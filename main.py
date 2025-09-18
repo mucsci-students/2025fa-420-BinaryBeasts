@@ -3,8 +3,8 @@
 Scheduler CLI Application
 Command-line tool for generating and optimizing schedules.
 """
-import argparse
 import sys
+import json
 from pathlib import Path
 
 def load_config(config_file: str) -> dict:
@@ -15,7 +15,20 @@ def load_config(config_file: str) -> dict:
     Returns:
         Dictionary containing configuration data
     """
-    pass
+    try:
+        with open(config_file, 'r') as f:
+            data = json.load(f)
+        
+        if 'config' in data:
+            return data['config']
+        else:
+            return data
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in config file {config_file}: {e}")
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Config file not found: {config_file}")
+    except Exception as e:
+        raise Exception(f"Error loading config file {config_file}: {e}")
 
 
 def load_time_slot_config(time_slot_config: str) -> dict:
@@ -26,7 +39,20 @@ def load_time_slot_config(time_slot_config: str) -> dict:
     Returns:
         Dictionary containing time slot configuration
     """
-    pass
+    try:
+        with open(time_slot_config, 'r') as f:
+            data = json.load(f)
+        
+        if 'time_slot_config' in data:
+            return data['time_slot_config']
+        else:
+            return data
+    except json.JSONDecodeError as e:
+        raise ValueError(f"Invalid JSON in time slot config file {time_slot_config}: {e}")
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Time slot config file not found: {time_slot_config}")
+    except Exception as e:
+        raise Exception(f"Error loading time slot config file {time_slot_config}: {e}")
 
 
 def generate_schedules(config: dict, time_slots: dict, limit: int, optimize: bool) -> list:
@@ -79,68 +105,71 @@ def validate_file_path(file_path: str, must_exist: bool = True) -> Path:
     pass
 
 
-def setup_argument_parser() -> argparse.ArgumentParser:
+def get_user_input():
     """
-    Setting up my little command-line argument parser majig.
+    Get user input for all required parameters.
     
     Returns:
-        A somewhat configured ArgumentParser instance I think so far
+        Dictionary containing user inputs
     """
-    parser = argparse.ArgumentParser(
-        description="Generate and optimize schedules based on configuration files.",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
-HOW IT SHOULD WORK -- might need changing I am still learning this library im just using what i think i need:
-  You would type -> program --config config.json --time-slots slots.json --output schedules.json
-  You would type -> program -c config.json -t slots.json -l 50 -o output.json --optimize
-        """
-    )
+    print("Scheduler CLI Application")
+    print("Generate and optimize schedules based on configuration files.")
+    print()
     
-    parser.add_argument(
-        '--config', '-c',
-        required=True,
-        help='Path to the configuration file'
-    )
+    # Get required inputs
+    config_file = input("Enter path to configuration file (JSON): ").strip()
     
-    parser.add_argument(
-        '--time-slots', '-t',
-        required=True,
-        help='Path to the time slot configuration file'
-    )
+    # Check if user wants to use the same file for time slots
+    use_same_file = input("Use the same file for time slot configuration? (y/n, default: y): ").strip().lower()
+    if not use_same_file or use_same_file in ['y', 'yes', 'true', '1']:
+        time_slots_file = config_file
+    else:
+        time_slots_file = input("Enter path to time slot configuration file (JSON): ").strip()
     
-    parser.add_argument(
-        '--limit', '-l',
-        type=int,
-        default=10,
-        help='Number of schedules to generate (defaulting to this rn: 10)'
-    )
+    output_file = input("Enter path to output file: ").strip()
     
-    parser.add_argument(
-        '--output', '-o',
-        required=True,
-        help='Path to the output file for the schedules'
-    )
+    # Get optional inputs
+    while True:
+        limit_input = input("Enter number of schedules to generate (default: 10): ").strip()
+        if not limit_input:
+            limit = 10
+            break
+        try:
+            limit = int(limit_input)
+            if limit <= 0:
+                print("Error: Please enter a number greater than 0.")
+                continue
+            if limit > 1000:
+                print("Error: Please enter a number less than 1000.")
+                continue
+            break
+        except ValueError:
+            print("Error: Please enter a valid number.")
     
-    parser.add_argument(
-        '--optimize',
-        action='store_true',
-        help='for schedule optimization'
-    )
-    return parser
+    optimize_input = input("Enable schedule optimization? (y/n, default: n): ").strip().lower()
+    optimize = optimize_input in ['y', 'yes', 'true', '1']
+    
+    return {
+        'config': config_file,
+        'time_slots': time_slots_file,
+        'output': output_file,
+        'limit': limit,
+        'optimize': optimize
+    }
 
 
 def main():
     """
     Where all the magic happens for the scheduler CLI.
     """
-    parser = setup_argument_parser()
-    args = parser.parse_args()
-    
     try:
+        # Get user input
+        user_input = get_user_input()
+        
         # Validate input files
-        config_path = validate_file_path(args.config, must_exist=True)
-        time_slots_path = validate_file_path(args.time_slots, must_exist=True)
-        output_path = validate_file_path(args.output, must_exist=False)
+        config_path = validate_file_path(user_input['config'], must_exist=True)
+        time_slots_path = validate_file_path(user_input['time_slots'], must_exist=True)
+        output_path = validate_file_path(user_input['output'], must_exist=False)
         
         # Load configurations
         print(f"Loading configuration from: {config_path}")
@@ -150,8 +179,8 @@ def main():
         time_slots = load_time_slot_config(str(time_slots_path))
         
         # Generate schedules
-        print(f"Generating {args.limit} schedules...")
-        schedules = generate_schedules(config, time_slots, args.limit, args.optimize)
+        print(f"Generating {user_input['limit']} schedules...")
+        schedules = generate_schedules(config, time_slots, user_input['limit'], user_input['optimize'])
         
         # Save results
         print(f"Saving schedules to: {output_path}")
@@ -164,6 +193,9 @@ def main():
         sys.exit(1)
     except PermissionError as e:
         print(f"Error: Permission denied - {e}", file=sys.stderr)
+        sys.exit(1)
+    except ValueError as e:
+        print(f"Error: Invalid input - {e}", file=sys.stderr)
         sys.exit(1)
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
