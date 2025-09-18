@@ -13,8 +13,8 @@ class RoomManager:
 			self.config['config']['rooms'] = []
 
 	def get_rooms(self) -> List[str]:
-		"""Return the list of rooms."""
-		return self.config['config'].get('rooms', [])
+		"""Return a copy of the list of rooms."""
+		return list(self.config['config'].get('rooms', []))
 
 	def add_room(self, room_name: str) -> bool:
 		"""Add a room if it does not already exist. Returns True if added, False if already present."""
@@ -35,7 +35,7 @@ class RoomManager:
 	def edit_room(self, old_name: str, new_name: str) -> bool:
 		"""Rename a room. Returns True if successful, False if old_name not found or new_name exists."""
 		rooms = self.config['config'].get('rooms', [])
-		if old_name not in rooms or new_name in rooms:
+		if old_name not in rooms or new_name in rooms:   
 			return False
 		idx = rooms.index(old_name)
 		rooms[idx] = new_name
