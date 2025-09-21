@@ -13,7 +13,7 @@ that all labs available to schedule are up-to-date.”
 
 import json
 
-class labManager:
+class LabManager:
 
     # Parses data from JSON file for Scheduler
     def load_data(self, config_file):
@@ -31,7 +31,7 @@ class labManager:
             return None
         # Catch if the file is not JSON extension type
         except json.JSONDecodeError:
-            print("The file" + filename + " is not a valid JSON file.")
+            print("The file " + filename + " is not a valid JSON file.")
             return None
 
     # Saves data into JSON file for Scheduler   
@@ -65,11 +65,13 @@ class labManager:
             print("No data loaded.")
             return None
     
-        if 'courses' not in self.data:
+        # Handle both direct and nested structure
+        courses = self.data.get('courses') or self.data.get('config', {}).get('courses', [])
+        if not courses:
             print("Data does not contain 'courses' list.")
             return None
     
-        for course in self.data['courses']:
+        for course in courses:
             # Check for course ID in parsed data, if ID matches, return course
             if 'course_id' in course and course['course_id'] == course_id:
                 return course
@@ -98,19 +100,19 @@ class labManager:
             print("Course with ID " + course_id + " was not found.")
             return
     
-        # If the course doesn't have a lab or labs DNE in list altogether,
-        if 'labs' not in course or course['labs'] is None:
-            # Create new empty list of labs for the courses to be stored in
-            course['labs'] = []
+        # If the course doesn't have a lab or lab DNE in list altogether,
+        if 'lab' not in course or course['lab'] is None:
+            # Create new empty list of lab for the courses to be stored in
+            course['lab'] = []
 
         # If lab type being added to course already exists as a lab in the course,
-        if lab_type in course['labs']:
+        if lab_type in course['lab']:
             # Print error msg 
             print("Lab " + lab_type + " already exists in course " + course_id)
             return
 
         # Once passed all test cases, can add lab to course
-        course['labs'].append(lab_type)
+        course['lab'].append(lab_type)
         print("Lab " + lab_type + " has been added to course " + course_id)
 
     # Modifies lab ['Mac' or 'Linux'] attached to a course in a scheduler CLI
@@ -131,13 +133,13 @@ class labManager:
         if course is None:
             print("Course with ID " + course_id + " does not exist.")
             return
-        # If the course doesn't have a lab or labs DNE in list altogether,
-        if 'labs' not in course or course['labs'] is None:
+        # If the course doesn't have a lab or lab DNE in list altogether,
+        if 'lab' not in course or course['lab'] is None:
             # Throw error message to user console
-            print("The course ID " + course_id + " has no labs to modify.")
+            print("The course ID " + course_id + " has no lab to modify.")
             return
         # If old type specified by user DNE in given course ID specified,
-        if old_type not in course['labs']:
+        if old_type not in course['lab']:
             # Throw error message to user console
             print("Lab " + old_type + " does not exist in " + course_id)
             return
@@ -146,16 +148,15 @@ class labManager:
         # Create empty list to store new lab type in
         labs = []
         # Check list of courses for lab
-        for lab in course['labs']:
+        for lab in course['lab']:
             if lab == old_type:
                 labs.append(new_type)
-
             else: 
                 labs.append(lab)
 
-            course['labs'] = labs
-            # Print log msg to user console stating lab type has been changed
-            print("Lab " + old_type + " has been changed to " + new_type + " for course " + course_id)
+        course['lab'] = labs
+        # Print log msg to user console stating lab type has been changed
+        print("Lab " + old_type + " has been changed to " + new_type + " for course " + course_id)
 
 
     def delete_lab(self, course_id, lab_type):
@@ -172,24 +173,24 @@ class labManager:
         if course is None:
             print("Course with ID " + course_id + " does not exist.")
             return
-        # If the course doesn't have a lab or labs DNE in list altogether,
-        if 'labs' not in course or course['labs'] is None:
+        # If the course doesn't have a lab or lab DNE in list altogether,
+        if 'lab' not in course or course['lab'] is None:
             # Throw error message to user console
-            print("The course ID " + course_id + " has no labs to modify.")
+            print("The course ID " + course_id + " has no lab to delete.")
             return
         # If the course ID specified by user does not have a lab type,
-        if lab_type not in course['labs']:
+        if lab_type not in course['lab']:
             # Throw error message to user console
             print("Lab " + lab_type + " does not exist in " + course_id)
             return
     
-        # Creates new list to store labs in excluding one that is deleted
+        # Creates new list to store lab in excluding one that is deleted
         new_labs = []
-        for lab in course['labs']:
+        for lab in course['lab']:
             if lab != lab_type:
                 new_labs.append(lab)
 
-        # Assign Updated list of labs for courses excluding deleted lab
-        course['labs'] = new_labs
+        # Assign Updated list of lab for courses excluding deleted lab
+        course['lab'] = new_labs
 
-        print("Lab " + lab_type + " has been deleted from course" + course_id)
+        print("Lab " + lab_type + " has been deleted from course " + course_id)
