@@ -117,18 +117,36 @@ def get_user_input():
     print()
     
     # Get required inputs
+    print("📁 CONFIGURATION FILE:")
+    print("   Example: example.json")
+    print("   Example: /path/to/config.json")
+    print("   Example: ./configs/schedule_config.json")
     config_file = input("Enter path to configuration file (JSON): ").strip()
     
     # Check if user wants to use the same file for time slots
+    print("\n🕒 TIME SLOT CONFIGURATION:")
+    print("   If your JSON file contains both 'config' and 'time_slot_config' sections,")
+    print("   you can use the same file for both.")
     use_same_file = input("Use the same file for time slot configuration? (y/n, default: y): ").strip().lower()
     if not use_same_file or use_same_file in ['y', 'yes', 'true', '1']:
         time_slots_file = config_file
     else:
+        print("   Example: timeslots.json")
+        print("   Example: /path/to/time_config.json")
         time_slots_file = input("Enter path to time slot configuration file (JSON): ").strip()
     
+    print("\n💾 OUTPUT FILE:")
+    print("   Example: schedules.json")
+    print("   Example: output/generated_schedules.json")
+    print("   Example: ./results/schedule_output.json")
     output_file = input("Enter path to output file: ").strip()
     
     # Get optional inputs
+    print("\n📊 SCHEDULE GENERATION LIMIT:")
+    print("   Example: 10 (default)")
+    print("   Example: 25")
+    print("   Example: 100")
+    print("   Valid range: 1-1000")
     while True:
         limit_input = input("Enter number of schedules to generate (default: 10): ").strip()
         if not limit_input:
@@ -146,6 +164,10 @@ def get_user_input():
         except ValueError:
             print("Error: Please enter a valid number.")
     
+    print("\n🚀 SCHEDULE OPTIMIZATION:")
+    print("   Example: y (enable optimization)")
+    print("   Example: n (disable optimization - default)")
+    print("   Accepted values: y/yes/true/1 for yes, n/no/false/0 for no")
     optimize_input = input("Enable schedule optimization? (y/n, default: n): ").strip().lower()
     optimize = optimize_input in ['y', 'yes', 'true', '1']
     
