@@ -1,7 +1,7 @@
-#BinaryBeasts 
-@Kenner Jimenez 
+# BinaryBeasts 
+@Kenner Jimenez
 @Sophia 
-@Andrew Delich 
-@Naomi 
-@Collin 
-@Patrick
+@Andrew Delich
+@Naomi
+@Collin
+@Patrick 
