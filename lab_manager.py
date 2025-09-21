@@ -181,7 +181,8 @@ class LabManager:
         # If the course ID specified by user does not have a lab type,
         if lab_type not in course['lab']:
             # Throw error message to user console
-            print("Lab " + lab_type + " does not exist in " + course_id)
+            # old print ("Lab " + lab_type + " does not exist in " + course_id)
+            print("no lab to delete")
             return
     
         # Creates new list to store lab in excluding one that is deleted
