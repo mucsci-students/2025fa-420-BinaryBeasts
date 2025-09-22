@@ -9,6 +9,7 @@ from pathlib import Path
 from generate_csv import ScheduleCSVGenerator
 from saveConfigFile import save_config_file
 from coursemanager import CourseManager, Course
+from room import RoomManager
 
 def load_config(config_file: str) -> dict:
     """
@@ -584,17 +585,206 @@ def course_management_menu(config: dict, config_file: str, time_slots: dict) -> 
             print("Invalid choice. Please select 1-6.")
 
 
+def display_rooms(room_manager: RoomManager) -> None:
+    """Display all rooms in a formatted list."""
+    print("\n" + "="*60)
+    print("ROOM LIST")
+    print("="*60)
+    
+    rooms = room_manager.get_rooms()
+    if not rooms:
+        print("No rooms found.")
+        return
+    
+    print(f"📍 Total Rooms: {len(rooms)}")
+    print("-" * 60)
+    
+    for i, room in enumerate(rooms, 1):
+        print(f"{i:3}. 🏢 {room}")
+    
+    print("="*60)
+
+
+def add_room_interactive(room_manager: RoomManager) -> None:
+    """Interactive room addition."""
+    print("\n🆕 ADD NEW ROOM")
+    print("=" * 30)
+    
+    room_name = input("Room name (e.g., Roddy 101): ").strip()
+    if not room_name:
+        print("❌ Room name cannot be empty.")
+        return
+    
+    try:
+        if room_manager.add_room(room_name):
+            print(f"✅ Successfully added room: {room_name}")
+        else:
+            print(f"❌ Room '{room_name}' already exists.")
+    except Exception as e:
+        print(f"❌ Error adding room: {e}")
+
+
+def edit_room_interactive(room_manager: RoomManager) -> None:
+    """Interactive room editing/renaming."""
+    display_rooms(room_manager)
+    
+    if not room_manager.get_rooms():
+        print("❌ No rooms available to edit.")
+        return
+    
+    old_name = input("\nEnter current room name to edit: ").strip()
+    if not old_name:
+        print("❌ Room name cannot be empty.")
+        return
+    
+    if old_name not in room_manager.get_rooms():
+        print(f"❌ Room '{old_name}' not found.")
+        return
+    
+    new_name = input(f"Enter new name for '{old_name}': ").strip()
+    if not new_name:
+        print("❌ New room name cannot be empty.")
+        return
+    
+    try:
+        if room_manager.edit_room(old_name, new_name):
+            print(f"✅ Successfully renamed '{old_name}' to '{new_name}'")
+            print("📝 Note: All course and faculty references have been updated automatically.")
+        else:
+            if new_name in room_manager.get_rooms():
+                print(f"❌ Room '{new_name}' already exists.")
+            else:
+                print(f"❌ Failed to rename room.")
+    except Exception as e:
+        print(f"❌ Error editing room: {e}")
+
+
+def delete_room_interactive(room_manager: RoomManager) -> None:
+    """Interactive room deletion with impact analysis."""
+    display_rooms(room_manager)
+    
+    if not room_manager.get_rooms():
+        print("❌ No rooms available to delete.")
+        return
+    
+    room_name = input("\nEnter room name to delete: ").strip()
+    if not room_name:
+        print("❌ Room name cannot be empty.")
+        return
+    
+    if room_name not in room_manager.get_rooms():
+        print(f"❌ Room '{room_name}' not found.")
+        return
+    
+    # Analyze impact of deletion
+    print(f"\n🔍 ANALYZING IMPACT OF DELETING '{room_name}':")
+    print("-" * 50)
+    
+    # Check courses using this room
+    affected_courses = []
+    config = room_manager.config.get('config', {})
+    for course in config.get('courses', []):
+        if 'room' in course and isinstance(course['room'], list):
+            if room_name in course['room']:
+                affected_courses.append(course.get('course_id', 'Unknown'))
+    
+    # Check faculty preferences
+    affected_faculty = []
+    for faculty in config.get('faculty', []):
+        room_prefs = faculty.get('room_preferences', {})
+        if room_name in room_prefs:
+            affected_faculty.append(faculty.get('name', 'Unknown'))
+    
+    if affected_courses:
+        print(f"📚 Courses using this room ({len(affected_courses)}):")
+        for course in affected_courses:
+            print(f"   • {course}")
+    
+    if affected_faculty:
+        print(f"👥 Faculty with preferences for this room ({len(affected_faculty)}):")
+        for faculty in affected_faculty:
+            print(f"   • {faculty}")
+    
+    if not affected_courses and not affected_faculty:
+        print("✅ No conflicts found. Room can be safely deleted.")
+    else:
+        print("\n⚠️  Warning: Deleting this room will:")
+        if affected_courses:
+            print(f"   • Remove room assignment from {len(affected_courses)} course(s)")
+        if affected_faculty:
+            print(f"   • Remove room preferences from {len(affected_faculty)} faculty member(s)")
+    
+    # Confirm deletion
+    confirm = input(f"\nAre you sure you want to delete '{room_name}'? (y/N): ").strip().lower()
+    if confirm in ['y', 'yes']:
+        try:
+            if room_manager.delete_room(room_name):
+                print(f"✅ Successfully deleted room: {room_name}")
+                if affected_courses or affected_faculty:
+                    print("📝 Note: All references have been automatically removed.")
+            else:
+                print(f"❌ Failed to delete room '{room_name}'.")
+        except Exception as e:
+            print(f"❌ Error deleting room: {e}")
+    else:
+        print("Deletion cancelled.")
+
+
+def room_management_menu(full_config: dict, config_file: str, time_slots: dict) -> dict:
+    """Room management menu interface."""
+    try:
+        # RoomManager expects the full structure with 'config' key
+        room_manager = RoomManager(full_config)
+        
+        while True:
+            print("\n" + "="*50)
+            print("ROOM MANAGEMENT")
+            print("="*50)
+            print("1. 👀 View all rooms")
+            print("2. ➕ Add new room")
+            print("3. ✏️  Edit/rename room")
+            print("4. ❌ Delete room")
+            print("5. 💾 Save changes and exit")
+            print("6. 🚪 Exit without saving")
+            print("="*50)
+            
+            choice = input("Select an option (1-6): ").strip()
+            
+            if choice == '1':
+                display_rooms(room_manager)
+            elif choice == '2':
+                add_room_interactive(room_manager)
+            elif choice == '3':
+                edit_room_interactive(room_manager)
+            elif choice == '4':
+                delete_room_interactive(room_manager)
+            elif choice == '5':
+                # Save changes back to full config
+                save_config_to_file(full_config['config'], time_slots, config_file)
+                return full_config['config']
+            elif choice == '6':
+                print("Exiting without saving changes.")
+                return full_config['config']
+            else:
+                print("Invalid choice. Please select 1-6.")
+                
+    except Exception as e:
+        print(f"❌ Error initializing room manager: {e}")
+        return full_config.get('config', {})
+
+
 def show_main_menu() -> str:
     """Display main menu and get user choice."""
     print("\n" + "="*50)
     print("SCHEDULER CLI - MAIN MENU")
     print("="*50)
     print("1. 🗂️  Course Management")
-    print("2. 📅 Generate Schedules")
-    print("3. 🚪 Exit")
+    print("2. 🏢 Room Management")
+    print("3. 📅 Generate Schedules")
+    print("4. 🚪 Exit")
     print("="*50)
     
-    return input("Select an option (1-3): ").strip()
+    return input("Select an option (1-4): ").strip()
 
 
 def get_user_input():
@@ -711,6 +901,10 @@ def main():
         print(f"Loading time slot configuration from: {config_path}")
         time_slots = load_time_slot_config(str(config_path))
         
+        # Load full config for room manager (needs both config and time_slot_config)
+        with open(str(config_path), 'r') as f:
+            full_config = json.load(f)
+        
         # Main application loop
         while True:
             choice = show_main_menu()
@@ -720,6 +914,12 @@ def main():
                 config = course_management_menu(config, str(config_path), time_slots)
                 
             elif choice == '2':
+                # Room Management
+                config = room_management_menu(full_config, str(config_path), time_slots)
+                # Update full_config with the new config
+                full_config['config'] = config
+                
+            elif choice == '3':
                 # Generate Schedules
                 user_input = get_user_input()
                 
@@ -747,13 +947,13 @@ def main():
                 
                 print("Schedule generation completed successfully!")
                 
-            elif choice == '3':
+            elif choice == '4':
                 # Exit
                 print("Thank you for using Scheduler CLI!")
                 break
                 
             else:
-                print("Invalid choice. Please select 1, 2, or 3.")
+                print("Invalid choice. Please select 1, 2, 3, or 4.")
         
     except FileNotFoundError as e:
         print(f"Error: File not found - {e}", file=sys.stderr)
