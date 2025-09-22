@@ -139,7 +139,6 @@ class CourseManager:
         """
         return self.courses.copy()
 
-#TODO
     def modify_course(self, course_id: str, index: int, new_course:Course) -> bool:
         """
         Modify the specified course in the schedule.
@@ -176,6 +175,15 @@ class CourseManager:
 
 
     def load_course_manager_from_config(config: Dict) -> "CourseManager":
+        """
+        Create a CourseManager from configuration data.
+
+        Args:
+            config: Configuration dictionary containing courses
+
+        Returns:
+            Initialized CourseManager instance
+        """
         course_data = config.get("courses", [])
         course_manager = CourseManager()
         course_manager.load_courses(course_data)
