@@ -23,7 +23,7 @@ This is a course scheduling system with an command-line interface. The applicati
 
 ## Prerequisites
 
-- Python 3.7 or higher
+- Python 3.12 or higher
 - Git (for cloning the repository)
 
 ## Installation
