@@ -50,9 +50,15 @@ scheduler_env\Scripts\activate
 source scheduler_env/bin/activate
 ```
 
-### Step 3: Dependencies?
+### Step 3: Install Dependencies
 
-No external dependencies are required - the application uses only Python standard library modules.
+Install the required course constraint scheduler library:
+
+```bash
+# Install the course constraint scheduler library
+pip install course-constraint-scheduler
+```
+**Note:** This library provides the core scheduling algorithms and constraint satisfaction functionality required for generating optimized class schedules.
 
 ## Usage
 
@@ -66,11 +72,6 @@ No external dependencies are required - the application uses only Python standar
 2. **Run the application:**
    ```bash
    python main.py
-   ```
-
-3. **When prompted, enter the configuration file path:**
-   ```
-   Enter path to configuration file (JSON): example.json
    ```
 
 ### Step-by-Step Usage Guide

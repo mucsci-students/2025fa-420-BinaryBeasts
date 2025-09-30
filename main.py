@@ -6,13 +6,19 @@ Command-line tool for generating and optimizing schedules.
 import sys
 import json
 from pathlib import Path
-from generate_csv import ScheduleCSVGenerator
+from scheduler import (
+    Scheduler,
+    load_config_from_file,
+)
+from scheduler.config import CombinedConfig
 from saveConfigFile import save_config_file
 from courses import CourseManager, Course
 from room import RoomManager
 from lab_manager import LabManager
 from faculty import FacultyManager
-
+"""
+Can cut \/\/\/\/\/\/
+"""
 def load_config(config_file: str) -> dict:
     """
     Load configuration from the specified config file.
@@ -61,7 +67,9 @@ def load_time_slot_config(time_slot_config: str) -> dict:
         raise Exception(f"Error loading time slot config file {time_slot_config}: {e}")
 
 
-
+"""
+Can cut \/\/\/\/\/\/
+"""
 def generate_schedules(config: dict, time_slots: dict, limit: int, optimize: bool) -> list:
     """
     Generate schedules based on configuration and constraints.
@@ -286,7 +294,9 @@ def save_config_to_file(config: dict, time_slots: dict, config_file: str) -> Non
     except Exception as e:
         print(f"❌ Error saving configuration: {e}")
 
-
+"""
+Sophias features can be moved to course class
+"""
 def display_courses(course_manager: CourseManager) -> None:
     """Display all courses in a formatted list."""
     print("\n" + "="*60)
@@ -313,7 +323,9 @@ def display_courses(course_manager: CourseManager) -> None:
     
     print("="*60)
 
-
+"""
+Sophias features can be moved to course class
+"""
 def get_course_input() -> dict:
     """Get course information from user input."""
     print("\n🆕 ADD NEW COURSE")
@@ -374,7 +386,9 @@ def get_course_input() -> dict:
         'conflicts': conflicts
     }
 
-
+"""
+Sophias features can be moved to course class
+"""
 def add_course_interactive(course_manager: CourseManager) -> None:
     """Interactive course addition."""
     try:
@@ -385,7 +399,9 @@ def add_course_interactive(course_manager: CourseManager) -> None:
     except Exception as e:
         print(f"❌ Error adding course: {e}")
 
-
+"""
+Sophias features can be moved to course class
+"""
 def modify_course_interactive(course_manager: CourseManager) -> None:
     """Interactive course modification."""
     display_courses(course_manager)
@@ -493,7 +509,9 @@ def modify_course_interactive(course_manager: CourseManager) -> None:
     
     print(f"✅ Successfully modified course: {current_course.course_id}")
 
-
+"""
+Sophias features can be moved to course class
+"""
 def delete_course_interactive(course_manager: CourseManager) -> None:
     """Interactive course deletion."""
     display_courses(course_manager)
@@ -536,7 +554,9 @@ def delete_course_interactive(course_manager: CourseManager) -> None:
         else:
             print("Deletion cancelled.")
 
-
+"""
+Sophias features can be moved to course class
+"""
 def course_management_menu(config: dict, config_file: str, time_slots: dict) -> dict:
     """Course management menu interface."""
     course_manager = CourseManager()
@@ -587,7 +607,9 @@ def course_management_menu(config: dict, config_file: str, time_slots: dict) -> 
         else:
             print("Invalid choice. Please select 1-6.")
 
-
+"""
+Andrews features can be moved to course class
+"""
 def display_rooms(room_manager: RoomManager) -> None:
     """Display all rooms in a formatted list."""
     print("\n" + "="*60)
@@ -607,7 +629,9 @@ def display_rooms(room_manager: RoomManager) -> None:
     
     print("="*60)
 
-
+"""
+Andrews features can be moved to course class
+"""
 def add_room_interactive(room_manager: RoomManager) -> None:
     """Interactive room addition."""
     print("\n🆕 ADD NEW ROOM")
@@ -626,7 +650,9 @@ def add_room_interactive(room_manager: RoomManager) -> None:
     except Exception as e:
         print(f"❌ Error adding room: {e}")
 
-
+"""
+Andrews features can be moved to course class
+"""
 def edit_room_interactive(room_manager: RoomManager) -> None:
     """Interactive room editing/renaming."""
     display_rooms(room_manager)
@@ -661,7 +687,9 @@ def edit_room_interactive(room_manager: RoomManager) -> None:
     except Exception as e:
         print(f"❌ Error editing room: {e}")
 
-
+"""
+Andrews features can be moved to course class
+"""
 def delete_room_interactive(room_manager: RoomManager) -> None:
     """Interactive room deletion with impact analysis."""
     display_rooms(room_manager)
@@ -732,7 +760,9 @@ def delete_room_interactive(room_manager: RoomManager) -> None:
     else:
         print("Deletion cancelled.")
 
-
+"""
+Andrews features can be moved to course class
+"""
 def room_management_menu(full_config: dict, config_file: str, time_slots: dict) -> dict:
     """Room management menu interface."""
     try:
@@ -775,7 +805,9 @@ def room_management_menu(full_config: dict, config_file: str, time_slots: dict) 
         print(f"❌ Error initializing room manager: {e}")
         return full_config.get('config', {})
 
-
+"""
+Naomis features can be moved to course class
+"""
 def display_labs_and_courses(lab_manager: LabManager) -> None:
     """Display all labs and which courses use them."""
     print("\n" + "="*60)
@@ -812,7 +844,9 @@ def display_labs_and_courses(lab_manager: LabManager) -> None:
     
     print("="*60)
 
-
+"""
+Naomis features can be moved to course class
+"""
 def add_lab_to_course_interactive(lab_manager: LabManager) -> None:
     """Interactive lab assignment to course."""
     print("\n➕ ADD LAB TO COURSE")
@@ -872,7 +906,9 @@ def add_lab_to_course_interactive(lab_manager: LabManager) -> None:
     except Exception as e:
         print(f"❌ Error adding lab: {e}")
 
-
+"""
+Naomis features can be moved to course class
+"""
 def modify_lab_interactive(lab_manager: LabManager) -> None:
     """Interactive lab modification for courses."""
     display_labs_and_courses(lab_manager)
@@ -931,7 +967,9 @@ def modify_lab_interactive(lab_manager: LabManager) -> None:
     except Exception as e:
         print(f"❌ Error modifying lab: {e}")
 
-
+"""
+Naomis features can be moved to course class
+"""
 def delete_lab_interactive(lab_manager: LabManager) -> None:
     """Interactive lab deletion from course."""
     display_labs_and_courses(lab_manager)
@@ -981,7 +1019,9 @@ def delete_lab_interactive(lab_manager: LabManager) -> None:
     except Exception as e:
         print(f"❌ Error removing lab: {e}")
 
-
+"""
+Naomis features can be moved to course class
+"""
 def lab_management_menu(config_file: str, config: dict, time_slots: dict) -> dict:
     """Lab management menu interface."""
     try:
@@ -1034,7 +1074,9 @@ def lab_management_menu(config_file: str, config: dict, time_slots: dict) -> dic
         print(f"❌ Error initializing lab manager: {e}")
         return config
 
-
+"""
+Patricks features can be moved to course class
+"""
 def display_faculty(faculty_manager: FacultyManager) -> None:
     """Display all faculty members in a formatted list."""
     print("\n" + "="*60)
@@ -1090,7 +1132,9 @@ def display_faculty(faculty_manager: FacultyManager) -> None:
     
     print("="*60)
 
-
+"""
+Patricks features can be moved to course class
+"""
 def get_faculty_input(config: dict) -> dict:
     """Get faculty information from user input."""
     print("\n🆕 ADD NEW FACULTY")
@@ -1227,7 +1271,9 @@ def get_faculty_input(config: dict) -> dict:
         'lab_preferences': lab_preferences
     }
 
-
+"""
+Patricks features can be moved to course class
+"""
 def add_faculty_interactive(faculty_manager: FacultyManager, config: dict) -> None:
     """Interactive faculty addition."""
     try:
@@ -1239,7 +1285,9 @@ def add_faculty_interactive(faculty_manager: FacultyManager, config: dict) -> No
     except Exception as e:
         print(f"❌ Error adding faculty: {e}")
 
-
+"""
+Patricks features can be moved to course class
+"""
 def edit_faculty_interactive(faculty_manager: FacultyManager, config: dict) -> None:
     """Interactive faculty editing."""
     display_faculty(faculty_manager)
@@ -1313,7 +1361,9 @@ def edit_faculty_interactive(faculty_manager: FacultyManager, config: dict) -> N
     except Exception as e:
         print(f"❌ Error editing faculty: {e}")
 
-
+"""
+Patricks features can be moved to course class
+"""
 def delete_faculty_interactive(faculty_manager: FacultyManager) -> None:
     """Interactive faculty deletion with impact analysis."""
     display_faculty(faculty_manager)
@@ -1371,7 +1421,9 @@ def delete_faculty_interactive(faculty_manager: FacultyManager) -> None:
     else:
         print("Deletion cancelled.")
 
-
+"""
+Patricks features can be moved to course class
+"""
 def faculty_management_menu(full_config: dict, config_file: str, time_slots: dict) -> dict:
     """Faculty management menu interface."""
     try:
