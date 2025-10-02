@@ -6,7 +6,6 @@ Command-line tool for generating and optimizing schedules.
 import sys
 import json
 from pathlib import Path
-from generate_csv import ScheduleCSVGenerator
 from saveConfigFile import save_config_file
 
 def load_config(config_file: str) -> dict:
