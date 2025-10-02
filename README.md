@@ -2,11 +2,11 @@
 
 **Team BinaryBeasts** - CMSC 420 Fall 2025
 - Kenner Jimenez
-- Sophia 
+- Sophia Koziar
 - Andrew Delich
-- Naomi
-- Collin
-- Patrick
+- Naomi Ermold
+- Collin Donnan
+- Patrick Kreibick
 - Tyler Brown
 
 ## Overview
