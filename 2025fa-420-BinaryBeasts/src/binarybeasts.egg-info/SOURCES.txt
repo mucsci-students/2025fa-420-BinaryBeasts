@@ -1,0 +1,15 @@
+LICENSE
+README.md
+pyproject.toml
+src/binarybeasts.egg-info/PKG-INFO
+src/binarybeasts.egg-info/SOURCES.txt
+src/binarybeasts.egg-info/dependency_links.txt
+src/binarybeasts.egg-info/top_level.txt
+tests/test_con.py
+tests/test_courses.py
+tests/test_csv_output.py
+tests/test_lab_manager.py
+tests/test_main.py
+tests/test_main_example.py
+tests/test_room.py
+tests/test_roomGUI.py

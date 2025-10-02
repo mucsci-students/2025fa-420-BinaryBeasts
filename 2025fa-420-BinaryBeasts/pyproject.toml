@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "binarybeasts"
+version = "0.0.0"
+description = "Binary Beasts local development package"
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["src"]

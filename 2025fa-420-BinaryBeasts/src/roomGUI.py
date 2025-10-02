@@ -1,4 +1,6 @@
 from PyQt5 import QtWidgets
+from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt  # Added for alignment and Qt namespace enums
 from typing import List, Optional
 from src.room import RoomManager
 import json
@@ -6,6 +8,14 @@ from PyQt5.QtWidgets import QFileDialog
 
 
 class AddRoomDialog(QtWidgets.QDialog):
+    """Simple dialog to add or edit a single room name.
+
+    Previously this was also named RoomGUI, which conflicted with the main
+    RoomGUI widget below. The duplicate class name caused the dialog class
+    to be overwritten, leading to incorrect instantiation and potential
+    runtime errors. Renamed to AddRoomDialog for clarity.
+    """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Add Room")
@@ -37,32 +47,46 @@ class RoomGUI(QtWidgets.QWidget):
     def __init__(self, config: dict, loaded_path: Optional[str] = None, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Room Manager")
-        self.resize(400, 300)
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(500)
 
         self.manager = RoomManager(config)
-        # Path to the file this config was loaded from (if any). If set, Save will
-        # overwrite this file instead of prompting for a location.
         self.loaded_path = loaded_path
 
-        self.list_widget = QtWidgets.QListWidget()
+        # Title label styled similar to main_gui
+        title = QtWidgets.QLabel("Room Manager")
+        title.setFont(QFont('Arial', 16, QFont.Bold))
+        # Align center using Qt enum from QtCore
+        title.setAlignment(Qt.AlignCenter)
 
-        # Buttons
-        self.add_btn = QtWidgets.QPushButton("Add Room")
-        self.edit_btn = QtWidgets.QPushButton("Edit Room")
-        self.del_btn = QtWidgets.QPushButton("Delete Room")
-        self.save_btn = QtWidgets.QPushButton("Save Config")
+        # List of rooms
+        self.list_widget = QtWidgets.QListWidget()
+        self.list_widget.setFont(QFont('Arial', 10))
+
+        # Buttons (consistent style)
+        def make_btn(text: str) -> QtWidgets.QPushButton:
+            b = QtWidgets.QPushButton(text)
+            b.setFont(QFont('Arial', 9))
+            b.setStyleSheet('padding: 8px; background-color: #4CAF50; color: white; border-radius: 5px;')
+            return b
+
+        self.add_btn = make_btn("Add Room")
+        self.edit_btn = make_btn("Edit Room")
+        self.del_btn = make_btn("Delete Room")
+        self.save_btn = make_btn("Save Config")
 
         # Layout
-        btn_layout = QtWidgets.QHBoxLayout()
-        btn_layout.addWidget(self.add_btn)
-        btn_layout.addWidget(self.edit_btn)
-        btn_layout.addWidget(self.del_btn)
-        btn_layout.addStretch()
-        btn_layout.addWidget(self.save_btn)
+        main_layout = QtWidgets.QVBoxLayout(self)
+        main_layout.addWidget(title)
+        main_layout.addWidget(self.list_widget)
 
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(self.list_widget)
-        layout.addLayout(btn_layout)
+        btn_row = QtWidgets.QHBoxLayout()
+        btn_row.addWidget(self.add_btn)
+        btn_row.addWidget(self.edit_btn)
+        btn_row.addWidget(self.del_btn)
+        btn_row.addStretch()
+        btn_row.addWidget(self.save_btn)
+        main_layout.addLayout(btn_row)
 
         # Signals
         self.add_btn.clicked.connect(self.add_room)
@@ -70,12 +94,10 @@ class RoomGUI(QtWidgets.QWidget):
         self.del_btn.clicked.connect(self.delete_room)
         self.save_btn.clicked.connect(self.save_config)
 
-        # Disable edit/delete when no selection
         self.edit_btn.setEnabled(False)
         self.del_btn.setEnabled(False)
         self.list_widget.itemSelectionChanged.connect(self._on_selection_changed)
 
-        # populate list
         self.refresh()
 
     def refresh(self):

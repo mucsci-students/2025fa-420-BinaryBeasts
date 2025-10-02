@@ -1,0 +1,27 @@
+{
+  "config": {
+    "rooms": [
+      "Room A",
+      "Room B",
+      "Room C",
+      "Room F",
+      "farf"
+    ],
+    "courses": [
+      {
+        "course_id": "CS1",
+        "room": [
+          "Room A"
+        ]
+      }
+    ],
+    "faculty": [
+      {
+        "name": "F1",
+        "room_preferences": {
+          "Room A": 1
+        }
+      }
+    ]
+  }
+}
