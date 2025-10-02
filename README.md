@@ -6,7 +6,8 @@
 - Andrew Delich
 - Naomi
 - Collin
-- Patrick 
+- Patrick
+- Tyler Brown
 
 ## Overview
 

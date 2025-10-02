@@ -338,7 +338,7 @@ class TestIntegrationWithExampleJSON(unittest.TestCase):
     
     def test_load_actual_example_json(self):
         """Test loading the actual example.json file if it exists."""
-        example_file = "../example.json"
+        example_file = "example.json"
         if os.path.exists(example_file):
             try:
                 config = main.load_config(example_file)

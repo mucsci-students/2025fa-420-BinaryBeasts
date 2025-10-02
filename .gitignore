@@ -1,0 +1,21 @@
+# --- Python Specific ---
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# --- Virtual Environment ---
+.venv/
+venv/
+
+# --- Operating System/IDE ---
+.DS_Store
+.vscode/
+.idea/
+
+# --- Logs and Data ---
+*.log
+*.sqlite3
+
+# --- Sensitive Files ---
+.env
