@@ -70,70 +70,10 @@ def load_time_slot_config(time_slot_config: str) -> dict:
 """
 Can cut \/\/\/\/\/\/
 """
-def generate_schedules(config: dict, time_slots: dict, limit: int, optimize: bool) -> list:
-    """
-    Generate schedules based on configuration and constraints.
-    Args:
-        config: Configuration dictionary
-        time_slots: Time slot configuration dictionary
-        limit: Maximum number of schedules to generate
-        optimize: Whether to optimize the generated schedules
-    Returns:
-        List of generated schedules
-    """
-    # Use the CSV generator to create schedules
-    csv_generator = ScheduleCSVGenerator(config, time_slots)
-    schedules = csv_generator.generate_schedules_from_config(limit)
-    
-    if optimize:
-        print("Applying optimization...")
-        # Apply optimization logic here
-        for schedule in schedules:
-            schedule['optimization_score'] = schedule.get('optimization_score', 75.0) + 10.0
-    
-    return schedules
 
 
-def optimize_schedule(schedule: dict) -> dict:
-    """
-    Optimize a single schedule according to specified criteria.
-    Args:
-        schedule: Schedule dictionary to optimize
-    Returns:
-        Optimized schedule dictionary
-    """
-    pass
 
 
-def save_schedules(schedules: list, output_file: str, output_format: str = 'json') -> None:
-    """
-    Save generated schedules to the specified output file.
-    Args:
-        schedules: List of schedules to save
-        output_file: Path to the output file
-        output_format: Format to save in ('json' or 'csv')
-    """
-    try:
-        if output_format.lower() == 'csv':
-            # Save as CSV format
-            import csv
-            with open(output_file, 'w', newline='', encoding='utf-8') as csvfile:
-                if schedules:
-                    fieldnames = schedules[0].keys()
-                    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-                    writer.writeheader()
-                    writer.writerows(schedules)
-                print(f"Successfully saved {len(schedules)} schedules to {output_file} (CSV format)")
-        else:
-            # Save as JSON format (default)
-            save_config_file(output_file, schedules)
-            print(f"Successfully saved {len(schedules)} schedules to {output_file} (JSON format)")
-    except PermissionError as e:
-        raise PermissionError(f"Permission denied writing to output file: {output_file}")
-    except OSError as e:
-        raise OSError(f"Error writing to output file {output_file}: {e}")
-    except Exception as e:
-        raise Exception(f"Unexpected error saving schedules to {output_file}: {e}")
 
 
 def print_config_summary(config: dict, time_slots: dict) -> None:
@@ -1157,20 +1097,32 @@ def faculty_management_menu(full_config: dict, config_file: str, time_slots: dic
         return full_config.get('config', {})
 
 
+def show_interface_selection() -> str:
+    """Display interface selection menu and get user choice."""
+    print("\n" + "="*50)
+    print("SCHEDULER APPLICATION")
+    print("="*50)
+    print("Choose your interface:")
+    print("1. 💻 CLI (Command Line Interface)")
+    print("2. 🖥️ GUI (Graphical User Interface)")
+    print("3. 🚪 Exit")
+    print("="*50)
+    
+    return input("Select an option (1-3): ").strip()
+
 def show_main_menu() -> str:
     """Display main menu and get user choice."""
     print("\n" + "="*50)
     print("SCHEDULER CLI - MAIN MENU")
     print("="*50)
-    print("1. 🗂️  Course Management")
+    print("1. 🗂️ Course Management")
     print("2. 🏢 Room Management")
     print("3. 🔬 Lab Management")
     print("4. 👥 Faculty Management")
-    print("5. 📅 Generate Schedules")
-    print("6. 🚪 Exit")
+    print("5. 🚪 Exit")
     print("="*50)
     
-    return input("Select an option (1-6): ").strip()
+    return input("Select an option (1-5): ").strip()
 
 
 def get_user_input():
@@ -1264,95 +1216,101 @@ def get_user_input():
     }
 
 
+def run_cli():
+    """
+    Run the CLI version of the scheduler application.
+    """
+    print("Welcome to the Scheduler CLI!")
+    print("Loading initial configuration...")
+    
+    # Get configuration file
+    print("\n📁 CONFIGURATION FILE:")
+    print("   Example: example.json")
+    print("   Example: /path/to/config.json")
+    config_file = input("Enter path to configuration file (JSON): ").strip()
+    
+    # Validate and load configurations
+    config_path = validate_file_path(config_file, must_exist=True)
+    print(f"Loading configuration from: {config_path}")
+    config = load_config(str(config_path))
+    
+    # Load time slots from same file (assuming nested structure like example.json)
+    print(f"Loading time slot configuration from: {config_path}")
+    time_slots = load_time_slot_config(str(config_path))
+    
+    # Load full config for room manager (needs both config and time_slot_config)
+    with open(str(config_path), 'r') as f:
+        full_config = json.load(f)
+    
+    # Main application loop
+    while True:
+        choice = show_main_menu()
+        
+        if choice == '1':
+            # Course Management
+            course_manager = CourseManager()
+            config = course_manager.course_management_menu(config, str(config_path), time_slots)
+            
+        elif choice == '2':
+            # Room Management
+            config = room_management_menu(full_config, str(config_path), time_slots)
+            # Update full_config with the new config
+            full_config['config'] = config
+            
+        elif choice == '3':
+            # Lab Management
+            config = lab_management_menu(str(config_path), config, time_slots)
+            # Update full_config with the new config
+            full_config['config'] = config
+            
+        elif choice == '4':
+            # Faculty Management
+            config = faculty_management_menu(full_config, str(config_path), time_slots)
+            # Update full_config with the new config
+            full_config['config'] = config
+            
+        elif choice == '5':
+            # Exit
+            print("Thank you for using Scheduler CLI!")
+            break
+            
+        else:
+            print("Invalid choice. Please select 1, 2, 3, 4, or 5.")
+
+def run_gui():
+    """
+    Run the GUI version of the scheduler application.
+    """
+    print("🖥️ Starting GUI Application...")
+    print("Note: GUI functionality will be implemented soon.")
+    print("For now, please use the CLI interface.")
+    input("Press Enter to return to interface selection...")
+
 def main():
     """
-    Where all the magic happens for the scheduler CLI.
+    Main entry point for the scheduler application.
     """
     try:
-        print("Welcome to the Scheduler CLI!")
-        print("Loading initial configuration...")
+        print("Welcome to the Scheduler Application!")
         
-        # Get configuration file
-        print("\n📁 CONFIGURATION FILE:")
-        print("   Example: example.json")
-        print("   Example: /path/to/config.json")
-        config_file = input("Enter path to configuration file (JSON): ").strip()
-        
-        # Validate and load configurations
-        config_path = validate_file_path(config_file, must_exist=True)
-        print(f"Loading configuration from: {config_path}")
-        config = load_config(str(config_path))
-        
-        # Load time slots from same file (assuming nested structure like example.json)
-        print(f"Loading time slot configuration from: {config_path}")
-        time_slots = load_time_slot_config(str(config_path))
-        
-        # Load full config for room manager (needs both config and time_slot_config)
-        with open(str(config_path), 'r') as f:
-            full_config = json.load(f)
-        
-        # Main application loop
+        # Interface selection loop
         while True:
-            choice = show_main_menu()
+            choice = show_interface_selection()
             
             if choice == '1':
-                # Course Management
-                course_manager = CourseManager()
-                config = course_manager.course_management_menu(config, str(config_path), time_slots)
-                
-            elif choice == '2':
-                # Room Management
-                config = room_management_menu(full_config, str(config_path), time_slots)
-                # Update full_config with the new config
-                full_config['config'] = config
-                
-            elif choice == '3':
-                # Lab Management
-                config = lab_management_menu(str(config_path), config, time_slots)
-                # Update full_config with the new config
-                full_config['config'] = config
-                
-            elif choice == '4':
-                # Faculty Management
-                config = faculty_management_menu(full_config, str(config_path), time_slots)
-                # Update full_config with the new config
-                full_config['config'] = config
-                
-            elif choice == '5':
-                # Generate Schedules
-                user_input = get_user_input()
-                
-                # Validate output file
-                output_path = validate_file_path(user_input['output'], must_exist=False)
-                
-                # Show config summary if requested
-                if user_input['show_config']:
-                    print_config_summary(config, time_slots)
-                    
-                    # Ask user if they want to continue after seeing the config
-                    print("\nContinue with schedule generation? (y/n, default: y):")
-                    continue_input = input().strip().lower()
-                    if continue_input in ['n', 'no', 'false', '0']:
-                        print("Schedule generation cancelled by user.")
-                        continue
-                
-                # Generate schedules
-                print(f"Generating {user_input['limit']} schedules...")
-                schedules = generate_schedules(config, time_slots, user_input['limit'], user_input['optimize'])
-                
-                # Save results
-                print(f"Saving schedules to: {output_path}")
-                save_schedules(schedules, str(output_path), user_input['format'])
-                
-                print("Schedule generation completed successfully!")
-                
-            elif choice == '6':
-                # Exit
-                print("Thank you for using Scheduler CLI!")
+                # CLI Interface
+                run_cli()
                 break
-                
+            elif choice == '2':
+                # GUI Interface
+                run_gui()
+                # Continue loop to allow interface selection again
+            elif choice == '3':
+                # Exit
+                print("Thank you for using the Scheduler Application!")
+                break
             else:
-                print("Invalid choice. Please select 1, 2, 3, 4, 5, or 6.")
+                print("Invalid choice. Please select 1, 2, or 3.")
         
     except FileNotFoundError as e:
         print(f"Error: File not found - {e}", file=sys.stderr)
