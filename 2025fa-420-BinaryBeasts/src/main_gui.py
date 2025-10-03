@@ -6,7 +6,10 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
-from roomGUI import RoomGUI
+try:
+    from roomGUI import create_room_window  # Factory handles construction & fallback
+except Exception:  # pragma: no cover - defensive import fallback
+    create_room_window = None  # type: ignore
 
 
 
@@ -14,6 +17,8 @@ from roomGUI import RoomGUI
 class MainGUI(QWidget):
     def __init__(self):
         super().__init__()
+        # State: path to currently selected configuration file (lazy-loaded for Room GUI)
+        self.loaded_config_path = None  # type: ignore[assignment]
         self.init_ui()
 
     def init_ui(self):
@@ -87,10 +92,9 @@ class MainGUI(QWidget):
     def open_file_dialog(self):
         file_path, _ = QFileDialog.getOpenFileName(self,'Open JSON file','','JSON Files (*.json)')
         if file_path:
-            #implement later
-            #self.selected_label.setText(config to str method)
-            #pass to backend
-            print(f'Selected file: {file_path}')
+            self.loaded_config_path = file_path
+            self.selected_label.setText(f"Selected: {file_path}")
+            print(f"Selected config file path: {file_path}")
         else:
             self.selected_label.setText('No file selected.')
 
@@ -105,38 +109,45 @@ class MainGUI(QWidget):
         print("Faculty Manager Opened")
     
     def open_room_manager(self):
-        # Prompt the user for an optional JSON configuration file to edit.
-        file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON config (optional)', '', 'JSON Files (*.json)')
         cfg = None
-        loaded_path = None
-        if file_path:
+        loaded_path = self.loaded_config_path
+
+        # If a path was previously selected, attempt to load lazily
+        if loaded_path:
             try:
                 import json
-                with open(file_path, encoding='utf-8') as f:
+                with open(loaded_path, encoding='utf-8') as f:
                     cfg = json.load(f)
-                loaded_path = file_path
             except Exception as e:
-                print(f"Failed to load {file_path}: {e}")
+                print(f"Failed to load stored config {loaded_path}: {e}")
                 cfg = None
 
+        # If still no config, prompt once now.
         if cfg is None:
-            # fallback sample config
-            cfg = {
-                "config": {
-                    "rooms": ["Room A", "Room B", "Room C"],
-                    "courses": [
-                        {"course_id": "CS1", "room": ["Room A", "Room B"]},
-                        {"course_id": "CS2", "room": ["Room C"]},
-                    ],
-                    "faculty": [
-                        {"name": "Prof X", "room_preferences": {"Room A": 10, "Room B": 5}}
-                    ],
-                }
-            }
+            file_path, _ = QFileDialog.getOpenFileName(self, 'Select Room Config', '', 'JSON Files (*.json)')
+            if file_path:
+                try:
+                    import json
+                    with open(file_path, encoding='utf-8') as f:
+                        cfg = json.load(f)
+                    loaded_path = file_path
+                    self.loaded_config_path = file_path  # remember for future
+                    self.selected_label.setText(f"Selected: {file_path}")
+                except Exception as e:
+                    print(f"Failed to load {file_path}: {e}")
+                    cfg = None
 
-        # Create and show the RoomGUI; keep a reference so it doesn't get GC'd
-        self.room_window = RoomGUI(cfg, loaded_path=loaded_path)
-        self.room_window.show()
+        # Create RoomGUI (top-level). If cfg is None the factory warns.
+        self.room_window = create_room_window(cfg, loaded_path=loaded_path, parent=None)
+        if self.room_window is not None:
+            # Optional: ensure it stays on top when first opened
+            try:
+                self.room_window.setWindowFlags(self.room_window.windowFlags())
+            except Exception:
+                pass
+            self.room_window.show()
+            self.room_window.raise_()
+            self.room_window.activateWindow()
 
     def save_configuration(self):
         folder_path = QFileDialog.getExistingDirectory(self, "Select Directory", "")
