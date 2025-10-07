@@ -95,7 +95,7 @@ class LabManager:
         if course is None:
             # If course DNE by given ID input by user, print error msg
             print("Course with ID " + course_id + " was not found.")
-            return
+            return False
     
         # If the course doesn't have a lab or lab DNE in list altogether,
         if 'lab' not in course or course['lab'] is None:
@@ -106,11 +106,12 @@ class LabManager:
         if lab_type in course['lab']:
             # Print error msg 
             print("Lab " + lab_type + " already exists in course " + course_id)
-            return
+            return False
 
         # Once passed all test cases, can add lab to course
         course['lab'].append(lab_type)
         print("Lab " + lab_type + " has been added to course " + course_id)
+        return True
 
     # Modifies lab ['Mac' or 'Linux'] attached to a course in a scheduler CLI
     def modify_lab(self, course_id, old_type, new_type):
@@ -129,17 +130,17 @@ class LabManager:
         # If input course DNE throw user console an error msg
         if course is None:
             print("Course with ID " + course_id + " does not exist.")
-            return
+            return False
         # If the course doesn't have a lab or lab DNE in list altogether,
         if 'lab' not in course or course['lab'] is None:
             # Throw error message to user console
             print("The course ID " + course_id + " has no lab to modify.")
-            return
+            return False
         # If old type specified by user DNE in given course ID specified,
         if old_type not in course['lab']:
             # Throw error message to user console
             print("Lab " + old_type + " does not exist in " + course_id)
-            return
+            return False
     
         # Otherwise after passing all test cases, modify old lab type 
         # Create empty list to store new lab type in
@@ -154,6 +155,7 @@ class LabManager:
         course['lab'] = labs
         # Print log msg to user console stating lab type has been changed
         print("Lab " + old_type + " has been changed to " + new_type + " for course " + course_id)
+        return True
 
 
     def delete_lab(self, course_id, lab_type):
@@ -169,18 +171,18 @@ class LabManager:
 
         if course is None:
             print("Course with ID " + course_id + " does not exist.")
-            return
+            return False
         # If the course doesn't have a lab or lab DNE in list altogether,
         if 'lab' not in course or course['lab'] is None:
             # Throw error message to user console
             print("The course ID " + course_id + " has no lab to delete.")
-            return
+            return False
         # If the course ID specified by user does not have a lab type,
         if lab_type not in course['lab']:
             # Throw error message to user console
             # old print ("Lab " + lab_type + " does not exist in " + course_id)
             print("no lab to delete")
-            return
+            return False
     
         # Creates new list to store lab in excluding one that is deleted
         new_labs = []
@@ -192,6 +194,7 @@ class LabManager:
         course['lab'] = new_labs
 
         print("Lab " + lab_type + " has been deleted from course " + course_id)
+        return True
 
     def display_labs_and_courses(self) -> None:
         """Display all labs and which courses use them."""
@@ -381,7 +384,7 @@ class LabManager:
             return
         
         # Confirm deletion
-        confirm = input(f"Are you sure you want to remove lab '{lab_type}' from course '{course_id}'? (y/N): ").strip().lower()
+        confirm = input(f"Are you sure you want to remove lab '{lab_type}' from course '{course_id}'? (y/n): ").strip().lower()
         if confirm not in ['y', 'yes']:
             print("Deletion cancelled.")
             return

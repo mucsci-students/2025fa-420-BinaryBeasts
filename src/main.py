@@ -8,7 +8,6 @@ from scheduler import (
     load_config_from_file,
 )
 from scheduler.config import CombinedConfig
-from saveConfigFile import save_config_file
 from courses import CourseManager
 from room import RoomManager
 from lab_manager import LabManager
@@ -41,7 +40,7 @@ def load_config(config_file: str) -> dict:
         raise FileNotFoundError(f"Config file not found: {config_file}")
     except Exception as e:
         raise Exception(f"Error loading config file {config_file}: {e}")
-# might not need this function
+
 def load_time_slot_config(time_slot_config: str) -> dict:
     """
     Load time slot configuration from the specified file.
@@ -64,10 +63,10 @@ def load_time_slot_config(time_slot_config: str) -> dict:
         raise FileNotFoundError(f"Time slot config file not found: {time_slot_config}")
     except Exception as e:
         raise Exception(f"Error loading time slot config file {time_slot_config}: {e}")
-# this is more a quality of life thing its convenient kind of but not needed really
+# this is more a quality of life thing its convenient
 def print_config_summary(config: dict, time_slots: dict) -> None:
     """
-    Print a human-readable summary of the configuration.
+    Print a readable summary of the configuration.
     Args:
         config: Configuration dictionary
         time_slots: Time slot configuration dictionary
@@ -129,6 +128,16 @@ def print_config_summary(config: dict, time_slots: dict) -> None:
         if course_prefs:
             top_courses = sorted(course_prefs.items(), key=lambda x: x[1], reverse=True)[:3]
             print(f"      Preferred courses: {', '.join([f'{c}({p})' for c, p in top_courses])}")
+        
+        room_prefs = member.get('room_preferences', {})
+        if room_prefs:
+            top_rooms = sorted(room_prefs.items(), key=lambda x: x[1], reverse=True)[:3]
+            print(f"      Preferred rooms: {', '.join([f'{r}({p})' for r, p in top_rooms])}")
+        
+        lab_prefs = member.get('lab_preferences', {})
+        if lab_prefs:
+            top_labs = sorted(lab_prefs.items(), key=lambda x: x[1], reverse=True)[:3]
+            print(f"      Preferred labs: {', '.join([f'{l}({p})' for l, p in top_labs])}")
     
     # Time slots summary
     print(f"\n🕒 TIME SLOT CONFIGURATION:")
@@ -205,12 +214,11 @@ def save_config_to_file(config: dict, time_slots: dict, config_file: str) -> Non
         config_file: Path to save the configuration
     """
     try:
-        # Reconstruct the full configuration structure
+        # Remake the full configuration structure
         full_config = {
             "config": config,
             "time_slot_config": time_slots
         }
-        
         with open(config_file, 'w', encoding='utf-8') as f:
             json.dump(full_config, f, indent=2, ensure_ascii=False)
         
@@ -529,7 +537,6 @@ def run_gui():
             app = QApplication(sys.argv)
         gui = MainGUI()
         gui.run_gui_interactive()
-        
     except ImportError:
         print("❌ GUI module not found. Please ensure main_gui.py is available.")
         input("Press Enter to return to interface selection...")
@@ -538,21 +545,9 @@ def run_gui():
         input("Press Enter to return to interface selection...")
 
 def main():
-    # This is the python api to use the scheduler first loading the config
-    # config = load_config_from_file(CombinedConfig, "example.json")
 
-    # Create scheduler
-    # scheduler = Scheduler(config)
-
-    # Generate schedules
-    # for schedule in scheduler.get_models():
-    #    print("Schedule:")
-    #   for course in schedule:
-    #        print(f"{course.as_csv()}")
-    # end if api use
     try:
         print("Welcome to the Scheduler Application!")
-        
         # Interface selection loop
         while True:
             choice = show_interface_selection()

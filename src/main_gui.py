@@ -119,9 +119,10 @@ class MainGUI(QWidget):
         print("Schedule Loaded")
 
     def run_gui_interactive(self):
-        gui = MainGUI()
-        gui.show()
-        sys.exit(app.exec_())
+        self.show()
+        app = QApplication.instance() #just a warning from reusing the variable
+        if app is not None:
+            sys.exit(app.exec_())
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

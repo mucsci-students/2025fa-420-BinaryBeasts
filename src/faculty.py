@@ -340,7 +340,7 @@ class FacultyManager:
 				available_courses.add(course_id)
 		
 		print(f"\nCourse preferences (available courses: {', '.join(sorted(available_courses))})")
-		print("Format: CourseID:preference (1-5), press Enter to finish:")
+		print("Format: CourseID:preference (0-10), press Enter to finish:")
 		course_preferences = {}
 		while True:
 			pref_input = input(f"  Course preference {len(course_preferences)+1} (or Enter to finish): ").strip()
@@ -350,20 +350,20 @@ class FacultyManager:
 				course_id, pref_str = pref_input.split(':')
 				course_id = course_id.strip()
 				preference = int(pref_str.strip())
-				if preference < 1 or preference > 5:
-					print("Error: Preference must be between 1 and 5")
+				if preference < 0 or preference > 10:
+					print("Error: Preference must be between 0 and 10")
 					continue
 				if course_id in available_courses:
 					course_preferences[course_id] = preference
 				else:
 					print(f"Warning: Course '{course_id}' not found in available courses")
 			except ValueError:
-				print("Error: Format should be CourseID:preference (e.g., CMSC140:5)")
+				print("Error: Format should be CourseID:preference (e.g., CMSC140:8)")
 		
 		# Get room preferences
 		available_rooms = self.config['config'].get('rooms', [])
 		print(f"\nRoom preferences (available rooms: {', '.join(available_rooms)})")
-		print("Format: RoomName:preference (1-5), press Enter to finish:")
+		print("Format: RoomName:preference (0-10), press Enter to finish:")
 		room_preferences = {}
 		while True:
 			pref_input = input(f"  Room preference {len(room_preferences)+1} (or Enter to finish): ").strip()
@@ -373,20 +373,20 @@ class FacultyManager:
 				room_name, pref_str = pref_input.split(':')
 				room_name = room_name.strip()
 				preference = int(pref_str.strip())
-				if preference < 1 or preference > 5:
-					print("Error: Preference must be between 1 and 5")
+				if preference < 0 or preference > 10:
+					print("Error: Preference must be between 0 and 10")
 					continue
 				if room_name in available_rooms:
 					room_preferences[room_name] = preference
 				else:
 					print(f"Warning: Room '{room_name}' not found in available rooms")
 			except ValueError:
-				print("Error: Format should be RoomName:preference (e.g., Roddy136:5)")
+				print("Error: Format should be RoomName:preference (e.g., Roddy136:8)")
 		
 		# Get lab preferences
 		available_labs = self.config['config'].get('labs', [])
 		print(f"\nLab preferences (available labs: {', '.join(available_labs)})")
-		print("Format: LabName:preference (1-5), press Enter to finish:")
+		print("Format: LabName:preference (0-10), press Enter to finish:")
 		lab_preferences = {}
 		while True:
 			pref_input = input(f"  Lab preference {len(lab_preferences)+1} (or Enter to finish): ").strip()
@@ -396,15 +396,15 @@ class FacultyManager:
 				lab_name, pref_str = pref_input.split(':')
 				lab_name = lab_name.strip()
 				preference = int(pref_str.strip())
-				if preference < 1 or preference > 5:
-					print("Error: Preference must be between 1 and 5")
+				if preference < 0 or preference > 10:
+					print("Error: Preference must be between 0 and 10")
 					continue
 				if lab_name in available_labs:
 					lab_preferences[lab_name] = preference
 				else:
 					print(f"Warning: Lab '{lab_name}' not found in available labs")
 			except ValueError:
-				print("Error: Format should be LabName:preference (e.g., Linux:5)")
+				print("Error: Format should be LabName:preference (e.g., Linux:8)")
 		
 		return {
 			'name': name,
