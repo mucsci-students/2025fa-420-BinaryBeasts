@@ -7,11 +7,14 @@ import sys
 import json
 from pathlib import Path
 from generate_csv import ScheduleCSVGenerator
-from saveConfigFile import save_config_file
+import views.gui.main_gui as main_gui
+from scheduler import Scheduler
 from courses import CourseManager, Course
 from room import RoomManager
 from lab_manager import LabManager
 from faculty import FacultyManager
+
+schedules  = any 
 
 def load_config(config_file: str) -> dict:
     """
@@ -26,7 +29,7 @@ def load_config(config_file: str) -> dict:
             data = json.load(f)
         
         if 'config' in data:
-            return data['config']
+            return data
         else:
             return data
     except json.JSONDecodeError as e:
@@ -61,8 +64,10 @@ def load_time_slot_config(time_slot_config: str) -> dict:
         raise Exception(f"Error loading time slot config file {time_slot_config}: {e}")
 
 
+def save_schedule(path):
+    print("Saving schedules to " + path)
 
-def generate_schedules(config: dict, time_slots: dict, limit: int, optimize: bool) -> list:
+def generate_schedules(config, limit: int):
     """
     Generate schedules based on configuration and constraints.
     Args:
@@ -74,17 +79,19 @@ def generate_schedules(config: dict, time_slots: dict, limit: int, optimize: boo
         List of generated schedules
     """
     # Use the CSV generator to create schedules
-    csv_generator = ScheduleCSVGenerator(config, time_slots)
-    schedules = csv_generator.generate_schedules_from_config(limit)
-    
-    if optimize:
-        print("Applying optimization...")
-        # Apply optimization logic here
-        for schedule in schedules:
-            schedule['optimization_score'] = schedule.get('optimization_score', 75.0) + 10.0
-    
-    return schedules
+    print("Generating schedules...")
+    return "Schedules generated."
 
+def next_schedule(num):
+     num = num + 1
+     print("Next schedule")
+     return "Schedule " + str(num)
+
+def previous_schedule(num):
+     num = num + 1
+     print("Previous schedule")
+     return "Schedule " + str(num)
+    
 
 def optimize_schedule(schedule: dict) -> dict:
     """
