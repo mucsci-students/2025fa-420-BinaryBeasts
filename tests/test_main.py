@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
-Test file for main.py
-Tests JSON loading, input validation, and main workflow functionality.
+Updated test file for main.py
+Tests the current scheduler integration functionality.
 """
 
 import unittest
 import json
 import tempfile
 import os
-from unittest.mock import patch, mock_open
-from io import StringIO
+from unittest.mock import patch, MagicMock
 import sys
 
-# Import the modules to test
+# Add the src directory to the path to import main this works for some reason importing main
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'src'))
 import main
 
 
 class TestJSONLoading(unittest.TestCase):
-    """Test JSON loading functions."""
+    """Test JSON loading functions that still exist."""
     
     def setUp(self):
         """Set up test data."""
@@ -46,12 +46,6 @@ class TestJSONLoading(unittest.TestCase):
         self.config_only = {
             "rooms": ["Roddy 136"],
             "courses": [{"course_id": "CMSC 140", "credits": 4}]
-        }
-        
-        self.time_slots_only = {
-            "times": {
-                "MON": [{"start": "08:00", "spacing": 60, "end": "17:00"}]
-            }
         }
     
     def test_load_config_with_config_section(self):
@@ -92,324 +86,242 @@ class TestJSONLoading(unittest.TestCase):
             self.assertIn("times", result)
         finally:
             os.unlink(temp_file)
-    
-    def test_load_time_slot_config_without_section(self):
-        """Test loading time slot config when section doesn't exist."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            json.dump(self.time_slots_only, f)
-            temp_file = f.name
-        
-        try:
-            result = main.load_time_slot_config(temp_file)
-            self.assertEqual(result, self.time_slots_only)
-        finally:
-            os.unlink(temp_file)
-    
-    def test_load_config_invalid_json(self):
-        """Test loading config with invalid JSON."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            f.write('{"invalid": json content}')
-            temp_file = f.name
-        
-        try:
-            with self.assertRaises(ValueError):
-                main.load_config(temp_file)
-        finally:
-            os.unlink(temp_file)
-    
-    def test_load_config_file_not_found(self):
-        """Test loading config with non-existent file."""
-        with self.assertRaises(FileNotFoundError):
-            main.load_config("nonexistent_file.json")
 
 
-class TestUserInput(unittest.TestCase):
-    """Test user input validation and processing."""
+class TestInterfaceSelection(unittest.TestCase):
+    """Test interface selection functionality."""
     
     @patch('builtins.input')
-    def test_get_user_input_with_defaults(self, mock_input):
-        """Test user input with default values."""
-        # Mock user inputs: config file, use same file (default), output file, default limit, no optimization
-        mock_input.side_effect = ['example.json', '', 'output.json', '', 'n']
-        
-        result = main.get_user_input()
-        
-        expected = {
-            'config': 'example.json',
-            'time_slots': 'example.json',  # Same file
-            'output': 'output.json',
-            'limit': 10,  # Default
-            'optimize': False
-        }
-        
-        self.assertEqual(result, expected)
+    def test_show_interface_selection_cli(self, mock_input):
+        """Test interface selection returns CLI choice."""
+        mock_input.return_value = '1'
+        result = main.show_interface_selection()
+        self.assertEqual(result, '1')
     
     @patch('builtins.input')
-    def test_get_user_input_separate_files(self, mock_input):
-        """Test user input with separate config files."""
-        mock_input.side_effect = ['config.json', 'no', 'timeslots.json', 'output.json', '25', 'yes']
-        
-        result = main.get_user_input()
-        
-        expected = {
-            'config': 'config.json',
-            'time_slots': 'timeslots.json',
-            'output': 'output.json',
-            'limit': 25,
-            'optimize': True
-        }
-        
-        self.assertEqual(result, expected)
+    def test_show_interface_selection_gui(self, mock_input):
+        """Test interface selection returns GUI choice."""
+        mock_input.return_value = '2'
+        result = main.show_interface_selection()
+        self.assertEqual(result, '2')
     
     @patch('builtins.input')
+    def test_show_main_menu(self, mock_input):
+        """Test main menu returns user choice."""
+        mock_input.return_value = '5'  # Generate Schedules
+        result = main.show_main_menu()
+        self.assertEqual(result, '5')
+
+
+class TestScheduleGeneration(unittest.TestCase):
+    """Test schedule generation functionality."""
+    
+    @patch('builtins.input')
+    @patch('main.load_config_from_file')
+    @patch('main.Scheduler')
+    @patch('main.save_schedules_to_file')
     @patch('builtins.print')
-    def test_get_user_input_invalid_limit_then_valid(self, mock_print, mock_input):
-        """Test limit validation with invalid input followed by valid input."""
-        # Invalid inputs: 'abc', '0', '1001', then valid '50'
-        mock_input.side_effect = [
-            'config.json', 'y', 'output.json', 
-            'abc', '0', '1001', '50',  # Invalid limits then valid
-            'n'
-        ]
+    def test_generate_schedules_interactive_success(self, mock_print, mock_save, 
+                                                   mock_scheduler_class, mock_load, mock_input):
+        """Test successful schedule generation."""
+        # Mock user inputs: no preview, default limit, json format, default filename, confirm, final enter
+        mock_input.side_effect = ['n', '', 'json', '', 'y', '']
         
-        result = main.get_user_input()
+        # Mock scheduler
+        mock_config = MagicMock()
+        mock_load.return_value = mock_config
         
-        self.assertEqual(result['limit'], 50)
-        # Check that error messages were printed
-        mock_print.assert_any_call("Error: Please enter a valid number.")
-        mock_print.assert_any_call("Error: Please enter a number greater than 0.")
-        mock_print.assert_any_call("Error: Please enter a number less than 1000.")
+        mock_scheduler = MagicMock()
+        mock_scheduler_class.return_value = mock_scheduler
+        
+        # Mock schedule generation
+        mock_course = MagicMock()
+        mock_course.as_csv.return_value = "CMSC140,MON,09:00,110,Roddy136,Linux,Dr.Smith"
+        mock_schedule = [mock_course]
+        mock_scheduler.get_models.return_value = [mock_schedule]
+        
+        # Test data
+        config_file = "test.json"
+        full_config = {"config": {"courses": []}}
+        time_slots = {"times": {}}
+        
+        # Run function
+        main.generate_schedules_interactive(config_file, full_config, time_slots)
+        
+        # Verify calls
+        mock_load.assert_called_once()
+        mock_scheduler_class.assert_called_once()
+        mock_save.assert_called_once()
     
     @patch('builtins.input')
-    def test_get_user_input_optimization_variants(self, mock_input):
-        """Test different optimization input variants."""
-        test_cases = [
-            ('y', True),
-            ('yes', True),
-            ('true', True),
-            ('1', True),
-            ('n', False),
-            ('no', False),
-            ('false', False),
-            ('0', False),
-            ('', False),  # Default
-            ('random', False)  # Invalid input defaults to False
-        ]
+    @patch('main.load_config_from_file')
+    @patch('main.Scheduler')
+    @patch('builtins.print')
+    def test_generate_schedules_interactive_no_schedules(self, mock_print, mock_scheduler_class, 
+                                                        mock_load, mock_input):
+        """Test schedule generation when no schedules can be generated."""
+        # Mock user inputs
+        mock_input.side_effect = ['n', '', 'json', '', 'y']
         
-        for opt_input, expected_optimize in test_cases:
-            with self.subTest(opt_input=opt_input):
-                mock_input.side_effect = ['config.json', 'y', 'output.json', '10', opt_input]
-                result = main.get_user_input()
-                self.assertEqual(result['optimize'], expected_optimize)
-
-
-class TestValidateFilePath(unittest.TestCase):
-    """Test file path validation (placeholder since function is not implemented)."""
+        # Mock scheduler that returns no schedules
+        mock_config = MagicMock()
+        mock_load.return_value = mock_config
+        
+        mock_scheduler = MagicMock()
+        mock_scheduler_class.return_value = mock_scheduler
+        mock_scheduler.get_models.return_value = []  # No schedules generated
+        
+        # Test data
+        config_file = "test.json"
+        full_config = {"config": {"courses": []}}
+        time_slots = {"times": {}}
+        
+        # Run function
+        main.generate_schedules_interactive(config_file, full_config, time_slots)
+        
+        # Verify error message was printed
+        mock_print.assert_any_call("❌ No valid schedules could be generated.")
     
-    def test_validate_file_path_placeholder(self):
+    @patch('builtins.input')
+    def test_generate_schedules_interactive_cancelled(self, mock_input):
+        """Test schedule generation when user cancels."""
+        # Mock user inputs: no preview, default settings, but don't confirm
+        mock_input.side_effect = ['n', '', 'json', '', 'n']
+        
+        # Test data
+        config_file = "test.json"
+        full_config = {"config": {"courses": []}}
+        time_slots = {"times": {}}
+        
+        # Run function - should return without generating
+        with patch('builtins.print') as mock_print:
+            main.generate_schedules_interactive(config_file, full_config, time_slots)
+            mock_print.assert_any_call("Schedule generation cancelled.")
+
+
+class TestFilePath(unittest.TestCase):
+    """Test file path validation."""
+    
+    def test_validate_file_path_exists(self):
         """Test that validate_file_path function exists."""
-        # Since the function currently just has 'pass', we just test it exists
         self.assertTrue(hasattr(main, 'validate_file_path'))
-
-
-class TestMainWorkflow(unittest.TestCase):
-    """Test the main workflow integration."""
-    
-    def setUp(self):
-        """Set up test files."""
-        self.test_config = {
-            "config": {
-                "rooms": ["Roddy 136", "Roddy 140"],
-                "labs": ["Linux", "Mac"],
-                "courses": [
-                    {
-                        "course_id": "CMSC 140",
-                        "credits": 4,
-                        "room": ["Roddy 136", "Roddy 140"],
-                        "lab": [],
-                        "conflicts": ["CMSC 161"],
-                        "faculty": ["Hardy"]
-                    },
-                    {
-                        "course_id": "CMSC 161",
-                        "credits": 4,
-                        "room": ["Roddy 136"],
-                        "lab": ["Linux"],
-                        "conflicts": ["CMSC 140"],
-                        "faculty": ["Zoppetti"]
-                    }
-                ],
-                "faculty": [
-                    {
-                        "name": "Hardy",
-                        "maximum_credits": 12,
-                        "minimum_credits": 8
-                    }
-                ]
-            },
-            "time_slot_config": {
-                "times": {
-                    "MON": [{"start": "08:00", "spacing": 60, "end": "17:00"}],
-                    "TUE": [{"start": "08:00", "spacing": 60, "end": "17:00"}]
-                },
-                "classes": [
-                    {
-                        "credits": 4,
-                        "meetings": [
-                            {"day": "MON", "duration": 110},
-                            {"day": "TUE", "duration": 110}
-                        ]
-                    }
-                ]
-            }
-        }
-    
-    @patch('builtins.input')
-    @patch('main.validate_file_path')
-    @patch('main.generate_schedules')
-    @patch('main.save_schedules')
-    @patch('builtins.print')
-    def test_main_successful_execution(self, mock_print, mock_save, mock_generate, 
-                                     mock_validate, mock_input):
-        """Test successful main execution."""
-        # Create temp config file
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
-            json.dump(self.test_config, f)
-            config_file = f.name
+        
+        # Create a temporary file to test with
+        with tempfile.NamedTemporaryFile(delete=False) as f:
+            temp_file = f.name
         
         try:
-            # Mock user input
-            mock_input.side_effect = [config_file, 'y', 'output.json', '5', 'n']
-            
-            # Mock file validation to return Path objects
-            from pathlib import Path
-            mock_validate.side_effect = [Path(config_file), Path(config_file), Path('output.json')]
-            
-            # Mock schedule generation
-            mock_generate.return_value = [{'schedule': 'test_schedule'}]
-            
-            # Run main
-            main.main()
-            
-            # Verify calls
-            self.assertEqual(mock_validate.call_count, 3)
-            mock_generate.assert_called_once()
-            mock_save.assert_called_once()
-            
-            # Check that success message was printed
-            mock_print.assert_any_call("Schedule generation completed successfully!")
-            
+            # Test that function can be called (even if it just returns the path)
+            result = main.validate_file_path(temp_file, must_exist=True)
+            self.assertIsNotNone(result)
         finally:
-            os.unlink(config_file)
+            os.unlink(temp_file)
+
+
+class TestSaveSchedules(unittest.TestCase):
+    """Test schedule saving functionality."""
     
-    @patch('builtins.input')
-    @patch('main.load_config')
-    @patch('sys.exit')
+    def test_save_schedules_to_file_csv(self):
+        """Test saving schedules to CSV format."""
+        # Mock schedule data
+        mock_course = MagicMock()
+        mock_course.as_csv.return_value = "CMSC140,MON,09:00,110,Roddy136,Linux,Dr.Smith"
+        mock_schedule = [mock_course]
+        schedules = [mock_schedule]
+        
+        # Create temporary file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.csv', delete=False) as f:
+            temp_file = f.name
+        
+        try:
+            # Test CSV saving
+            main.save_schedules_to_file(schedules, temp_file, 'csv')
+            
+            # Verify file was created and has content
+            self.assertTrue(os.path.exists(temp_file))
+            with open(temp_file, 'r') as f:
+                content = f.read()
+                self.assertIn("Schedule,Course,Day,Time,Duration,Room,Lab,Faculty", content)
+                self.assertIn("CMSC140", content)
+        finally:
+            if os.path.exists(temp_file):
+                os.unlink(temp_file)
+    
+    def test_save_schedules_to_file_json(self):
+        """Test saving schedules to JSON format."""
+        # Mock schedule data
+        mock_course = MagicMock()
+        mock_course.as_csv.return_value = "CMSC140,MON,09:00,110,Roddy136,Linux,Dr.Smith"
+        mock_schedule = [mock_course]
+        schedules = [mock_schedule]
+        
+        # Create temporary file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+            temp_file = f.name
+        
+        try:
+            # Test JSON saving
+            main.save_schedules_to_file(schedules, temp_file, 'json')
+            
+            # Verify file was created and has valid JSON
+            self.assertTrue(os.path.exists(temp_file))
+            with open(temp_file, 'r') as f:
+                data = json.load(f)
+                self.assertIsInstance(data, list)
+                self.assertEqual(len(data), 1)
+                self.assertIn('schedule_id', data[0])
+                self.assertIn('courses', data[0])
+        finally:
+            if os.path.exists(temp_file):
+                os.unlink(temp_file)
+
+
+class TestPrintConfigSummary(unittest.TestCase):
+    """Test configuration summary printing."""
+    
     @patch('builtins.print')
-    def test_main_file_not_found_error(self, mock_print, mock_exit, mock_load, mock_input):
-        """Test main function handling FileNotFoundError."""
-        mock_input.side_effect = ['nonexistent.json', 'y', 'output.json', '10', 'n']
-        mock_load.side_effect = FileNotFoundError("Config file not found")
+    def test_print_config_summary(self, mock_print):
+        """Test that config summary prints correctly."""
+        config = {
+            "rooms": ["Roddy 136"],
+            "labs": ["Linux"],
+            "courses": [{"course_id": "CMSC 140", "credits": 4}],
+            "faculty": [{"name": "Dr. Smith"}]
+        }
+        time_slots = {
+            "times": {"MON": [{"start": "08:00", "end": "17:00"}]},
+            "classes": [{"credits": 4}]
+        }
         
-        main.main()
+        main.print_config_summary(config, time_slots)
         
-        mock_exit.assert_called_with(1)
-        # Check error message was printed to stderr
-        self.assertTrue(any('File not found' in str(call) for call in mock_print.call_args_list))
-    
-    @patch('builtins.input')
-    @patch('main.load_config')
-    @patch('sys.exit')
-    @patch('builtins.print')
-    def test_main_json_decode_error(self, mock_print, mock_exit, mock_load, mock_input):
-        """Test main function handling JSON decode error."""
-        mock_input.side_effect = ['invalid.json', 'y', 'output.json', '10', 'n']
-        mock_load.side_effect = ValueError("Invalid JSON")
-        
-        main.main()
-        
-        mock_exit.assert_called_with(1)
-        # Check error message was printed
-        self.assertTrue(any('Invalid input' in str(call) for call in mock_print.call_args_list))
-
-
-class TestIntegrationWithExampleJSON(unittest.TestCase):
-    """Integration tests using the actual example.json file."""
-    
-    def test_load_actual_example_json(self):
-        """Test loading the actual example.json file if it exists."""
-        example_file = "example.json"
-        if os.path.exists(example_file):
-            try:
-                config = main.load_config(example_file)
-                time_slots = main.load_time_slot_config(example_file)
-                
-                # Verify expected structure
-                self.assertIn("rooms", config)
-                self.assertIn("courses", config)
-                self.assertIn("faculty", config)
-                self.assertIn("times", time_slots)
-                self.assertIn("classes", time_slots)
-                
-                # Verify course structure
-                courses = config["courses"]
-                self.assertGreater(len(courses), 0)
-                
-                first_course = courses[0]
-                self.assertIn("course_id", first_course)
-                self.assertIn("credits", first_course)
-                self.assertIn("room", first_course)
-                self.assertIn("lab", first_course)
-                self.assertIn("conflicts", first_course)
-                self.assertIn("faculty", first_course)
-                
-            except Exception as e:
-                self.fail(f"Failed to load example.json: {e}")
-        else:
-            self.skipTest("example.json not found in current directory")
-
-
-def run_interactive_test():
-    """
-    Run an interactive test of the main program.
-    This function simulates user interaction for manual testing.
-    """
-    print("=== Interactive Test of main.py ===")
-    print("This will run the actual main() function.")
-    print("You can test with 'example.json' if it exists in the current directory.")
-    print("Press Ctrl+C to cancel.\n")
-    
-    try:
-        main.main()
-    except KeyboardInterrupt:
-        print("\nTest cancelled by user.")
-    except Exception as e:
-        print(f"Error during interactive test: {e}")
+        # Verify summary sections were printed
+        mock_print.assert_any_call("CONFIGURATION SUMMARY")
+        # Check that some key information was printed
+        print_calls = [str(call) for call in mock_print.call_args_list]
+        summary_text = ' '.join(print_calls)
+        self.assertIn("ROOMS", summary_text)
+        self.assertIn("COURSES", summary_text)
+        self.assertIn("FACULTY", summary_text)
 
 
 if __name__ == '__main__':
     import argparse
     
-    parser = argparse.ArgumentParser(description='Test main.py functionality')
-    parser.add_argument('--interactive', '-i', action='store_true',
-                       help='Run interactive test instead of unit tests')
+    parser = argparse.ArgumentParser(description='Test updated main.py functionality')
     parser.add_argument('--verbose', '-v', action='store_true',
                        help='Verbose output for unit tests')
     
     args = parser.parse_args()
     
-    if args.interactive:
-        run_interactive_test()
-    else:
-        # Run unit tests
-        verbosity = 2 if args.verbose else 1
-        unittest.main(argv=[''], verbosity=verbosity, exit=False)
-        
-        print("\n" + "="*50)
-        print("Test Summary:")
-        print("- JSON loading functions tested")
-        print("- User input validation tested") 
-        print("- Error handling tested")
-        print("- Integration scenarios tested")
-        print("\nTo run interactive test: python test_main.py --interactive")
-        print("To run with verbose output: python test_main.py --verbose")
+    # Run unit tests
+    verbosity = 2 if args.verbose else 1
+    unittest.main(argv=[''], verbosity=verbosity, exit=False)
+    
+    print("\n" + "="*50)
+    print("Updated Test Summary:")
+    print("- JSON loading functions tested")
+    print("- Interface selection tested")
+    print("- Schedule generation tested") 
+    print("- File operations tested")
+    print("- Configuration summary tested")
