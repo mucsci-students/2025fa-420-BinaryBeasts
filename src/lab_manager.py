@@ -1,4 +1,3 @@
-# lab_manager.py
 # Author: Naomi E.
 """
 Interfaces with main file to implement feature to add, modify, and delete
@@ -8,9 +7,7 @@ User Story: Adding, modifying, or deleting a lab from Scheduler CLI
 
 “As a scheduler administrator, I want to add, modify, or delete a lab so 
 that all labs available to schedule are up-to-date.”
-
 """
-
 import json
 
 class LabManager:
@@ -98,7 +95,7 @@ class LabManager:
         if course is None:
             # If course DNE by given ID input by user, print error msg
             print("Course with ID " + course_id + " was not found.")
-            return
+            return False
     
         # If the course doesn't have a lab or lab DNE in list altogether,
         if 'lab' not in course or course['lab'] is None:
@@ -109,11 +106,12 @@ class LabManager:
         if lab_type in course['lab']:
             # Print error msg 
             print("Lab " + lab_type + " already exists in course " + course_id)
-            return
+            return False
 
         # Once passed all test cases, can add lab to course
         course['lab'].append(lab_type)
         print("Lab " + lab_type + " has been added to course " + course_id)
+        return True
 
     # Modifies lab ['Mac' or 'Linux'] attached to a course in a scheduler CLI
     def modify_lab(self, course_id, old_type, new_type):
@@ -132,17 +130,17 @@ class LabManager:
         # If input course DNE throw user console an error msg
         if course is None:
             print("Course with ID " + course_id + " does not exist.")
-            return
+            return False
         # If the course doesn't have a lab or lab DNE in list altogether,
         if 'lab' not in course or course['lab'] is None:
             # Throw error message to user console
             print("The course ID " + course_id + " has no lab to modify.")
-            return
+            return False
         # If old type specified by user DNE in given course ID specified,
         if old_type not in course['lab']:
             # Throw error message to user console
             print("Lab " + old_type + " does not exist in " + course_id)
-            return
+            return False
     
         # Otherwise after passing all test cases, modify old lab type 
         # Create empty list to store new lab type in
@@ -157,6 +155,7 @@ class LabManager:
         course['lab'] = labs
         # Print log msg to user console stating lab type has been changed
         print("Lab " + old_type + " has been changed to " + new_type + " for course " + course_id)
+        return True
 
 
     def delete_lab(self, course_id, lab_type):
@@ -172,18 +171,18 @@ class LabManager:
 
         if course is None:
             print("Course with ID " + course_id + " does not exist.")
-            return
+            return False
         # If the course doesn't have a lab or lab DNE in list altogether,
         if 'lab' not in course or course['lab'] is None:
             # Throw error message to user console
             print("The course ID " + course_id + " has no lab to delete.")
-            return
+            return False
         # If the course ID specified by user does not have a lab type,
         if lab_type not in course['lab']:
             # Throw error message to user console
             # old print ("Lab " + lab_type + " does not exist in " + course_id)
             print("no lab to delete")
-            return
+            return False
     
         # Creates new list to store lab in excluding one that is deleted
         new_labs = []
@@ -195,3 +194,257 @@ class LabManager:
         course['lab'] = new_labs
 
         print("Lab " + lab_type + " has been deleted from course " + course_id)
+        return True
+
+    def display_labs_and_courses(self) -> None:
+        """Display all labs and which courses use them."""
+        print("\n" + "="*60)
+        print("LAB USAGE SUMMARY")
+        print("="*60)
+        
+        # Get all labs from the global labs list
+        all_labs = self.data.get('config', {}).get('labs', [])
+        courses = self.data.get('config', {}).get('courses', [])
+        
+        if not all_labs:
+            print("No labs found in configuration.")
+            return
+        
+        print(f"📍 Total Labs Available: {len(all_labs)}")
+        print("-" * 60)
+        
+        for lab in all_labs:
+            print(f"\n🔬 {lab}")
+            
+            # Find courses that use this lab
+            courses_using_lab = []
+            for course in courses:
+                if 'lab' in course and isinstance(course.get('lab'), list):
+                    if lab in course['lab']:
+                        courses_using_lab.append(course.get('course_id', 'Unknown'))
+            
+            if courses_using_lab:
+                print(f"   📚 Used by {len(courses_using_lab)} course(s):")
+                for course_id in courses_using_lab:
+                    print(f"      • {course_id}")
+            else:
+                print("   📭 No courses currently use this lab")
+        
+        print("="*60)
+
+    def add_lab_to_course_interactive(self) -> None:
+        """Interactive lab assignment to course."""
+        print("\n➕ ADD LAB TO COURSE")
+        print("=" * 30)
+        
+        # Show available courses
+        courses = self.data.get('config', {}).get('courses', [])
+        if not courses:
+            print("❌ No courses found.")
+            return
+        
+        print("Available courses:")
+        course_ids = set()
+        for course in courses:
+            course_id = course.get('course_id')
+            if course_id:
+                course_ids.add(course_id)
+        
+        for i, course_id in enumerate(sorted(course_ids), 1):
+            print(f"  {i}. {course_id}")
+        
+        course_id = input("\nEnter Course ID to add lab to: ").strip()
+        if not course_id:
+            print("❌ Course ID cannot be empty.")
+            return
+        
+        # Check if course exists
+        if not self.get_course_by_id(course_id):
+            print(f"❌ Course '{course_id}' not found.")
+            return
+        
+        # Show available labs
+        all_labs = self.data.get('config', {}).get('labs', [])
+        if not all_labs:
+            print("❌ No labs available in configuration.")
+            return
+        
+        print(f"\nAvailable labs:")
+        for i, lab in enumerate(all_labs, 1):
+            print(f"  {i}. {lab}")
+        
+        lab_type = input("\nEnter lab name to add: ").strip()
+        if not lab_type:
+            print("❌ Lab name cannot be empty.")
+            return
+        
+        if lab_type not in all_labs:
+            print(f"❌ Lab '{lab_type}' not found in available labs.")
+            return
+        
+        try:
+            result = self.add_lab(course_id, lab_type)
+            if result:
+                print(f"✅ Successfully added lab '{lab_type}' to course '{course_id}'")
+            else:
+                print(f"❌ Failed to add lab. Lab may already be assigned to this course.")
+        except Exception as e:
+            print(f"❌ Error adding lab: {e}")
+
+    def modify_lab_interactive(self) -> None:
+        """Interactive lab modification for courses."""
+        self.display_labs_and_courses()
+        
+        course_id = input("\nEnter Course ID to modify lab for: ").strip()
+        if not course_id:
+            print("❌ Course ID cannot be empty.")
+            return
+        
+        # Check if course exists
+        course = self.get_course_by_id(course_id)
+        if not course:
+            print(f"❌ Course '{course_id}' not found.")
+            return
+        
+        # Show current labs for this course
+        current_labs = course.get('lab', [])
+        if not current_labs:
+            print(f"❌ Course '{course_id}' has no labs assigned.")
+            return
+        
+        print(f"\nCurrent labs for {course_id}:")
+        for i, lab in enumerate(current_labs, 1):
+            print(f"  {i}. {lab}")
+        
+        old_lab = input("\nEnter current lab name to modify: ").strip()
+        if not old_lab:
+            print("❌ Lab name cannot be empty.")
+            return
+        
+        if old_lab not in current_labs:
+            print(f"❌ Lab '{old_lab}' is not assigned to course '{course_id}'.")
+            return
+        
+        # Show available labs
+        all_labs = self.data.get('config', {}).get('labs', [])
+        print(f"\nAvailable labs:")
+        for i, lab in enumerate(all_labs, 1):
+            print(f"  {i}. {lab}")
+        
+        new_lab = input("\nEnter new lab name: ").strip()
+        if not new_lab:
+            print("❌ New lab name cannot be empty.")
+            return
+        
+        if new_lab not in all_labs:
+            print(f"❌ Lab '{new_lab}' not found in available labs.")
+            return
+        
+        try:
+            result = self.modify_lab(course_id, old_lab, new_lab)
+            if result:
+                print(f"✅ Successfully modified lab '{old_lab}' to '{new_lab}' for course '{course_id}'")
+            else:
+                print(f"❌ Failed to modify lab.")
+        except Exception as e:
+            print(f"❌ Error modifying lab: {e}")
+
+    def delete_lab_interactive(self) -> None:
+        """Interactive lab deletion from course."""
+        self.display_labs_and_courses()
+        
+        course_id = input("\nEnter Course ID to remove lab from: ").strip()
+        if not course_id:
+            print("❌ Course ID cannot be empty.")
+            return
+        
+        # Check if course exists
+        course = self.get_course_by_id(course_id)
+        if not course:
+            print(f"❌ Course '{course_id}' not found.")
+            return
+        
+        # Show current labs for this course
+        current_labs = course.get('lab', [])
+        if not current_labs:
+            print(f"❌ Course '{course_id}' has no labs assigned.")
+            return
+        
+        print(f"\nCurrent labs for {course_id}:")
+        for i, lab in enumerate(current_labs, 1):
+            print(f"  {i}. {lab}")
+        
+        lab_type = input("\nEnter lab name to remove: ").strip()
+        if not lab_type:
+            print("❌ Lab name cannot be empty.")
+            return
+        
+        if lab_type not in current_labs:
+            print(f"❌ Lab '{lab_type}' is not assigned to course '{course_id}'.")
+            return
+        
+        # Confirm deletion
+        confirm = input(f"Are you sure you want to remove lab '{lab_type}' from course '{course_id}'? (y/n): ").strip().lower()
+        if confirm not in ['y', 'yes']:
+            print("Deletion cancelled.")
+            return
+        
+        try:
+            result = self.delete_lab(course_id, lab_type)
+            if result:
+                print(f"✅ Successfully removed lab '{lab_type}' from course '{course_id}'")
+            else:
+                print(f"❌ Failed to remove lab.")
+        except Exception as e:
+            print(f"❌ Error removing lab: {e}")
+
+    def lab_management_menu(self, config_file: str, config: dict, time_slots: dict) -> dict:
+        """Lab management menu interface."""
+        try:
+            self.load_data(config_file)
+            
+            if not self.data:
+                print("❌ Error loading lab data. Please check the configuration file.")
+                return config
+            
+            while True:
+                print("\n" + "="*50)
+                print("LAB MANAGEMENT")
+                print("="*50)
+                print("1. 👀 View labs and course assignments")
+                print("2. ➕ Add lab to course")
+                print("3. ✏️ Modify course lab assignment")
+                print("4. ❌ Remove lab from course")
+                print("5. 💾 Save changes and exit")
+                print("6. 🚪 Exit without saving")
+                print("="*50)
+                
+                choice = input("Select an option (1-6): ").strip()
+                
+                if choice == '1':
+                    self.display_labs_and_courses()
+                elif choice == '2':
+                    self.add_lab_to_course_interactive()
+                elif choice == '3':
+                    self.modify_lab_interactive()
+                elif choice == '4':
+                    self.delete_lab_interactive()
+                elif choice == '5':
+                    # Save changes back to file
+                    self.save_data()
+                    # Update the config dictionary with the modified data
+                    if 'config' in self.data:
+                        config.update(self.data['config'])
+                    else:
+                        config.update(self.data)
+                    print("✅ Lab changes saved successfully.")
+                    return config
+                elif choice == '6':
+                    print("Exiting without saving changes.")
+                    return config
+                else:
+                    print("Invalid choice. Please select 1-6.")
+                    
+        except Exception as e:
+            print(f"❌ Error initializing lab manager: {e}")
+            return config
