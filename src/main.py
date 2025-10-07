@@ -1,8 +1,5 @@
 #!/usr/bin/env python3
-"""
-Scheduler CLI Application
-Command-line tool for generating and optimizing schedules.
-"""
+
 import sys
 import json
 from pathlib import Path
@@ -22,9 +19,6 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
-"""
-Can cut \/\/\/\/\/\/
-"""
 def load_config(config_file: str) -> dict:
     """
     Load configuration from the specified config file.
@@ -47,8 +41,7 @@ def load_config(config_file: str) -> dict:
         raise FileNotFoundError(f"Config file not found: {config_file}")
     except Exception as e:
         raise Exception(f"Error loading config file {config_file}: {e}")
-
-
+# might not need this function
 def load_time_slot_config(time_slot_config: str) -> dict:
     """
     Load time slot configuration from the specified file.
@@ -71,17 +64,7 @@ def load_time_slot_config(time_slot_config: str) -> dict:
         raise FileNotFoundError(f"Time slot config file not found: {time_slot_config}")
     except Exception as e:
         raise Exception(f"Error loading time slot config file {time_slot_config}: {e}")
-
-
-"""
-Can cut \/\/\/\/\/\/
-"""
-
-
-
-
-
-
+# this is more a quality of life thing its convenient kind of but not needed really
 def print_config_summary(config: dict, time_slots: dict) -> None:
     """
     Print a human-readable summary of the configuration.
@@ -92,19 +75,16 @@ def print_config_summary(config: dict, time_slots: dict) -> None:
     print("\n" + "="*60)
     print("CONFIGURATION SUMMARY")
     print("="*60)
-    
     # Rooms
     rooms = config.get('rooms', [])
     print(f"\n📍 ROOMS ({len(rooms)} available):")
     for room in rooms:
         print(f"   • {room}")
-    
     # Labs
     labs = config.get('labs', [])
     print(f"\n🔬 LABS ({len(labs)} available):")
     for lab in labs:
         print(f"   • {lab}")
-    
     # Courses
     courses = config.get('courses', [])
     print(f"\n📚 COURSES ({len(courses)} total):")
@@ -114,7 +94,7 @@ def print_config_summary(config: dict, time_slots: dict) -> None:
         if course_id not in course_by_id:
             course_by_id[course_id] = []
         course_by_id[course_id].append(course)
-    
+
     for course_id, instances in course_by_id.items():
         print(f"   📖 {course_id} ({len(instances)} instance(s))")
         first_instance = instances[0]
@@ -179,7 +159,6 @@ def print_config_summary(config: dict, time_slots: dict) -> None:
     
     print("="*60)
 
-
 def validate_file_path(file_path: str, must_exist: bool = True) -> Path:
     """
     Validate that a file path is accessible.
@@ -217,7 +196,6 @@ def validate_file_path(file_path: str, must_exist: bool = True) -> Path:
     
     return path
 
-
 def save_config_to_file(config: dict, time_slots: dict, config_file: str) -> None:
     """
     Save the modified configuration back to the JSON file.
@@ -239,604 +217,6 @@ def save_config_to_file(config: dict, time_slots: dict, config_file: str) -> Non
         print(f"✅ Configuration saved successfully to {config_file}")
     except Exception as e:
         print(f"❌ Error saving configuration: {e}")
-
-
-
-"""
-Andrews features can be moved to course class
-"""
-def display_rooms(room_manager: RoomManager) -> None:
-    """Display all rooms in a formatted list."""
-    print("\n" + "="*60)
-    print("ROOM LIST")
-    print("="*60)
-    
-    rooms = room_manager.get_rooms()
-    if not rooms:
-        print("No rooms found.")
-        return
-    
-    print(f"📍 Total Rooms: {len(rooms)}")
-    print("-" * 60)
-    
-    for i, room in enumerate(rooms, 1):
-        print(f"{i:3}. 🏢 {room}")
-    
-    print("="*60)
-
-"""
-Andrews features can be moved to course class
-"""
-def add_room_interactive(room_manager: RoomManager) -> None:
-    """Interactive room addition."""
-    print("\n🆕 ADD NEW ROOM")
-    print("=" * 30)
-    
-    room_name = input("Room name (e.g., Roddy 101): ").strip()
-    if not room_name:
-        print("❌ Room name cannot be empty.")
-        return
-    
-    try:
-        if room_manager.add_room(room_name):
-            print(f"✅ Successfully added room: {room_name}")
-        else:
-            print(f"❌ Room '{room_name}' already exists.")
-    except Exception as e:
-        print(f"❌ Error adding room: {e}")
-
-"""
-Andrews features can be moved to course class
-"""
-def edit_room_interactive(room_manager: RoomManager) -> None:
-    """Interactive room editing/renaming."""
-    display_rooms(room_manager)
-    
-    if not room_manager.get_rooms():
-        print("❌ No rooms available to edit.")
-        return
-    
-    old_name = input("\nEnter current room name to edit: ").strip()
-    if not old_name:
-        print("❌ Room name cannot be empty.")
-        return
-    
-    if old_name not in room_manager.get_rooms():
-        print(f"❌ Room '{old_name}' not found.")
-        return
-    
-    new_name = input(f"Enter new name for '{old_name}': ").strip()
-    if not new_name:
-        print("❌ New room name cannot be empty.")
-        return
-    
-    try:
-        if room_manager.edit_room(old_name, new_name):
-            print(f"✅ Successfully renamed '{old_name}' to '{new_name}'")
-            print("📝 Note: All course and faculty references have been updated automatically.")
-        else:
-            if new_name in room_manager.get_rooms():
-                print(f"❌ Room '{new_name}' already exists.")
-            else:
-                print(f"❌ Failed to rename room.")
-    except Exception as e:
-        print(f"❌ Error editing room: {e}")
-
-"""
-Andrews features can be moved to course class
-"""
-def delete_room_interactive(room_manager: RoomManager) -> None:
-    """Interactive room deletion with impact analysis."""
-    display_rooms(room_manager)
-    
-    if not room_manager.get_rooms():
-        print("❌ No rooms available to delete.")
-        return
-    
-    room_name = input("\nEnter room name to delete: ").strip()
-    if not room_name:
-        print("❌ Room name cannot be empty.")
-        return
-    
-    if room_name not in room_manager.get_rooms():
-        print(f"❌ Room '{room_name}' not found.")
-        return
-    
-    # Analyze impact of deletion
-    print(f"\n🔍 ANALYZING IMPACT OF DELETING '{room_name}':")
-    print("-" * 50)
-    
-    # Check courses using this room
-    affected_courses = []
-    config = room_manager.config.get('config', {})
-    for course in config.get('courses', []):
-        if 'room' in course and isinstance(course['room'], list):
-            if room_name in course['room']:
-                affected_courses.append(course.get('course_id', 'Unknown'))
-    
-    # Check faculty preferences
-    affected_faculty = []
-    for faculty in config.get('faculty', []):
-        room_prefs = faculty.get('room_preferences', {})
-        if room_name in room_prefs:
-            affected_faculty.append(faculty.get('name', 'Unknown'))
-    
-    if affected_courses:
-        print(f"📚 Courses using this room ({len(affected_courses)}):")
-        for course in affected_courses:
-            print(f"   • {course}")
-    
-    if affected_faculty:
-        print(f"👥 Faculty with preferences for this room ({len(affected_faculty)}):")
-        for faculty in affected_faculty:
-            print(f"   • {faculty}")
-    
-    if not affected_courses and not affected_faculty:
-        print("✅ No conflicts found. Room can be safely deleted.")
-    else:
-        print("\n⚠️  Warning: Deleting this room will:")
-        if affected_courses:
-            print(f"   • Remove room assignment from {len(affected_courses)} course(s)")
-        if affected_faculty:
-            print(f"   • Remove room preferences from {len(affected_faculty)} faculty member(s)")
-    
-    # Confirm deletion
-    confirm = input(f"\nAre you sure you want to delete '{room_name}'? (y/N): ").strip().lower()
-    if confirm in ['y', 'yes']:
-        try:
-            if room_manager.delete_room(room_name):
-                print(f"✅ Successfully deleted room: {room_name}")
-                if affected_courses or affected_faculty:
-                    print("📝 Note: All references have been automatically removed.")
-            else:
-                print(f"❌ Failed to delete room '{room_name}'.")
-        except Exception as e:
-            print(f"❌ Error deleting room: {e}")
-    else:
-        print("Deletion cancelled.")
-
-"""
-Andrews features can be moved to course class
-"""
-def room_management_menu(full_config: dict, config_file: str, time_slots: dict) -> dict:
-    """Room management menu interface."""
-    try:
-        # RoomManager expects the full structure with 'config' key
-        room_manager = RoomManager(full_config)
-        
-        while True:
-            print("\n" + "="*50)
-            print("ROOM MANAGEMENT")
-            print("="*50)
-            print("1. 👀 View all rooms")
-            print("2. ➕ Add new room")
-            print("3. ✏️  Edit/rename room")
-            print("4. ❌ Delete room")
-            print("5. 💾 Save changes and exit")
-            print("6. 🚪 Exit without saving")
-            print("="*50)
-            
-            choice = input("Select an option (1-6): ").strip()
-            
-            if choice == '1':
-                display_rooms(room_manager)
-            elif choice == '2':
-                add_room_interactive(room_manager)
-            elif choice == '3':
-                edit_room_interactive(room_manager)
-            elif choice == '4':
-                delete_room_interactive(room_manager)
-            elif choice == '5':
-                # Save changes back to full config
-                save_config_to_file(full_config['config'], time_slots, config_file)
-                return full_config['config']
-            elif choice == '6':
-                print("Exiting without saving changes.")
-                return full_config['config']
-            else:
-                print("Invalid choice. Please select 1-6.")
-                
-    except Exception as e:
-        print(f"❌ Error initializing room manager: {e}")
-        return full_config.get('config', {})
-
-"""
-Naomis features can be moved to course class
-"""
-
-"""
-Patricks features can be moved to course class
-"""
-def display_faculty(faculty_manager: FacultyManager) -> None:
-    """Display all faculty members in a formatted list."""
-    print("\n" + "="*60)
-    print("FACULTY LIST")
-    print("="*60)
-    
-    faculty_list = faculty_manager.get_faculty()
-    if not faculty_list:
-        print("No faculty found.")
-        return
-    
-    print(f"👥 Total Faculty: {len(faculty_list)}")
-    print("-" * 60)
-    
-    for i, member in enumerate(faculty_list, 1):
-        name = member.get('name', 'Unknown')
-        min_credits = member.get('minimum_credits', 0)
-        max_credits = member.get('maximum_credits', 0)
-        unique_limit = member.get('unique_course_limit', 'N/A')
-        
-        print(f"\n{i:3}. 👤 {name}")
-        print(f"      📊 Credit range: {min_credits}-{max_credits}")
-        print(f"      📚 Max unique courses: {unique_limit}")
-        
-        # Show availability
-        times = member.get('times', {})
-        available_days = [day for day, slots in times.items() if slots]
-        print(f"      📅 Available days: {', '.join(available_days) or 'None'}")
-        
-        # Show course preferences
-        course_prefs = member.get('course_preferences', {})
-        if course_prefs:
-            top_courses = sorted(course_prefs.items(), key=lambda x: x[1], reverse=True)[:3]
-            print(f"      ⭐ Preferred courses: {', '.join([f'{c}({p})' for c, p in top_courses])}")
-        else:
-            print(f"      ⭐ Preferred courses: None")
-        
-        # Show room preferences
-        room_prefs = member.get('room_preferences', {})
-        if room_prefs:
-            top_rooms = sorted(room_prefs.items(), key=lambda x: x[1], reverse=True)[:3]
-            print(f"      🏢 Preferred rooms: {', '.join([f'{r}({p})' for r, p in top_rooms])}")
-        else:
-            print(f"      🏢 Preferred rooms: None")
-        
-        # Show lab preferences
-        lab_prefs = member.get('lab_preferences', {})
-        if lab_prefs:
-            top_labs = sorted(lab_prefs.items(), key=lambda x: x[1], reverse=True)[:3]
-            print(f"      🔬 Preferred labs: {', '.join([f'{l}({p})' for l, p in top_labs])}")
-        else:
-            print(f"      🔬 Preferred labs: None")
-    
-    print("="*60)
-
-"""
-Patricks features can be moved to course class
-"""
-def get_faculty_input(config: dict) -> dict:
-    """Get faculty information from user input."""
-    print("\n🆕 ADD NEW FACULTY")
-    print("=" * 30)
-    
-    name = input("Faculty name (e.g., Dr. Smith): ").strip()
-    if not name:
-        raise ValueError("Faculty name cannot be empty")
-    
-    # Get credit limits
-    while True:
-        try:
-            min_credits = int(input("Minimum credits (0-20): ").strip())
-            if min_credits < 0 or min_credits > 20:
-                print("Error: Minimum credits must be between 0 and 20")
-                continue
-            break
-        except ValueError:
-            print("Error: Please enter a valid number for minimum credits")
-    
-    while True:
-        try:
-            max_credits = int(input("Maximum credits (0-20): ").strip())
-            if max_credits < min_credits or max_credits > 20:
-                print(f"Error: Maximum credits must be between {min_credits} and 20")
-                continue
-            break
-        except ValueError:
-            print("Error: Please enter a valid number for maximum credits")
-    
-    while True:
-        try:
-            unique_limit = int(input("Unique course limit (1-10): ").strip())
-            if unique_limit < 1 or unique_limit > 10:
-                print("Error: Unique course limit must be between 1 and 10")
-                continue
-            break
-        except ValueError:
-            print("Error: Please enter a valid number for unique course limit")
-    
-    # Get availability times
-    print("\nAvailability times (format: HH:MM-HH:MM, press Enter to skip day):")
-    times = {}
-    days = ['MON', 'TUE', 'WED', 'THU', 'FRI']
-    for day in days:
-        time_input = input(f"  {day} (e.g., 09:00-17:00): ").strip()
-        if time_input:
-            times[day] = [time_input]
-        else:
-            times[day] = []
-    
-    # Get course preferences
-    available_courses = set()
-    for course in config.get('courses', []):
-        course_id = course.get('course_id')
-        if course_id:
-            available_courses.add(course_id)
-    
-    print(f"\nCourse preferences (available courses: {', '.join(sorted(available_courses))})")
-    print("Format: CourseID:preference (1-5), press Enter to finish:")
-    course_preferences = {}
-    while True:
-        pref_input = input(f"  Course preference {len(course_preferences)+1} (or Enter to finish): ").strip()
-        if not pref_input:
-            break
-        try:
-            course_id, pref_str = pref_input.split(':')
-            course_id = course_id.strip()
-            preference = int(pref_str.strip())
-            if preference < 1 or preference > 5:
-                print("Error: Preference must be between 1 and 5")
-                continue
-            if course_id in available_courses:
-                course_preferences[course_id] = preference
-            else:
-                print(f"Warning: Course '{course_id}' not found in available courses")
-        except ValueError:
-            print("Error: Format should be CourseID:preference (e.g., CMSC140:5)")
-    
-    # Get room preferences
-    available_rooms = config.get('rooms', [])
-    print(f"\nRoom preferences (available rooms: {', '.join(available_rooms)})")
-    print("Format: RoomName:preference (1-5), press Enter to finish:")
-    room_preferences = {}
-    while True:
-        pref_input = input(f"  Room preference {len(room_preferences)+1} (or Enter to finish): ").strip()
-        if not pref_input:
-            break
-        try:
-            room_name, pref_str = pref_input.split(':')
-            room_name = room_name.strip()
-            preference = int(pref_str.strip())
-            if preference < 1 or preference > 5:
-                print("Error: Preference must be between 1 and 5")
-                continue
-            if room_name in available_rooms:
-                room_preferences[room_name] = preference
-            else:
-                print(f"Warning: Room '{room_name}' not found in available rooms")
-        except ValueError:
-            print("Error: Format should be RoomName:preference (e.g., Roddy136:5)")
-    
-    # Get lab preferences
-    available_labs = config.get('labs', [])
-    print(f"\nLab preferences (available labs: {', '.join(available_labs)})")
-    print("Format: LabName:preference (1-5), press Enter to finish:")
-    lab_preferences = {}
-    while True:
-        pref_input = input(f"  Lab preference {len(lab_preferences)+1} (or Enter to finish): ").strip()
-        if not pref_input:
-            break
-        try:
-            lab_name, pref_str = pref_input.split(':')
-            lab_name = lab_name.strip()
-            preference = int(pref_str.strip())
-            if preference < 1 or preference > 5:
-                print("Error: Preference must be between 1 and 5")
-                continue
-            if lab_name in available_labs:
-                lab_preferences[lab_name] = preference
-            else:
-                print(f"Warning: Lab '{lab_name}' not found in available labs")
-        except ValueError:
-            print("Error: Format should be LabName:preference (e.g., Linux:5)")
-    
-    return {
-        'name': name,
-        'minimum_credits': min_credits,
-        'maximum_credits': max_credits,
-        'unique_course_limit': unique_limit,
-        'times': times,
-        'course_preferences': course_preferences,
-        'room_preferences': room_preferences,
-        'lab_preferences': lab_preferences
-    }
-
-"""
-Patricks features can be moved to course class
-"""
-def add_faculty_interactive(faculty_manager: FacultyManager, config: dict) -> None:
-    """Interactive faculty addition."""
-    try:
-        faculty_data = get_faculty_input(config)
-        if faculty_manager.add_faculty(faculty_data):
-            print(f"✅ Successfully added faculty: {faculty_data['name']}")
-        else:
-            print(f"❌ Faculty '{faculty_data['name']}' already exists.")
-    except Exception as e:
-        print(f"❌ Error adding faculty: {e}")
-
-"""
-Patricks features can be moved to course class
-"""
-def edit_faculty_interactive(faculty_manager: FacultyManager, config: dict) -> None:
-    """Interactive faculty editing."""
-    display_faculty(faculty_manager)
-    
-    faculty_list = faculty_manager.get_faculty()
-    if not faculty_list:
-        print("❌ No faculty available to edit.")
-        return
-    
-    name = input("\nEnter faculty name to edit: ").strip()
-    if not name:
-        print("❌ Faculty name cannot be empty.")
-        return
-    
-    # Check if faculty exists
-    if not any(f.get('name') == name for f in faculty_list):
-        print(f"❌ Faculty '{name}' not found.")
-        return
-    
-    print(f"\n📝 EDITING: {name}")
-    print("Enter new values (press Enter to keep current value):")
-    
-    # Get current faculty data
-    current_faculty = next(f for f in faculty_list if f.get('name') == name)
-    
-    # Get new name (optional)
-    new_name = input(f"New name (current: {name}): ").strip()
-    if not new_name:
-        new_name = name
-    
-    # Get new credit limits (optional)
-    min_credits_input = input(f"New minimum credits (current: {current_faculty.get('minimum_credits', 0)}): ").strip()
-    min_credits = int(min_credits_input) if min_credits_input else current_faculty.get('minimum_credits', 0)
-    
-    max_credits_input = input(f"New maximum credits (current: {current_faculty.get('maximum_credits', 0)}): ").strip()
-    max_credits = int(max_credits_input) if max_credits_input else current_faculty.get('maximum_credits', 0)
-    
-    unique_limit_input = input(f"New unique course limit (current: {current_faculty.get('unique_course_limit', 1)}): ").strip()
-    unique_limit = int(unique_limit_input) if unique_limit_input else current_faculty.get('unique_course_limit', 1)
-    
-    new_data = {
-        'name': new_name,
-        'minimum_credits': min_credits,
-        'maximum_credits': max_credits,
-        'unique_course_limit': unique_limit
-    }
-    
-    # Ask if they want to update preferences
-    update_prefs = input("Update preferences? (y/n, default: n): ").strip().lower()
-    if update_prefs in ['y', 'yes']:
-        print("Note: Complete faculty preference update - enter all preferences you want to keep:")
-        try:
-            faculty_data = get_faculty_input(config)
-            new_data.update({
-                'times': faculty_data['times'],
-                'course_preferences': faculty_data['course_preferences'],
-                'room_preferences': faculty_data['room_preferences'],
-                'lab_preferences': faculty_data['lab_preferences']
-            })
-        except Exception as e:
-            print(f"❌ Error getting preferences: {e}")
-            return
-    
-    try:
-        if faculty_manager.edit_faculty(name, new_data):
-            print(f"✅ Successfully updated faculty: {name}")
-            if new_name != name:
-                print(f"📝 Note: All course references have been updated to use new name '{new_name}'")
-        else:
-            print(f"❌ Failed to update faculty. Name may already exist.")
-    except Exception as e:
-        print(f"❌ Error editing faculty: {e}")
-
-"""
-Patricks features can be moved to course class
-"""
-def delete_faculty_interactive(faculty_manager: FacultyManager) -> None:
-    """Interactive faculty deletion with impact analysis."""
-    display_faculty(faculty_manager)
-    
-    faculty_list = faculty_manager.get_faculty()
-    if not faculty_list:
-        print("❌ No faculty available to delete.")
-        return
-    
-    name = input("\nEnter faculty name to delete: ").strip()
-    if not name:
-        print("❌ Faculty name cannot be empty.")
-        return
-    
-    # Check if faculty exists
-    if not any(f.get('name') == name for f in faculty_list):
-        print(f"❌ Faculty '{name}' not found.")
-        return
-    
-    # Analyze impact of deletion
-    print(f"\n🔍 ANALYZING IMPACT OF DELETING '{name}':")
-    print("-" * 50)
-    
-    # Check courses assigned to this faculty
-    affected_courses = []
-    config = faculty_manager.config.get('config', {})
-    for course in config.get('courses', []):
-        if 'faculty' in course and isinstance(course['faculty'], list):
-            if name in course['faculty']:
-                affected_courses.append(course.get('course_id', 'Unknown'))
-    
-    if affected_courses:
-        print(f"📚 Courses assigned to this faculty ({len(affected_courses)}):")
-        for course in affected_courses:
-            print(f"   • {course}")
-    else:
-        print("✅ No courses currently assigned to this faculty.")
-    
-    if affected_courses:
-        print("\n⚠️  Warning: Deleting this faculty member will:")
-        print(f"   • Remove faculty assignment from {len(affected_courses)} course(s)")
-    
-    # Confirm deletion
-    confirm = input(f"\nAre you sure you want to delete faculty '{name}'? (y/N): ").strip().lower()
-    if confirm in ['y', 'yes']:
-        try:
-            if faculty_manager.delete_faculty(name):
-                print(f"✅ Successfully deleted faculty: {name}")
-                if affected_courses:
-                    print("📝 Note: All course references have been automatically removed.")
-            else:
-                print(f"❌ Failed to delete faculty '{name}'.")
-        except Exception as e:
-            print(f"❌ Error deleting faculty: {e}")
-    else:
-        print("Deletion cancelled.")
-
-"""
-Patricks features can be moved to course class
-"""
-def faculty_management_menu(full_config: dict, config_file: str, time_slots: dict) -> dict:
-    """Faculty management menu interface."""
-    try:
-        # FacultyManager expects the full structure with 'config' key
-        faculty_manager = FacultyManager(full_config)
-        config = full_config.get('config', {})
-        
-        while True:
-            print("\n" + "="*50)
-            print("FACULTY MANAGEMENT")
-            print("="*50)
-            print("1. 👀 View all faculty")
-            print("2. ➕ Add new faculty")
-            print("3. ✏️ Edit faculty")
-            print("4. ❌ Delete faculty")
-            print("5. 💾 Save changes and exit")
-            print("6. 🚪 Exit without saving")
-            print("="*50)
-            
-            choice = input("Select an option (1-6): ").strip()
-            
-            if choice == '1':
-                display_faculty(faculty_manager)
-            elif choice == '2':
-                add_faculty_interactive(faculty_manager, config)
-            elif choice == '3':
-                edit_faculty_interactive(faculty_manager, config)
-            elif choice == '4':
-                delete_faculty_interactive(faculty_manager)
-            elif choice == '5':
-                # Save changes back to full config
-                save_config_to_file(full_config['config'], time_slots, config_file)
-                return full_config['config']
-            elif choice == '6':
-                print("Exiting without saving changes.")
-                return full_config['config']
-            else:
-                print("Invalid choice. Please select 1-6.")
-                
-    except Exception as e:
-        print(f"❌ Error initializing faculty manager: {e}")
-        return full_config.get('config', {})
-
 
 def show_interface_selection() -> str:
     """Display interface selection menu and get user choice."""
@@ -860,30 +240,27 @@ def show_main_menu() -> str:
     print("2. 🏢 Room Management")
     print("3. 🔬 Lab Management")
     print("4. 👥 Faculty Management")
-    print("5. 🚪 Exit")
+    print("5. 📅 Generate Schedules")
+    print("6. 🚪 Exit")
     print("="*50)
     
-    return input("Select an option (1-5): ").strip()
-
+    return input("Select an option (1-6): ").strip()
 
 def get_user_input():
     """
     Get user input for all required parameters.
-    
     Returns:
         Dictionary containing user inputs
     """
     print("Scheduler CLI Application")
     print("Generate and optimize schedules based on configuration files.")
     print()
-    
     # Get required inputs
     print("📁 CONFIGURATION FILE:")
     print("   Example: example.json")
     print("   Example: /path/to/config.json")
     print("   Example: ./configs/schedule_config.json")
     config_file = input("Enter path to configuration file (JSON): ").strip()
-    
     # Check if user wants to use the same file for time slots
     print("\n🕒 TIME SLOT CONFIGURATION:")
     print("   If your JSON file contains both 'config' and 'time_slot_config' sections,")
@@ -931,7 +308,7 @@ def get_user_input():
     print("   Accepted values: json, csv")
     format_input = input("Choose output format (json/csv, default: json): ").strip().lower()
     output_format = 'csv' if format_input in ['csv', 'c'] else 'json'
-    
+    # might get rid of this I don't know if it is necessary really
     print("\n📋 CONFIGURATION PREVIEW:")
     print("   Example: y (show config summary before generating schedules)")
     print("   Example: n (skip config preview - default)")
@@ -956,6 +333,131 @@ def get_user_input():
         'show_config': show_config
     }
 
+def generate_schedules_interactive(config_file: str, full_config: dict, time_slots: dict) -> None:
+    """
+    Schedule generation using the scheduler API.
+    """
+    print("\n" + "="*60)
+    print("SCHEDULE GENERATION")
+    print("="*60)
+    
+    # Show configuration preview option
+    show_preview = input("📋 Show configuration summary? (y/n, default: n): ").strip().lower()
+    if show_preview in ['y', 'yes', 'true', '1']:
+        print_config_summary(full_config.get('config', {}), time_slots)
+    
+    # Get scheduler parameters
+    print("\n📊 SCHEDULE GENERATION PARAMETERS:")
+    
+    # Get limit
+    while True:
+        limit_input = input("Number of schedules to generate (1-1000, default: 10): ").strip()
+        if not limit_input:
+            limit = 10
+            break
+        try:
+            limit = int(limit_input)
+            if limit <= 0 or limit > 1000:
+                print("Error: Please enter a number between 1 and 1000")
+                continue
+            break
+        except ValueError:
+            print("Error: Please enter a valid number")
+    
+    # Get format
+    format_input = input("Output format (json/csv, default: json): ").strip().lower()
+    output_format = 'csv' if format_input in ['csv', 'c'] else 'json'
+    
+    # Get output file
+    output_file = input("What would like to name the output file (default: generated_schedules): ").strip()
+    if not output_file:
+        output_file = "generated_schedules"
+    
+    # Add extension if not provided
+    if not output_file.endswith(f'.{output_format}'):
+        output_file = f"{output_file}.{output_format}"
+    
+    # Confirm generation
+    print(f"\n🚀 READY TO GENERATE SCHEDULES:")
+    print(f"   Config file: {config_file}")
+    print(f"   Schedules: {limit}")
+    print(f"   Format: {output_format}")
+    print(f"   Output: {output_file}")
+    
+    confirm = input("\nProceed with schedule generation? (y/n): ").strip().lower()
+    if confirm not in ['y', 'yes']:
+        print("Schedule generation cancelled.")
+        return
+    
+    # Use the scheduler API
+    try:
+        print("\n🔄 Loading configuration for scheduler...")
+        scheduler_config = load_config_from_file(CombinedConfig, config_file)
+        
+        print("🔄 Initializing scheduler...")
+        scheduler = Scheduler(scheduler_config)
+        
+        print(f"🔄 Generating schedule(s)...")
+        schedules = []
+        count = 0
+        for schedule in scheduler.get_models():
+            if count >= limit:
+                break
+            schedules.append(schedule)
+            count += 1
+            print(f"   Generated schedule {count}")
+            
+        if not schedules:
+            print("❌ No valid schedules could be generated.")
+            print("   The scheduler couldn't find solutions with the current configuration.")
+            return
+        
+        print(f"\n✅ Successfully generated {len(schedules)} schedule(s)!")
+        
+        # Save schedules
+        save_schedules_to_file(schedules, output_file, output_format)
+        
+        # Show preview of first schedule
+        if schedules:
+            print(f"\n📋 PREVIEW OF FIRST SCHEDULE:")
+            print("-" * 40)
+            for course in schedules[0]:
+                print(f"   {course.as_csv()}")
+            print("-" * 40)
+        
+        print(f"\n💾 Schedules saved to: {output_file}")
+        
+    except Exception as e:
+        print(f"❌ Error generating schedules: {e}")
+        print("   The scheduler encountered an issue with the configuration.")
+    
+    input("\nPress Enter to continue...")
+
+def save_schedules_to_file(schedules: list, output_file: str, format_type: str) -> None:
+    """Save generated schedules to file."""
+    try:
+        if format_type == 'csv':
+            with open(output_file, 'w', encoding='utf-8') as f:
+                f.write("Schedule,Course,Day,Time,Duration,Room,Lab,Faculty\n")
+                for i, schedule in enumerate(schedules, 1):
+                    for course in schedule:
+                        csv_line = course.as_csv()
+                        f.write(f"{i},{csv_line}\n")
+        else:
+            # JSON format
+            json_schedules = []
+            for i, schedule in enumerate(schedules, 1):
+                schedule_data = {
+                    'schedule_id': i,
+                    'courses': [course.as_csv() for course in schedule]
+                }
+                json_schedules.append(schedule_data)
+            
+            with open(output_file, 'w', encoding='utf-8') as f:
+                json.dump(json_schedules, f, indent=2, ensure_ascii=False)
+                
+    except Exception as e:
+        print(f"❌ Error saving schedules: {e}")
 
 def run_cli():
     """
@@ -982,50 +484,46 @@ def run_cli():
     # Load full config for room manager (needs both config and time_slot_config)
     with open(str(config_path), 'r') as f:
         full_config = json.load(f)
-    
-    # Main application loop
+
     while True:
         choice = show_main_menu()
-        
         if choice == '1':
-            # Course Management
-            course_manager = CourseManager()
+            course_manager = CourseManager() # Course Management
             config = course_manager.course_management_menu(config, str(config_path), time_slots)
             
         elif choice == '2':
-            # Room Management
-            config = room_management_menu(full_config, str(config_path), time_slots)
-            # Update full_config with the new config
+            room_manager = RoomManager(full_config) # Room Management
+            config = room_manager.room_management_menu(str(config_path), time_slots)
             full_config['config'] = config
             
         elif choice == '3':
-            # Lab Management
-            lab_manager = LabManager()
+            lab_manager = LabManager() # Lab Management
             config = lab_manager.lab_management_menu(str(config_path), config, time_slots)
-            # Update full_config with the new config
             full_config['config'] = config
             
         elif choice == '4':
-            # Faculty Management
-            config = faculty_management_menu(full_config, str(config_path), time_slots)
+            faculty_manager = FacultyManager(full_config) # Faculty Management
+            config = faculty_manager.faculty_management_menu(str(config_path), time_slots)
             # Update full_config with the new config
             full_config['config'] = config
             
         elif choice == '5':
+            # Generate Schedules
+            generate_schedules_interactive(str(config_path), full_config, time_slots)
+            
+        elif choice == '6':
             # Exit
             print("Thank you for using Scheduler CLI!")
             break
-            
+
         else:
-            print("Invalid choice. Please select 1, 2, 3, 4, or 5.")
+            print("Invalid choice. Please select 1, 2, 3, 4, 5, or 6.")
 
 def run_gui():
-    """
-    Run the GUI version of the scheduler application.
-    """
+
     app = None
     try:
-        print("🖥️ Starting GUI Application...")
+        print("Starting GUI Application...")
         app = QApplication.instance()
         if app is None:
             app = QApplication(sys.argv)
@@ -1038,12 +536,20 @@ def run_gui():
     except Exception as e:
         print(f"❌ Error starting GUI: {e}")
         input("Press Enter to return to interface selection...")
-        input("Press Enter to return to interface selection...")
 
 def main():
-    """
-    Main entry point for the scheduler application.
-    """
+    # This is the python api to use the scheduler first loading the config
+    # config = load_config_from_file(CombinedConfig, "example.json")
+
+    # Create scheduler
+    # scheduler = Scheduler(config)
+
+    # Generate schedules
+    # for schedule in scheduler.get_models():
+    #    print("Schedule:")
+    #   for course in schedule:
+    #        print(f"{course.as_csv()}")
+    # end if api use
     try:
         print("Welcome to the Scheduler Application!")
         
@@ -1052,13 +558,10 @@ def main():
             choice = show_interface_selection()
             
             if choice == '1':
-                # CLI Interface
                 run_cli()
                 break
             elif choice == '2':
-                # GUI Interface
                 run_gui()
-                # Continue loop to allow interface selection again
             elif choice == '3':
                 # Exit
                 print("Thank you for using the Scheduler Application!")
@@ -1078,7 +581,5 @@ def main():
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
-
-
 if __name__ == "__main__":
     main()

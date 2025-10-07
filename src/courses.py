@@ -180,7 +180,6 @@ class CourseManager:
 
         Args:
             config: Configuration dictionary containing courses
-
         Returns:
             Initialized CourseManager instance
         """
@@ -199,7 +198,6 @@ class CourseManager:
     def print_course_summary(self) -> None:
         """
         Print a summary of all courses.
-
         Displays each course_id and its instances with fields.
         Also prints statistics at the end.
         """
@@ -245,7 +243,7 @@ class CourseManager:
                 print(f"   🏢 Rooms: {', '.join(course.room) if course.room else 'None'}")
                 print(f"   🔬 Labs: {', '.join(course.lab) if course.lab else 'None'}")
                 print(f"   👤 Faculty: {', '.join(course.faculty) if course.faculty else 'Unassigned'}")
-                print(f"   ⚠️  Conflicts: {', '.join(course.conflicts) if course.conflicts else 'None'}")
+                print(f"   ⚠️ Conflicts: {', '.join(course.conflicts) if course.conflicts else 'None'}")
                 if i < len(instances) - 1:
                     print("   " + "-" * 40)
         
@@ -463,7 +461,7 @@ class CourseManager:
                 self.delete_course(course_id, choice - 1)
                 print(f"✅ Successfully deleted instance {choice} of course: {course_id}")
         else:
-            confirm = input(f"Are you sure you want to delete {course_id}? (y/N): ").strip().lower()
+            confirm = input(f"Are you sure you want to delete {course_id}? (y/n): ").strip().lower()
             if confirm in ['y', 'yes']:
                 self.delete_course(course_id, 0)
                 print(f"✅ Successfully deleted course: {course_id}")
@@ -480,7 +478,7 @@ class CourseManager:
             print("="*50)
             print("1. 👀 View all courses")
             print("2. ➕ Add new course")
-            print("3. ✏️  Modify existing course")
+            print("3. ✏️ Modify existing course")
             print("4. ❌ Delete course")
             print("5. 💾 Save changes and exit")
             print("6. 🚪 Exit without saving")
