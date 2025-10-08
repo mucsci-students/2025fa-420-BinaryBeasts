@@ -1,30 +1,44 @@
 import sys
 from PyQt5.QtWidgets import QApplication
-from typing import Dict, List, Optional, Tuple
 from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QDialog, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QListWidget, QListWidgetItem, QLabel, QFormLayout, QLineEdit,
     QSpinBox, QDialogButtonBox, QMessageBox
 )
-
-# import your Course + CourseManager from your own file
 from courses import Course, CourseManager
+from scheduler.config import CombinedConfig, CourseConfig
 
 
-class CourseForm(QDialog):
+BUTTON_STYLE = (
+    "padding: 10px; background-color: #327f66; color: white; "
+    "border-radius: 5px; width: 140px;"
+)
+TITLE_FONT = QFont('Arial', 19, QFont.Bold)
+LABEL_FONT = QFont('Arial', 15)
+BUTTON_FONT = QFont('Arial', 15)
+
+class CourseDialog(QDialog):
     """
     Small form to add or edit a course section.
     Uses comma-separated text boxes for rooms, labs, etc.
     """
 
-    def __init__(self, parent: QWidget = None, course: Optional[Course] = None):
+    def __init__(self, parent=None, course=None):
         super().__init__(parent)
 
+        # Window
         self.setWindowTitle("Course Section")
         self.setModal(True)
+        self.setMinimumWidth(520)
 
-        # --- form fields ---
+        # Title
+        title_label = QLabel("Course Section")
+        title_label.setFont(TITLE_FONT)
+        title_label.setAlignment(Qt.AlignCenter)
+
+        # form fields
         self.course_id_input = QLineEdit()
         self.credits_input = QSpinBox()
         self.credits_input.setRange(1, 12)
@@ -34,7 +48,7 @@ class CourseForm(QDialog):
         self.faculty_input = QLineEdit()
         self.conflicts_input = QLineEdit()
 
-        # if editing an existing course section, pre-fill values
+        # pre-fill when editing
         if course:
             self.course_id_input.setText(course.course_id)
             self.credits_input.setValue(course.credits)
@@ -43,7 +57,7 @@ class CourseForm(QDialog):
             self.faculty_input.setText(", ".join(course.faculty))
             self.conflicts_input.setText(", ".join(course.conflicts))
         else:
-            self.credits_input.setValue(3)
+            self.credits_input.setValue(4)
 
         form_layout = QFormLayout()
         form_layout.addRow("Course ID", self.course_id_input)
@@ -53,17 +67,27 @@ class CourseForm(QDialog):
         form_layout.addRow("Faculty", self.faculty_input)
         form_layout.addRow("Conflicts", self.conflicts_input)
 
+        tip = QLabel("Tip: separate multiple values with commas (e.g. Roddy 140, Roddy 141)\n" 
+                     "* Required: Course ID, Credits, at least one Room, at least one Faculty")
+        tip.setFont(QFont('Arial', 13))
+        tip.setAlignment(Qt.AlignCenter)
+
         # Save / Cancel buttons
         button_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
+        for btn in button_box.buttons():
+            btn.setFont(BUTTON_FONT)
+            btn.setStyleSheet(BUTTON_STYLE)
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
 
-        layout = QVBoxLayout(self)
-        layout.addLayout(form_layout)
-        layout.addWidget(QLabel("Tip: separate multiple values with commas"))
-        layout.addWidget(button_box)
+        # Layout
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(title_label)
+        main_layout.addLayout(form_layout)
+        main_layout.addWidget(tip)
+        main_layout.addWidget(button_box)
 
-        self.result_course: Optional[Course] = None
+        self.result_course = None
 
     def accept(self):
         """Called when Save is clicked."""
@@ -80,6 +104,14 @@ class CourseForm(QDialog):
         faculty_list = [s.strip() for s in self.faculty_input.text().split(",") if s.strip()]
         conflict_list = [s.strip() for s in self.conflicts_input.text().split(",") if s.strip()]
 
+        if not room_list:
+            QMessageBox.warning(self, "Error", "At least one room is required")
+            return
+
+        if not faculty_list:
+            QMessageBox.warning(self, "Error", "At least one faculty member is required")
+            return
+
         try:
             self.result_course = Course(
                 course_id=course_id,
@@ -95,7 +127,6 @@ class CourseForm(QDialog):
 
         super().accept()
 
-
 class CoursesDialog(QDialog):
     """
     Main window to manage all courses.
@@ -104,30 +135,53 @@ class CoursesDialog(QDialog):
     Buttons: Add / Edit / Delete / Save & Close / Cancel
     """
 
-    def __init__(self, config: Dict, parent: QWidget = None):
+    def __init__(self, combined_config, parent = None):
         super().__init__(parent)
 
-        self.setWindowTitle("Edit Courses")
+        self.setWindowTitle("Scheduler")
+        self.setMinimumWidth(950)
+        self.setMinimumHeight(520)
         self.setModal(True)
 
-        # copy the config dict
-        self.config = config
-        self.course_manager = CourseManager()
-        self.course_manager.load_courses(config.get("courses", []))
+        header = QLabel("Edit Courses")
+        header.setFont(TITLE_FONT)
+        header.setAlignment(Qt.AlignCenter)
 
-        # left list: Course IDs
+        self.combined_config = combined_config
+        self.course_manager = CourseManager()
+        courses_list = []
+        for course in combined_config.config.courses:
+            courses_list.append({
+                'course_id': course.course_id,
+                'credits': course.credits,
+                'room': course.room,
+                'lab': course.lab,
+                'faculty': course.faculty,
+                'conflicts': course.conflicts
+            })
+
+        self.course_manager.load_courses(courses_list)
+
+        # left: course IDs
         self.course_id_list = QListWidget()
+        self.course_id_list.setFont(LABEL_FONT)
         self.course_id_list.currentRowChanged.connect(self.show_sections)
 
-        # right list: Sections
+        # right: sections
         self.section_list = QListWidget()
+        self.section_list.setFont(LABEL_FONT)
+        self.section_list.setWordWrap(True)
 
-        # buttons
         self.add_button = QPushButton("Add")
         self.edit_button = QPushButton("Edit")
         self.delete_button = QPushButton("Delete")
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
+
+        for b in (self.add_button, self.edit_button, self.delete_button,
+                  self.save_button, self.cancel_button):
+            b.setFont(BUTTON_FONT)
+            b.setStyleSheet(BUTTON_STYLE)
 
         self.add_button.clicked.connect(self.add_section)
         self.edit_button.clicked.connect(self.edit_section)
@@ -135,34 +189,40 @@ class CoursesDialog(QDialog):
         self.save_button.clicked.connect(self.save_and_close)
         self.cancel_button.clicked.connect(self.reject)
 
-        # layout
+        # layout: two columns, right side wider (3:1)
         lists_row = QHBoxLayout()
+
         left_box = QVBoxLayout()
-        left_box.addWidget(QLabel("Course IDs"))
+        left_label = QLabel("Course IDs")
+        left_label.setFont(LABEL_FONT)
+        left_box.addWidget(left_label)
         left_box.addWidget(self.course_id_list)
 
         right_box = QVBoxLayout()
-        right_box.addWidget(QLabel("Sections"))
+        right_label = QLabel("Sections")
+        right_label.setFont(LABEL_FONT)
+        right_box.addWidget(right_label)
         right_box.addWidget(self.section_list)
 
         lists_row.addLayout(left_box, 1)
-        lists_row.addLayout(right_box, 2)
+        lists_row.addLayout(right_box, 3)
 
+        # bottom button row
         button_row = QHBoxLayout()
         button_row.addWidget(self.add_button)
         button_row.addWidget(self.edit_button)
         button_row.addWidget(self.delete_button)
-        button_row.addStretch(1)
         button_row.addWidget(self.save_button)
         button_row.addWidget(self.cancel_button)
 
+        # layout
         main_layout = QVBoxLayout(self)
+        main_layout.addWidget(header)
         main_layout.addLayout(lists_row)
         main_layout.addLayout(button_row)
 
+        # populate lists
         self.refresh_course_ids()
-
-        self.resize(900, 450)
 
     def refresh_course_ids(self):
         """Updates the left list with course IDs, after adding/deleting courses"""
@@ -196,7 +256,7 @@ class CoursesDialog(QDialog):
             self.section_list.addItem(list_item)
 
     def add_section(self):
-        dialog = CourseForm(self)
+        dialog = CourseDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             if dialog.result_course:
                 self.course_manager.add_course(dialog.result_course)
@@ -205,11 +265,12 @@ class CoursesDialog(QDialog):
     def edit_section(self):
         item = self.section_list.currentItem()
         if not item:
+            QMessageBox.information(self, "No section selected", "Please select a section to edit.")
             return
         course_id, section_index = item.data(Qt.UserRole)
         current_section = self.course_manager.get_course(course_id)[section_index]
 
-        dialog = CourseForm(self, course=current_section)
+        dialog = CourseDialog(self, course=current_section)
         if dialog.exec_() == QDialog.Accepted:
             updated_section = dialog.result_course
             if updated_section:
@@ -223,6 +284,7 @@ class CoursesDialog(QDialog):
     def delete_section(self):
         item = self.section_list.currentItem()
         if not item:
+            QMessageBox.information(self, "No section selected", "Please select a section to continue.")
             return
         course_id, section_index = item.data(Qt.UserRole)
         confirm = QMessageBox.question(self, "Confirm", f"Delete {course_id} section {section_index+1}?")
@@ -231,32 +293,31 @@ class CoursesDialog(QDialog):
             self.refresh_course_ids()
 
     def save_and_close(self):
-        """Export back into config and close."""
+        """Save changes using edit_mode"""
+        try:
+            with self.combined_config.edit_mode() as editable_config:
+                # Clear existing courses
+                editable_config.config.courses.clear()
 
-        """Placeholder: will save later."""
-        # for now, just close the dialog
-        self.accept()
+                # Add all courses from CourseManager
+                all_courses = self.course_manager.get_all_courses()
 
-# quick test
-if __name__ == "__main__":
+                for course_id in all_courses:
+                    for course in all_courses[course_id]:
+                        # Create CourseConfig object
+                        new_course = CourseConfig(
+                            course_id=course.course_id,
+                            credits=course.credits,
+                            room=course.room,
+                            lab=course.lab,
+                            faculty=course.faculty,
+                            conflicts=course.conflicts
+                        )
+                        # Add to config
+                        editable_config.config.courses.append(new_course)
 
-    app = QApplication(sys.argv)
+            self.accept()
 
-    fake_config = {
-        "courses": [
-            {"course_id": "CMSC 161", "credits": 4, "room": ["Roddy 140"], "lab": ["Mac"], "faculty": ["Dr. X"], "conflicts": []},
-            {"course_id": "CMSC 161", "credits": 4, "room": ["Roddy 140"], "lab": ["Linux"], "faculty": ["Dr. Y"], "conflicts": []},
-            {"course_id": "CMSC 162", "credits": 4, "room": ["Roddy 136"], "lab": [], "faculty": ["Dr. X"],"conflicts": ["CMCS 161"]},
-            {"course_id": "CMSC 140", "credits": 4, "room": ["Roddy 141"], "lab": [], "faculty": ["Dr. Y"], "conflicts": []},
-
-        ]
-    }
-
-    dialog = CoursesDialog(fake_config)          # create the dialog
-    result = dialog.exec_()                      # run it modally
-    if result:                                   # QDialog.Accepted is truthy
-        print("Saved! Entries:", len(fake_config["courses"]))
-        for course in fake_config["courses"]:
-            print(course)
-    else:
-        print("Cancelled")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to save: {str(e)}")
+            return
