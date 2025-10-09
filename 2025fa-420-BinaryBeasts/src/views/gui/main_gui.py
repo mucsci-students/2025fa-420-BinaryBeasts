@@ -1,21 +1,32 @@
 
 
+import src.views.gui.roomGui as roomGui
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QHBoxLayout, QSpacerItem, QSizePolicy
+    QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
-try:
-    from roomGUI import create_room_window  # Factory handles construction & fallback
-except Exception:  # pragma: no cover - defensive import fallback
-    create_room_window = None  # type: ignore
+import src.views.gui.generate_schedules_gui as generate_schedules_gui
+from PyQt5.QtWidgets import QInputDialog, QMessageBox
+import src.views.gui.courses_gui as courses_gui
 
 
 
+from scheduler import (
+    Scheduler,
+    load_config_from_file,
+)
+from scheduler.config import CombinedConfig
+
+num_schedules = 0
 
 class MainGUI(QWidget):
+    file_uploaded = False
+
     def __init__(self):
+        config = any
+
         super().__init__()
         self.init_ui()
 
@@ -85,69 +96,81 @@ class MainGUI(QWidget):
         layout.addWidget(GenerateButton)
         GenerateButton.clicked.connect(self.generate_schedule)
 
-        self.setLayout(layout)
 
+        self.setLayout(layout)
     def open_file_dialog(self):
-        file_path, _ = QFileDialog.getOpenFileName(self,'Open JSON file','','JSON Files (*.json)')
-        if file_path:
-            #implement later
-            #self.selected_label.setText(config to str method)
-            #pass to backend
-            print(f'Selected file: {file_path}')
-        else:
-            self.selected_label.setText('No file selected.')
+            file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON file', '', 'JSON Files (*.json)')
+            if file_path:
+                self.file_uploaded = True
+                config_obj = load_config_from_file(CombinedConfig, file_path)
+                self.config = config_obj
+                self.selected_label.setText(f'Selected: {file_path}')
+                return
+            else:
+                self.selected_label.setText('No file selected.')
 
         
     def open_course_manager(self):
-        print("Course Manager Opened")
+        if not self.file_uploaded:
+            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            return
+        #self.course_window = courses_gui.CoursesDialog(self.config)
+        #
+        #self.course_window.show()
 
     def open_lab_manager(self):
+        if not self.file_uploaded:
+            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            return
         print("Lab Manager Opened")
 
     def open_faculty_manager(self):
+        if not self.file_uploaded:
+            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            return
         print("Faculty Manager Opened")
     
     def open_room_manager(self):
-        # Prompt the user for an optional JSON configuration file to edit.
-        file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON config (optional)', '', 'JSON Files (*.json)')
-        cfg = None
-        loaded_path = None
-        if file_path:
-            try:
-                import json
-                with open(file_path, encoding='utf-8') as f:
-                    cfg = json.load(f)
-                loaded_path = file_path
-            except Exception as e:
-                print(f"Failed to load {file_path}: {e}")
-                cfg = None
-
-        # Create RoomGUI as a separate top-level window (no parent). If cfg is None,
-        # the factory will display an error instead of creating a placeholder.
-        self.room_window = create_room_window(cfg, loaded_path=loaded_path, parent=None)
-        if self.room_window is not None:
-            # Optional: ensure it stays on top when first opened
-            try:
-                self.room_window.setWindowFlags(self.room_window.windowFlags())
-            except Exception:
-                pass
-            self.room_window.show()
-            self.room_window.raise_()
-            self.room_window.activateWindow()
+        if not self.file_uploaded:
+            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            return
+        #try:
+        #    self.room_window = roomGui.RoomGUI(self.config)
+         #   self.room_window.show()
+        #except Exception as e:
+         #   QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
+       
 
     def save_configuration(self):
-        folder_path = QFileDialog.getExistingDirectory(self, "Select Directory", "")
+        if not self.file_uploaded:
+            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            return
+        folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
 
         if folder_path:  
-            self.selected_label.setText(f'Selected Folder: {folder_path}')
+            main.save_config(self.config, folder_path)
         else:
             self.selected_label.setText('No folder selected.')
 
-    def generate_schedule(self):
-        print("Schedule Generated")
+    def generate_schedule(self): 
+        if not self.file_uploaded:
+            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            return       
+        num, ok = QInputDialog.getInt(self, "Input Required", "Pick an amount of schedules to generate:", min=1)
+        if not ok:
+            return
+        self.close()
+        main.generate_schedules(self.config, num)
+        self.generate_schedule_window = generate_schedules_gui.MainGUI()
+        self.generate_schedule_window.show()
     
     def load_schedule(self):
         print("Schedule Loaded")
+
+    def gen_sched(self):
+        scheduler = Scheduler(self.config)
+
+
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
