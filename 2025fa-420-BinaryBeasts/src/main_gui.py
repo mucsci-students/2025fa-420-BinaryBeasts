@@ -17,8 +17,6 @@ except Exception:  # pragma: no cover - defensive import fallback
 class MainGUI(QWidget):
     def __init__(self):
         super().__init__()
-        # State: path to currently selected configuration file (lazy-loaded for Room GUI)
-        self.loaded_config_path = None  # type: ignore[assignment]
         self.init_ui()
 
     def init_ui(self):
@@ -92,9 +90,10 @@ class MainGUI(QWidget):
     def open_file_dialog(self):
         file_path, _ = QFileDialog.getOpenFileName(self,'Open JSON file','','JSON Files (*.json)')
         if file_path:
-            self.loaded_config_path = file_path
-            self.selected_label.setText(f"Selected: {file_path}")
-            print(f"Selected config file path: {file_path}")
+            #implement later
+            #self.selected_label.setText(config to str method)
+            #pass to backend
+            print(f'Selected file: {file_path}')
         else:
             self.selected_label.setText('No file selected.')
 
@@ -109,35 +108,22 @@ class MainGUI(QWidget):
         print("Faculty Manager Opened")
     
     def open_room_manager(self):
+        # Prompt the user for an optional JSON configuration file to edit.
+        file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON config (optional)', '', 'JSON Files (*.json)')
         cfg = None
-        loaded_path = self.loaded_config_path
-
-        # If a path was previously selected, attempt to load lazily
-        if loaded_path:
+        loaded_path = None
+        if file_path:
             try:
                 import json
-                with open(loaded_path, encoding='utf-8') as f:
+                with open(file_path, encoding='utf-8') as f:
                     cfg = json.load(f)
+                loaded_path = file_path
             except Exception as e:
-                print(f"Failed to load stored config {loaded_path}: {e}")
+                print(f"Failed to load {file_path}: {e}")
                 cfg = None
 
-        # If still no config, prompt once now.
-        if cfg is None:
-            file_path, _ = QFileDialog.getOpenFileName(self, 'Select Room Config', '', 'JSON Files (*.json)')
-            if file_path:
-                try:
-                    import json
-                    with open(file_path, encoding='utf-8') as f:
-                        cfg = json.load(f)
-                    loaded_path = file_path
-                    self.loaded_config_path = file_path  # remember for future
-                    self.selected_label.setText(f"Selected: {file_path}")
-                except Exception as e:
-                    print(f"Failed to load {file_path}: {e}")
-                    cfg = None
-
-        # Create RoomGUI (top-level). If cfg is None the factory warns.
+        # Create RoomGUI as a separate top-level window (no parent). If cfg is None,
+        # the factory will display an error instead of creating a placeholder.
         self.room_window = create_room_window(cfg, loaded_path=loaded_path, parent=None)
         if self.room_window is not None:
             # Optional: ensure it stays on top when first opened
