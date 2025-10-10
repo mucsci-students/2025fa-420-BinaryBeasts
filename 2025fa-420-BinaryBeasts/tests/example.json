@@ -379,9 +379,9 @@
           "CMSC 152": 4
         },
         "room_preferences": {
-          "Roddy 147": 10,
           "Roddy 140": 1,
-          "Roddy 136": 1
+          "Roddy 136": 1,
+          "Roddy 147": 10
         },
         "lab_preferences": {
           "Linux": 3,
@@ -551,9 +551,9 @@
           "CMSC 161": 5
         },
         "room_preferences": {
-          "Roddy 147": 5,
           "Roddy 136": 1,
-          "Roddy 140": 1
+          "Roddy 140": 1,
+          "Roddy 147": 5
         },
         "lab_preferences": {
           "Linux": 5,

@@ -4,7 +4,6 @@ from PyQt5.QtCore import Qt
 from typing import List, Optional, Any
 from src.room import RoomManager
 import json
-import main
 from PyQt5.QtWidgets import QFileDialog
 
 
@@ -264,7 +263,16 @@ class RoomGUI(QtWidgets.QWidget):
 if __name__ == "__main__":
     import sys
 
+    # Minimal self-test runner with a tiny example config
+    example = {
+        "config": {
+            "rooms": ["Room A", "Room B"],
+            "courses": [],
+            "faculty": [],
+            "labs": []
+        }
+    }
     app = QtWidgets.QApplication(sys.argv)
-    w = RoomGUI(main.config)
+    w = RoomGUI(example)
     w.show()
     sys.exit(app.exec_())

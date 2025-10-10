@@ -4,11 +4,6 @@ import sys
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
-# Also add the 'src' directory so top-level modules inside it (e.g., 'main.py')
-# can be imported directly as 'import main'
-SRC_PATH = os.path.join(PROJECT_ROOT, "src")
-if SRC_PATH not in sys.path:
-    sys.path.insert(0, SRC_PATH)
 
 import src.views.gui.roomGui as roomGui
 from PyQt5.QtWidgets import (
@@ -19,7 +14,6 @@ from PyQt5.QtCore import Qt
 import src.views.gui.generate_schedules_gui as generate_schedules_gui
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 import src.views.gui.courses_gui as courses_gui
-import main
 
 
 
@@ -172,7 +166,9 @@ class MainGUI(QWidget):
         folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
 
         if folder_path:  
-            main.save_config(self.config, folder_path)
+            # Lazy import to avoid circular dependency when main imports MainGUI
+            import main as _main
+            _main.save_config(self.config, folder_path)
         else:
             self.selected_label.setText('No folder selected.')
 
@@ -184,7 +180,9 @@ class MainGUI(QWidget):
         if not ok:
             return
         self.close()
-        main.generate_schedules(self.config, num)
+        # Lazy import to avoid circular dependency when main imports MainGUI
+        import main as _main
+        _main.generate_schedules(self.config, num)
         self.generate_schedule_window = generate_schedules_gui.MainGUI()
         self.generate_schedule_window.show()
     
