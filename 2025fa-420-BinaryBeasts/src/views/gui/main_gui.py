@@ -4,6 +4,11 @@ import sys
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
+# Also add the 'src' directory so top-level modules inside it (e.g., 'main.py')
+# can be imported directly as 'import main'
+SRC_PATH = os.path.join(PROJECT_ROOT, "src")
+if SRC_PATH not in sys.path:
+    sys.path.insert(0, SRC_PATH)
 
 import src.views.gui.roomGui as roomGui
 from PyQt5.QtWidgets import (
@@ -14,6 +19,7 @@ from PyQt5.QtCore import Qt
 import src.views.gui.generate_schedules_gui as generate_schedules_gui
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 import src.views.gui.courses_gui as courses_gui
+import main
 
 
 
@@ -104,42 +110,6 @@ class MainGUI(QWidget):
 
 
         self.setLayout(layout)
-    
-    # --- helpers ---
-    def _dump_config_dict(self, cfg):
-        """Return a plain dict for the scheduler config, regardless of Pydantic model/dict input."""
-        try:
-            if hasattr(cfg, "model_dump"):
-                return cfg.model_dump()
-        except Exception:
-            pass
-        return cfg
-
-    def _save_config(self, cfg, path: str):
-        data = self._dump_config_dict(cfg)
-        # If the dict is the raw scheduler shape, allow both raw or wrapped; prefer raw for user files
-        if isinstance(data, dict) and "config" in data:
-            serializable = data
-        else:
-            serializable = {"config": data} if isinstance(data, dict) else data
-        import json as _json
-        with open(path, "w", encoding="utf-8") as f:
-            _json.dump(serializable, f, indent=2, ensure_ascii=False)
-
-    def _generate_schedules(self, cfg, num: int):
-        # Use the scheduler directly; cfg can be a Pydantic CombinedConfig or compatible dict
-        try:
-            scheduler = Scheduler(cfg)
-        except Exception:
-            # If cfg is a dict, try to validate to CombinedConfig first
-            try:
-                validated = CombinedConfig.model_validate(self._dump_config_dict(cfg))
-                scheduler = Scheduler(validated)
-            except Exception as e:
-                raise e
-        # This placeholder iterates models to ensure generation runs
-        for _ in scheduler.get_models(limit=num if hasattr(scheduler, 'get_models') else None):
-            break
     def open_file_dialog(self):
             file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON file', '', 'JSON Files (*.json)')
             if file_path:
@@ -202,7 +172,7 @@ class MainGUI(QWidget):
         folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
 
         if folder_path:  
-            self._save_config(self.config, folder_path)
+            main.save_config(self.config, folder_path)
         else:
             self.selected_label.setText('No folder selected.')
 
@@ -214,8 +184,7 @@ class MainGUI(QWidget):
         if not ok:
             return
         self.close()
-        # Run generation (basic check) and open result GUI
-        self._generate_schedules(self.config, num)
+        main.generate_schedules(self.config, num)
         self.generate_schedule_window = generate_schedules_gui.MainGUI()
         self.generate_schedule_window.show()
     
