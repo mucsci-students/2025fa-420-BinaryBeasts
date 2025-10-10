@@ -18,7 +18,7 @@ if repo_root_str not in sys.path:
     sys.path.insert(0, repo_root_str)
 
 from PyQt5 import QtWidgets
-from src.roomGUI import RoomGUI
+from src.views.gui.roomGui import RoomGUI
 
 
 def main():

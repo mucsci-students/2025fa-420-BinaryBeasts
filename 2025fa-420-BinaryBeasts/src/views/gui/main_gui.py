@@ -1,7 +1,11 @@
-
+import os
+import sys
+# Ensure Python can resolve the top-level 'src' package when running this file directly
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 
 import src.views.gui.roomGui as roomGui
-import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel
 )
@@ -28,6 +32,8 @@ class MainGUI(QWidget):
         config = any
 
         super().__init__()
+        # Remember the path of the loaded config file (if any) so editors can overwrite it.
+        self.config_path = None
         self.init_ui()
 
     def init_ui(self):
@@ -98,12 +104,50 @@ class MainGUI(QWidget):
 
 
         self.setLayout(layout)
+    
+    # --- helpers ---
+    def _dump_config_dict(self, cfg):
+        """Return a plain dict for the scheduler config, regardless of Pydantic model/dict input."""
+        try:
+            if hasattr(cfg, "model_dump"):
+                return cfg.model_dump()
+        except Exception:
+            pass
+        return cfg
+
+    def _save_config(self, cfg, path: str):
+        data = self._dump_config_dict(cfg)
+        # If the dict is the raw scheduler shape, allow both raw or wrapped; prefer raw for user files
+        if isinstance(data, dict) and "config" in data:
+            serializable = data
+        else:
+            serializable = {"config": data} if isinstance(data, dict) else data
+        import json as _json
+        with open(path, "w", encoding="utf-8") as f:
+            _json.dump(serializable, f, indent=2, ensure_ascii=False)
+
+    def _generate_schedules(self, cfg, num: int):
+        # Use the scheduler directly; cfg can be a Pydantic CombinedConfig or compatible dict
+        try:
+            scheduler = Scheduler(cfg)
+        except Exception:
+            # If cfg is a dict, try to validate to CombinedConfig first
+            try:
+                validated = CombinedConfig.model_validate(self._dump_config_dict(cfg))
+                scheduler = Scheduler(validated)
+            except Exception as e:
+                raise e
+        # This placeholder iterates models to ensure generation runs
+        for _ in scheduler.get_models(limit=num if hasattr(scheduler, 'get_models') else None):
+            break
     def open_file_dialog(self):
             file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON file', '', 'JSON Files (*.json)')
             if file_path:
                 self.file_uploaded = True
                 config_obj = load_config_from_file(CombinedConfig, file_path)
                 self.config = config_obj
+                # Remember the path so child dialogs (e.g., RoomGUI) can save back to the same file
+                self.config_path = file_path
                 self.selected_label.setText(f'Selected: {file_path}')
                 return
             else:
@@ -134,11 +178,21 @@ class MainGUI(QWidget):
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
             return
-        #try:
-        #    self.room_window = roomGui.RoomGUI(self.config)
-         #   self.room_window.show()
-        #except Exception as e:
-         #   QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
+        try:
+            cfg = self.config
+            # Normalize pydantic model to dict if needed; RoomGUI can also handle this,
+            # but we keep it explicit here for clarity and resilience.
+            if hasattr(cfg, "model_dump"):
+                cfg = cfg.model_dump()
+            # If top-level looks like scheduler raw config, wrap under 'config' key for RoomManager
+            if isinstance(cfg, dict) and "config" not in cfg:
+                if any(k in cfg for k in ("rooms", "courses", "faculty", "labs")):
+                    cfg = {"config": cfg}
+
+            self.room_window = roomGui.RoomGUI(cfg, loaded_path=self.config_path)
+            self.room_window.show()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
        
 
     def save_configuration(self):
@@ -148,7 +202,7 @@ class MainGUI(QWidget):
         folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
 
         if folder_path:  
-            main.save_config(self.config, folder_path)
+            self._save_config(self.config, folder_path)
         else:
             self.selected_label.setText('No folder selected.')
 
@@ -160,7 +214,8 @@ class MainGUI(QWidget):
         if not ok:
             return
         self.close()
-        main.generate_schedules(self.config, num)
+        # Run generation (basic check) and open result GUI
+        self._generate_schedules(self.config, num)
         self.generate_schedule_window = generate_schedules_gui.MainGUI()
         self.generate_schedule_window.show()
     
