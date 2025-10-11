@@ -31,17 +31,11 @@ class main_controller():
     def generate_schedules(self, limit: int):
         self.model.set_limit(limit)
         scheduler = Scheduler(self.model.config)
-        for schedule in scheduler.get_models():
-            print("Schedule:")
-            for course in schedule:
-                print(f"{course.as_csv()}")
-        """"
         lst = []
         for schedule in scheduler.get_models():
             lst.append(schedule)
             self.model.schedules.append(schedule)
         return lst
-        """
 
     def save_config(self, path: str):
         with open(path, 'w') as f:
@@ -53,8 +47,35 @@ class main_controller():
 
 
     
-    def load_schedules(self, path: str):
-        pass
+    def load_schedules(self):
+        """Load schedules from JSON file and navigate them"""
+        path = main_view.import_schedules()
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+
+            # Handle both single schedule and multiple schedules
+            if isinstance(data, list):
+                if data and isinstance(data[0], list):
+                    # Multiple schedules: [[schedule1], [schedule2], ...]
+                    schedules = data
+                else:
+                    # Single schedule: [course1, course2, ...]
+                    schedules = [data]
+            else:
+                print("Invalid schedule format in JSON file.")
+                return
+
+            # Use raw_schedules_controller for navigation
+            controller = schedules_controller.raw_schedules_controller(schedules)
+            controller.entry()
+
+        except FileNotFoundError:
+            print(f"Error: File '{path}' not found.")
+        except json.JSONDecodeError:
+            print(f"Error: Invalid JSON format in '{path}'.")
+        except Exception as e:
+            print(f"Error loading schedules: {e}")
 
     def save_schedules(self, path: str):
         with open(path, 'w') as f:
@@ -77,16 +98,20 @@ class main_controller():
         elif input_data == "4":
             room_controller(self.model.config)
             room_view()
-        #save configuration has been selected
+        #generate schedules has been selected
         elif input_data == "5":
             num = main_view.generate_schedules()
             scheds = self.generate_schedules(num)
             controller = schedules_controller.generate_controller(scheds)
             controller.entry()
-        #generate schedule has been selected
+        #save configuration has been selected
         elif input_data == "6":
             self.save_config("config.json")
+        #import schedules has been selected
         elif input_data == "7":
+            self.load_schedules()
+        #exit has been selected
+        elif input_data == "8":
             print("Exiting program.")
             exit(0)
 
