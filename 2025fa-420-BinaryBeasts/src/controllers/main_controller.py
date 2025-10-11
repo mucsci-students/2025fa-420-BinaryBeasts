@@ -1,14 +1,6 @@
 import src.models.main_model as main_model
 import src.views.cli.main_view as main_view
-#from src.controllers.course_controller import course_controller
-from src.views.cli.course_view import course_view
-#from src.controllers.lab_controller import lab_controller
-from src.views.cli.lab_view import lab_view
-#from src.controllers.faculty_controller import faculty_controller
-from src.views.cli.faculty_view import faculty_view
-#from src.controllers.room_controller import room_controller
-from src.views.cli.room_view import room_view
-from src.controllers import schedules_controller
+from src.controllers import schedules_controllers as schedules_controller
 from src.views.cli import schedules_view
 from scheduler import (
     Scheduler,
@@ -31,21 +23,18 @@ class main_controller():
     def generate_schedules(self, limit: int):
         self.model.set_limit(limit)
         scheduler = Scheduler(self.model.config)
-        for schedule in scheduler.get_models():
-            print("Schedule:")
-            for course in schedule:
-                print(f"{course.as_csv()}")
-        """"
         lst = []
         for schedule in scheduler.get_models():
             lst.append(schedule)
             self.model.schedules.append(schedule)
         return lst
-        """
 
     def save_config(self, path: str):
-        with open(path, 'w') as f:
-            json.dump(self.config.__dict__, f, indent=4)
+        # Persist the current config using Pydantic's serialization
+        if not self.model or not getattr(self.model, 'config', None):
+            raise ValueError("No configuration is set to save.")
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(self.model.config.model_dump(), f, indent=4)
 
     def load_config(self):
         path = main_view.load_config()
@@ -53,8 +42,35 @@ class main_controller():
 
 
     
-    def load_schedules(self, path: str):
-        pass
+    def load_schedules(self):
+        """Load schedules from JSON file and navigate them"""
+        path = main_view.import_schedules()
+        try:
+            with open(path, 'r') as f:
+                data = json.load(f)
+
+            # Handle both single schedule and multiple schedules
+            if isinstance(data, list):
+                if data and isinstance(data[0], list):
+                    # Multiple schedules: [[schedule1], [schedule2], ...]
+                    schedules = data
+                else:
+                    # Single schedule: [course1, course2, ...]
+                    schedules = [data]
+            else:
+                print("Invalid schedule format in JSON file.")
+                return
+
+            # Use raw_schedules_controller for navigation
+            controller = schedules_controller.raw_schedules_controller(schedules)
+            controller.entry()
+
+        except FileNotFoundError:
+            print(f"Error: File '{path}' not found.")
+        except json.JSONDecodeError:
+            print(f"Error: Invalid JSON format in '{path}'.")
+        except Exception as e:
+            print(f"Error loading schedules: {e}")
 
     def save_schedules(self, path: str):
         with open(path, 'w') as f:
@@ -63,29 +79,29 @@ class main_controller():
     def process_input(self, input_data):
         #edit course has been selected
         if input_data == "1":
-            course_controller(self.model.config)
-            course_view()
+            print("Course editor (CLI) not implemented in this build.")
         #edit lab has been selected
         elif input_data == "2":
-            lab_controller(self.model.config)
-            lab_view()
+            print("Lab editor (CLI) not implemented in this build.")
         #edit faculty has been selected
         elif input_data == "3":
-            faculty_controller(self.model.config)
-            faculty_view()
+            print("Faculty editor (CLI) not implemented in this build.")
         #edit room has been selected
         elif input_data == "4":
-            room_controller(self.model.config)
-            room_view()
-        #save configuration has been selected
+            print("Room editor (CLI) not implemented in this build.")
+        #generate schedules has been selected
         elif input_data == "5":
             num = main_view.generate_schedules()
             scheds = self.generate_schedules(num)
             controller = schedules_controller.generate_controller(scheds)
             controller.entry()
-        #generate schedule has been selected
+        #save configuration has been selected
         elif input_data == "6":
             self.save_config("config.json")
+        #import schedules has been selected
         elif input_data == "7":
+            self.load_schedules()
+        #exit has been selected
+        elif input_data == "8":
             print("Exiting program.")
             exit(0)

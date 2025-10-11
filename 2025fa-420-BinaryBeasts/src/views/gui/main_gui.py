@@ -11,7 +11,6 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
-import src.views.gui.generate_schedules_gui as generate_schedules_gui
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 import src.views.gui.courses_gui as courses_gui
 
@@ -158,7 +157,7 @@ class MainGUI(QWidget):
 
         if folder_path:  
             # Lazy import to avoid circular dependency when main imports MainGUI
-            import main as _main
+            from src import main as _main
             _main.save_config(self.config, folder_path)
         else:
             self.selected_label.setText('No folder selected.')
@@ -170,12 +169,26 @@ class MainGUI(QWidget):
         num, ok = QInputDialog.getInt(self, "Input Required", "Pick an amount of schedules to generate:", min=1)
         if not ok:
             return
+        # Use the controller layer to generate schedules
+        try:
+            from src.controllers.main_controller import main_controller
+            from src.models.main_model import main_model
+            from src.views.gui.facultyDisplay import FacultyDisplay
+
+            model = main_model()
+            model.set_config(self.config)
+            controller = main_controller(model)
+            schedules = controller.generate_schedules(num)
+            if not schedules:
+                QMessageBox.information(self, "No Schedules", "No valid schedules were generated.")
+                return
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")
+            return
+    # Open the FacultyDisplay UI with the generated schedules
+        self.schedule_display = FacultyDisplay(schedules)
+        self.schedule_display.show()
         self.close()
-        # Lazy import to avoid circular dependency when main imports MainGUI
-        import main as _main
-        _main.generate_schedules(self.config, num)
-        self.generate_schedule_window = generate_schedules_gui.MainGUI()
-        self.generate_schedule_window.show()
     
     def load_schedule(self):
         print("Schedule Loaded")

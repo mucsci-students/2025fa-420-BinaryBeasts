@@ -1,4 +1,4 @@
-from src.controllers import schedules_controller
+from src.controllers import schedules_controllers as schedules_controller
 
 def generate_schedules_view():
     input_str = input("Enter the number of schedules to generate: ")

@@ -8,11 +8,11 @@ from scheduler import (
     load_config_from_file,
 )
 from scheduler.config import CombinedConfig
-from courses import CourseManager
-from room import RoomManager
-from lab_manager import LabManager
-from faculty import FacultyManager
-from views.gui.main_gui import MainGUI
+from src.courses import CourseManager
+from src.room import RoomManager
+from src.lab_manager import LabManager
+from src.faculty import FacultyManager
+from src.views.gui.main_gui import MainGUI
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QHBoxLayout, QSpacerItem, QSizePolicy
 )
