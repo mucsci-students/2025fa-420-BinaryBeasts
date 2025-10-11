@@ -16,7 +16,6 @@ class Course:
         self.course_id = course_id
         self.credits = credits
 
-        # Optional lists (use [] if not provided)
         self.room = room if room is not None else []
         self.lab = lab if lab is not None else []
         self.conflicts = conflicts if conflicts is not None else []
@@ -102,14 +101,12 @@ class CourseManager:
         Iterates over all courses and collects unique values.
 
         """
-        # Start with clean sets to avoid stale entries
         self.rooms.clear()
         self.labs.clear()
         self.faculty.clear()
-        # Loop through all instances of all courses
+
         for instances in self.courses.values():
             for course in instances:
-                # Add each course's resources
                 self.rooms.update(course.room)
                 self.labs.update(course.lab)
                 self.faculty.update(course.faculty)
@@ -465,13 +462,23 @@ def course_management_menu(config: dict, config_file: str, time_slots: dict) -> 
                         'conflicts': course.conflicts
                     })
 
-            config['courses'] = updated_courses
-            save_config_to_file(config, time_slots, config_file)
-            return config
+                config['courses'] = updated_courses
+                # Save changes to file
+                import json
+                full_config = {
+                    "config": config,
+                    "time_slot_config": time_slots
+                }
+
+                with open(config_file, 'w', encoding='utf-8') as f:
+                    json.dump(full_config, f, indent=2, ensure_ascii=False)
+
+                print(f"✅ Configuration saved successfully to {config_file}")
+                return config
         elif choice == '6':
-            print("Exiting without saving changes.")
-            return config
-        else:
+         print("Exiting without saving changes.")
+        return config
+    else:
             print("Invalid choice. Please select 1-6.")
 
 
