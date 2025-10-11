@@ -143,17 +143,8 @@ class MainGUI(QWidget):
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
             return
         try:
-            cfg = self.config
-            # Normalize pydantic model to dict if needed; RoomGUI can also handle this,
-            # but we keep it explicit here for clarity and resilience.
-            if hasattr(cfg, "model_dump"):
-                cfg = cfg.model_dump()
-            # If top-level looks like scheduler raw config, wrap under 'config' key for RoomManager
-            if isinstance(cfg, dict) and "config" not in cfg:
-                if any(k in cfg for k in ("rooms", "courses", "faculty", "labs")):
-                    cfg = {"config": cfg}
-
-            self.room_window = roomGui.RoomGUI(cfg, loaded_path=self.config_path)
+            # Pass the CombinedConfig (or SchedulerConfig) model directly to RoomGUI
+            self.room_window = roomGui.RoomGUI(self.config, loaded_path=self.config_path)
             self.room_window.show()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")

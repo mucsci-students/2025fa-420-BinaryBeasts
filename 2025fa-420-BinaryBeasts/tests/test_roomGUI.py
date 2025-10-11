@@ -1,4 +1,4 @@
-"""Manual test that launches the RoomGUI with a sample config.
+"""Manual test that launches the RoomGUI with a scheduler model.
 
 Run this with:
     python -m tests.test_roomGUI
@@ -7,7 +7,6 @@ This is an interactive test and is not a unit test. It opens the PyQt window so 
 """
 
 import sys
-import json
 from pathlib import Path
 
 # Ensure the repository root is on sys.path so `import src...` works when this
@@ -19,44 +18,37 @@ if repo_root_str not in sys.path:
 
 from PyQt5 import QtWidgets
 from src.views.gui.roomGui import RoomGUI
+from scheduler.config import CombinedConfig, SchedulerConfig
+from scheduler import load_config_from_file
 
 
 def main():
     # Prefer configTest.json at the repository root if available
     root = Path(__file__).resolve().parents[1]
     candidate = root / "configTest.json"
+
+    model: CombinedConfig | SchedulerConfig
+    loaded_path: str | None = None
     if candidate.exists():
         try:
-            cfg = json.loads(candidate.read_text(encoding="utf-8"))
+            model = load_config_from_file(CombinedConfig, str(candidate))
+            loaded_path = str(candidate)
         except Exception as e:
-            print(f"Failed to load {candidate}: {e}")
-            cfg = None
+            print(f"Failed to load CombinedConfig from {candidate}: {e}")
+            # fall back to minimal scheduler config
+            model = SchedulerConfig(rooms=["Room A", "Room B", "Room C"], labs=[], courses=[], faculty=[])
     else:
-        cfg = None
-
-    if cfg is None:
-        # fallback sample
-        cfg = {
-            "config": {
-                "rooms": ["Room A", "Room B", "Room C"],
-                "courses": [
-                    {"course_id": "CS1", "room": ["Room A", "Room B"]},
-                    {"course_id": "CS2", "room": ["Room C"]},
-                ],
-                "faculty": [
-                    {"name": "Prof X", "room_preferences": {"Room A": 10, "Room B": 5}}
-                ],
-            }
-        }
+        # fallback minimal scheduler config (no cross-references, safest for manual UI test)
+        model = SchedulerConfig(rooms=["Room A", "Room B", "Room C"], labs=[], courses=[], faculty=[])
 
     app = QtWidgets.QApplication(sys.argv)
-    # If we loaded from a file, pass that path so Save will overwrite it
-    loaded_path = str(candidate) if (candidate.exists() and cfg is not None) else None
-    w = RoomGUI(cfg, loaded_path=loaded_path)
+    w = RoomGUI(model, loaded_path=loaded_path)
     w.show()
     app.exec_()
 
-    print("Final rooms:", cfg["config"]["rooms"])
+    # Show final rooms from the same model instance
+    final_rooms = model.config.rooms if isinstance(model, CombinedConfig) else model.rooms
+    print("Final rooms:", final_rooms)
 
 
 if __name__ == "__main__":

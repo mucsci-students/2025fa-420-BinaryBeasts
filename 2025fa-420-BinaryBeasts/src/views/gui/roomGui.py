@@ -1,7 +1,7 @@
 from PyQt5 import QtWidgets
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
-from typing import List, Optional, Any
+from typing import Optional, Any
 from src.room import RoomManager
 import json
 from PyQt5.QtWidgets import QFileDialog
@@ -51,43 +51,16 @@ class RoomGUI(QtWidgets.QWidget):
         self.setWindowTitle("College Course Scheduler - Rooms")
         self.setMinimumSize(360, 260)
 
-        # Preserve time_slot_config if a dict with combined shape is provided
-        self._time_slot_config = None
-
-        # Build RoomManager with scheduler models only
-        scheduler_config_obj = None
-        combined_config_obj = None
+        # Build RoomManager with scheduler models only (CombinedConfig or SchedulerConfig)
         try:
             from scheduler.config import CombinedConfig, SchedulerConfig  # type: ignore
-            if isinstance(config, CombinedConfig):
-                combined_config_obj = config
-            elif isinstance(config, SchedulerConfig):
-                scheduler_config_obj = config
-            elif isinstance(config, dict):
-                # If combined dict, preserve time_slot_config and use inner config for SchedulerConfig
-                if "time_slot_config" in config:
-                    self._time_slot_config = config.get("time_slot_config")
-                inner = config.get("config", config)
-                scheduler_config_obj = SchedulerConfig.model_validate(inner)
-            else:
-                # Try to derive from model_dump if provided a pydantic-like object
-                if hasattr(config, "model_dump"):
-                    data = config.model_dump()
-                    if "time_slot_config" in data:
-                        self._time_slot_config = data.get("time_slot_config")
-                        inner = data.get("config", {})
-                        scheduler_config_obj = SchedulerConfig.model_validate(inner)
-                    else:
-                        scheduler_config_obj = SchedulerConfig.model_validate(data)
-                else:
-                    raise TypeError
-        except Exception:
-            raise TypeError("RoomGUI requires a scheduler CombinedConfig/SchedulerConfig or a compatible dict")
+        except Exception as e:
+            raise TypeError(f"RoomGUI requires scheduler models available: {e}")
 
-        if combined_config_obj is not None:
-            self.manager = RoomManager(combined_config_obj)
+        if isinstance(config, CombinedConfig) or isinstance(config, SchedulerConfig):
+            self.manager = RoomManager(config)
         else:
-            self.manager = RoomManager(scheduler_config_obj)
+            raise TypeError("RoomGUI now only accepts CombinedConfig or SchedulerConfig instances")
         # Path to the file this config was loaded from (if any). If set, Save will
         # overwrite this file instead of prompting for a location.
         self.loaded_path = loaded_path
@@ -215,10 +188,8 @@ class RoomGUI(QtWidgets.QWidget):
             if not path:
                 return False
         try:
-            # Gather combined config for saving via manager; re-attach preserved time slots if needed
+            # Gather combined config for saving via manager
             data = self.manager.to_combined_dict()
-            if "time_slot_config" not in data and self._time_slot_config is not None:
-                data["time_slot_config"] = self._time_slot_config
 
             # Optionally validate with CombinedConfig before write
             try:

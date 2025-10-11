@@ -3,10 +3,9 @@
     "rooms": [
       "Roddy 136",
       "Roddy 140",
-      "Roddy 147",
-      "Roddy 15000",
-      "TEST",
-      "TEST2"
+      "TEST12",
+      "TESTING",
+      "Roddy 1477"
     ],
     "labs": [
       "Linux",
@@ -19,7 +18,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [],
         "conflicts": [
@@ -34,7 +33,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [],
         "conflicts": [
@@ -49,7 +48,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [
           "Mac",
@@ -80,7 +79,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [
           "Linux"
@@ -94,7 +93,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [
           "Linux"
@@ -124,7 +123,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [
           "Linux",
@@ -142,7 +141,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [
           "Mac",
@@ -162,7 +161,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [
           "Mac",
@@ -196,7 +195,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [
           "Linux",
@@ -215,7 +214,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [
           "Linux",
@@ -266,7 +265,7 @@
         "room": [
           "Roddy 136",
           "Roddy 140",
-          "Roddy 147"
+          "Roddy 1477"
         ],
         "lab": [
           "Mac",
@@ -337,7 +336,7 @@
         "room_preferences": {
           "Roddy 136": 5,
           "Roddy 140": 1,
-          "Roddy 147": 1
+          "Roddy 1477": 1
         },
         "lab_preferences": {
           "Linux": 5,
@@ -383,7 +382,7 @@
         "room_preferences": {
           "Roddy 140": 1,
           "Roddy 136": 1,
-          "Roddy 147": 10
+          "Roddy 1477": 10
         },
         "lab_preferences": {
           "Linux": 3,
@@ -429,7 +428,7 @@
         "room_preferences": {
           "Roddy 140": 5,
           "Roddy 136": 1,
-          "Roddy 147": 1
+          "Roddy 1477": 1
         },
         "lab_preferences": {
           "Linux": 5,
@@ -475,7 +474,7 @@
         "room_preferences": {
           "Roddy 140": 5,
           "Roddy 136": 1,
-          "Roddy 147": 5
+          "Roddy 1477": 5
         },
         "lab_preferences": {
           "Linux": 3,
@@ -520,7 +519,7 @@
         "room_preferences": {
           "Roddy 136": 5,
           "Roddy 140": 1,
-          "Roddy 147": 1
+          "Roddy 1477": 1
         },
         "lab_preferences": {
           "Linux": 5,
@@ -555,7 +554,7 @@
         "room_preferences": {
           "Roddy 136": 1,
           "Roddy 140": 1,
-          "Roddy 147": 5
+          "Roddy 1477": 5
         },
         "lab_preferences": {
           "Linux": 5,
@@ -600,7 +599,7 @@
         "room_preferences": {
           "Roddy 140": 5,
           "Roddy 136": 1,
-          "Roddy 147": 1
+          "Roddy 1477": 1
         },
         "lab_preferences": {
           "Mac": 5,
@@ -646,7 +645,7 @@
         "room_preferences": {
           "Roddy 140": 3,
           "Roddy 136": 3,
-          "Roddy 147": 3
+          "Roddy 1477": 3
         },
         "lab_preferences": {
           "Mac": 3,
@@ -669,7 +668,7 @@
         "room_preferences": {
           "Roddy 140": 5,
           "Roddy 136": 1,
-          "Roddy 147": 1
+          "Roddy 1477": 1
         },
         "lab_preferences": {
           "Mac": 5,
