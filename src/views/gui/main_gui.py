@@ -9,8 +9,6 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 import src.views.gui.generate_schedules_gui as generate_schedules_gui
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
-import src.views.gui.courses_gui as courses_gui
-
 
 
 from scheduler import (
