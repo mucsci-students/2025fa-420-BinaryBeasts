@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Dict, Any, Optional
 
 from PyQt5 import QtWidgets, QtCore
+from PyQt5.QtGui import QFont
 
 from src.controllers.faculty_controller import FacultyController
 
@@ -128,20 +129,42 @@ class FacultyGUI(QtWidgets.QWidget):
 
     def __init__(self, config: Dict[str, Any], loaded_path: Optional[str] = None, parent=None):
         super().__init__(parent)
+
+        # Match main_gui sizing and title styling
         self.setWindowTitle("Faculty Manager")
-        self.resize(600, 400)
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(800)
 
         self.controller = FacultyController(config)
 
         self.loaded_path = loaded_path
 
+        # Title label styled like main_gui
+        title = QtWidgets.QLabel("Faculty Manager")
+        title.setFont(QFont("Arial", 16, QFont.Bold))
+        title.setAlignment(QtCore.Qt.AlignCenter)
+
         self.list_widget = QtWidgets.QListWidget()
 
-        # Buttons
+        # Buttons (styled to match main_gui)
+        btn_style = "padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;"
+        btn_font = QFont("Arial", 8)
+
         self.add_btn = QtWidgets.QPushButton("Add Faculty")
+        self.add_btn.setFont(btn_font)
+        self.add_btn.setStyleSheet(btn_style)
+
         self.edit_btn = QtWidgets.QPushButton("Edit Faculty")
+        self.edit_btn.setFont(btn_font)
+        self.edit_btn.setStyleSheet(btn_style)
+
         self.del_btn = QtWidgets.QPushButton("Delete Faculty")
+        self.del_btn.setFont(btn_font)
+        self.del_btn.setStyleSheet(btn_style)
+
         self.save_btn = QtWidgets.QPushButton("Save Config")
+        self.save_btn.setFont(btn_font)
+        self.save_btn.setStyleSheet(btn_style)
 
         # Layout
         btn_layout = QtWidgets.QHBoxLayout()
@@ -152,6 +175,7 @@ class FacultyGUI(QtWidgets.QWidget):
         btn_layout.addWidget(self.save_btn)
 
         layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(title)
         layout.addWidget(self.list_widget)
         layout.addLayout(btn_layout)
 
@@ -182,14 +206,14 @@ class FacultyGUI(QtWidgets.QWidget):
         raw = dlg.get_values()
         try:
             entry = self.controller.build_faculty_entry(
-                name=raw['name'],
-                minimum_credits=raw['minimum_credits'],
-                maximum_credits=raw['maximum_credits'],
-                unique_course_limit=raw['unique_course_limit'],
-                times=raw['times'],
-                course_pref_inputs=raw['course_pref_inputs'],
-                room_pref_inputs=raw['room_pref_inputs'],
-                lab_pref_inputs=raw['lab_pref_inputs'],
+                name=raw["name"],
+                minimum_credits=raw["minimum_credits"],
+                maximum_credits=raw["maximum_credits"],
+                unique_course_limit=raw["unique_course_limit"],
+                times=raw["times"],
+                course_pref_inputs=raw["course_pref_inputs"],
+                room_pref_inputs=raw["room_pref_inputs"],
+                lab_pref_inputs=raw["lab_pref_inputs"],
             )
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Validation error", str(e))
@@ -206,7 +230,7 @@ class FacultyGUI(QtWidgets.QWidget):
             QtWidgets.QMessageBox.information(self, "Select", "Select a faculty to edit")
             return
         existing = item.data(QtCore.Qt.UserRole) or {}
-        old_name = existing.get('name')
+        old_name = existing.get("name")
         dlg = FacultyDialog(self, initial=existing)
         dlg.setWindowTitle("Edit Faculty")
         if dlg.exec() != QtWidgets.QDialog.Accepted:
@@ -214,14 +238,14 @@ class FacultyGUI(QtWidgets.QWidget):
         raw = dlg.get_values()
         try:
             entry = self.controller.build_faculty_entry(
-                name=raw['name'],
-                minimum_credits=raw['minimum_credits'],
-                maximum_credits=raw['maximum_credits'],
-                unique_course_limit=raw['unique_course_limit'],
-                times=raw['times'],
-                course_pref_inputs=raw['course_pref_inputs'],
-                room_pref_inputs=raw['room_pref_inputs'],
-                lab_pref_inputs=raw['lab_pref_inputs'],
+                name=raw["name"],
+                minimum_credits=raw["minimum_credits"],
+                maximum_credits=raw["maximum_credits"],
+                unique_course_limit=raw["unique_course_limit"],
+                times=raw["times"],
+                course_pref_inputs=raw["course_pref_inputs"],
+                room_pref_inputs=raw["room_pref_inputs"],
+                lab_pref_inputs=raw["lab_pref_inputs"],
             )
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Validation error", str(e))
@@ -271,7 +295,16 @@ class FacultyGUI(QtWidgets.QWidget):
 if __name__ == "__main__":
     import sys
 
+    # Sample in-file configuration for standalone execution.
+    sample_config = {
+        "config": {
+            "rooms": ["Room A", "Room B"],
+            "courses": [{"course_id": "CS1", "room": ["Room A"]}],
+            "labs": ["Linux"],
+            "faculty": [{"name": "F1", "room_preferences": {"Room A": 1}}],
+        }
+    }
     app = QtWidgets.QApplication(sys.argv)
-    w = FacultyGUI(loaded_path=None)
+    w = FacultyGUI(sample_config, loaded_path=None)
     w.show()
     sys.exit(app.exec_())

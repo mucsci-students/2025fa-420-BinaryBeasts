@@ -1,13 +1,13 @@
 
 
-import src.views.gui.roomGui as roomGui
+from roomGui import RoomGUI
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
-import src.views.gui.generate_schedules_gui as generate_schedules_gui
+##from generate_schedules_gui import MainGUIGen
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 
 
@@ -16,6 +16,7 @@ from scheduler import (
     load_config_from_file,
 )
 from scheduler.config import CombinedConfig
+from src.views.gui.faculty_gui import FacultyGUI
 
 num_schedules = 0
 
@@ -126,7 +127,12 @@ class MainGUI(QWidget):
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
             return
-        print("Faculty Manager Opened")
+        # pass the loaded config so the faculty GUI reflects current state
+        try:
+            self.faculty_window = FacultyGUI(self.config)
+            self.faculty_window.show()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Faculty Manager:\n{e}")
     
     def open_room_manager(self):
         if not self.file_uploaded:
