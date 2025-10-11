@@ -51,30 +51,43 @@ class RoomGUI(QtWidgets.QWidget):
         self.setWindowTitle("College Course Scheduler - Rooms")
         self.setMinimumSize(360, 260)
 
-        # Normalize incoming config so RoomManager always receives a dict with a top-level 'config' key.
-        # Supports either a plain dict or a Pydantic model (e.g., scheduler CombinedConfig) via model_dump().
-        cfg_dict = None
+        # Preserve time_slot_config if a dict with combined shape is provided
+        self._time_slot_config = None
+
+        # Build RoomManager with scheduler models only
+        scheduler_config_obj = None
+        combined_config_obj = None
         try:
-            if hasattr(config, "model_dump"):
-                cfg_dict = config.model_dump()
+            from scheduler.config import CombinedConfig, SchedulerConfig  # type: ignore
+            if isinstance(config, CombinedConfig):
+                combined_config_obj = config
+            elif isinstance(config, SchedulerConfig):
+                scheduler_config_obj = config
+            elif isinstance(config, dict):
+                # If combined dict, preserve time_slot_config and use inner config for SchedulerConfig
+                if "time_slot_config" in config:
+                    self._time_slot_config = config.get("time_slot_config")
+                inner = config.get("config", config)
+                scheduler_config_obj = SchedulerConfig.model_validate(inner)
             else:
-                cfg_dict = config
+                # Try to derive from model_dump if provided a pydantic-like object
+                if hasattr(config, "model_dump"):
+                    data = config.model_dump()
+                    if "time_slot_config" in data:
+                        self._time_slot_config = data.get("time_slot_config")
+                        inner = data.get("config", {})
+                        scheduler_config_obj = SchedulerConfig.model_validate(inner)
+                    else:
+                        scheduler_config_obj = SchedulerConfig.model_validate(data)
+                else:
+                    raise TypeError
         except Exception:
-            cfg_dict = config
+            raise TypeError("RoomGUI requires a scheduler CombinedConfig/SchedulerConfig or a compatible dict")
 
-        if not isinstance(cfg_dict, dict):
-            raise TypeError(
-                "RoomGUI expects a dict-like config or a Pydantic model with model_dump()"
-            )
-
-        # If the dict appears to be the raw scheduler config (rooms/courses/faculty/labs at top-level),
-        # wrap it under the 'config' key so RoomManager can use it.
-        if "config" not in cfg_dict:
-            inner_keys = ("rooms", "courses", "faculty", "labs")
-            if any(k in cfg_dict for k in inner_keys):
-                cfg_dict = {"config": cfg_dict}
-
-        self.manager = RoomManager(cfg_dict)
+        if combined_config_obj is not None:
+            self.manager = RoomManager(combined_config_obj)
+        else:
+            self.manager = RoomManager(scheduler_config_obj)
         # Path to the file this config was loaded from (if any). If set, Save will
         # overwrite this file instead of prompting for a location.
         self.loaded_path = loaded_path
@@ -202,19 +215,17 @@ class RoomGUI(QtWidgets.QWidget):
             if not path:
                 return False
         try:
-            # The RoomManager stores the config dict by reference. Prefer to validate
-            # and serialize using the scheduler package's CombinedConfig if available
-            # (keeps Pydantic serialization rules), otherwise fall back to a plain JSON dump.
-            try:
-                # Try to import the scheduler CombinedConfig for validation/serialization
-                from scheduler.config import CombinedConfig  # type: ignore
+            # Gather combined config for saving via manager; re-attach preserved time slots if needed
+            data = self.manager.to_combined_dict()
+            if "time_slot_config" not in data and self._time_slot_config is not None:
+                data["time_slot_config"] = self._time_slot_config
 
-                # Attempt to construct/validate a CombinedConfig and then dump
-                combined = CombinedConfig.model_validate(self.manager.config)
-                data = combined.model_dump()
+            # Optionally validate with CombinedConfig before write
+            try:
+                from scheduler.config import CombinedConfig  # type: ignore
+                data = CombinedConfig.model_validate(data).model_dump()
             except Exception:
-                # If scheduler isn't importable or validation fails, fallback to raw dict
-                data = self.manager.config
+                pass
 
             # Write JSON to disk using standard library for portability
             with open(path, "w", encoding="utf-8") as f:
@@ -262,17 +273,11 @@ class RoomGUI(QtWidgets.QWidget):
 
 if __name__ == "__main__":
     import sys
+    from scheduler.config import SchedulerConfig
 
-    # Minimal self-test runner with a tiny example config
-    example = {
-        "config": {
-            "rooms": ["Room A", "Room B"],
-            "courses": [],
-            "faculty": [],
-            "labs": []
-        }
-    }
+    # Minimal self-test runner using SchedulerConfig directly
+    sched = SchedulerConfig(rooms=["Room A", "Room B"], labs=[], courses=[], faculty=[])
     app = QtWidgets.QApplication(sys.argv)
-    w = RoomGUI(example)
+    w = RoomGUI(sched)
     w.show()
     sys.exit(app.exec_())

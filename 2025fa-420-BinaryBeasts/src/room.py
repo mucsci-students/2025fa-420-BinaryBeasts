@@ -1,46 +1,103 @@
-# RoomManager: Add, delete, and edit rooms in a config dictionary
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional, Union
+
+# Required imports from scheduler project
+from scheduler.config import CombinedConfig, SchedulerConfig
+
 
 class RoomManager:
-	def __init__(self, config: Dict[str, Any]):
+	"""Manage rooms using scheduler models only (CombinedConfig or SchedulerConfig)."""
+
+	def __init__(self, config_like: Union[CombinedConfig, SchedulerConfig]):
+		# Store scheduler models only
+		self._combined: Optional[CombinedConfig] = None
+		self._scheduler: SchedulerConfig
+
+		if isinstance(config_like, CombinedConfig):
+			self._combined = config_like
+			self._scheduler = config_like.config
+		elif isinstance(config_like, SchedulerConfig):
+			self._scheduler = config_like
+		else:
+			raise TypeError("RoomManager expects CombinedConfig or SchedulerConfig from scheduler.config")
+
+	def _edit_context(self):
+		"""Yield an editable model context for atomic edits with validation."""
+		if self._combined is not None:
+			return self._combined.edit_mode()
+		return self._scheduler.edit_mode()
+
+	def _sync_scheduler(self) -> None:
+		"""Ensure self._scheduler points to the current scheduler model.
+
+		When editing a CombinedConfig, the inner .config may be replaced
+		during validation. Keep our reference in sync so getters reflect changes.
 		"""
-		Initialize with a config dictionary (should have a 'rooms' key under 'config').
-		"""
-		self.config = config
-		if 'config' not in self.config:
-			raise ValueError("Config dictionary must have a 'config' key.")
-		if 'rooms' not in self.config['config']:
-			self.config['config']['rooms'] = []
+		if self._combined is not None:
+			self._scheduler = self._combined.config
 
 	def get_rooms(self) -> List[str]:
 		"""Return a copy of the list of rooms."""
-		return list(self.config['config'].get('rooms', []))
+		return list(self._scheduler.rooms)
 
 	def add_room(self, room_name: str) -> bool:
 		"""Add a room if it does not already exist. Returns True if added, False if already present."""
-		rooms = self.config['config'].setdefault('rooms', [])
+		if not isinstance(room_name, str) or not room_name:
+			raise TypeError("room_name must be a non-empty string")
+
+		rooms = self.get_rooms()
 		if room_name in rooms:
 			return False
-		rooms.append(room_name)
+
+		with self._edit_context() as editable:
+			sched = editable.config if hasattr(editable, 'config') else editable
+			sched.rooms.append(room_name)
+		self._sync_scheduler()
 		return True
 
 	def delete_room(self, room_name: str) -> bool:
 		"""Delete a room if it exists. Returns True if deleted, False if not found."""
-		rooms = self.config['config'].get('rooms', [])
-		if room_name in rooms:
-			rooms.remove(room_name)
-			return True
-		return False
+		rooms = self.get_rooms()
+		if room_name not in rooms:
+			return False
+
+		with self._edit_context() as editable:
+			sched = editable.config if hasattr(editable, 'config') else editable
+			# Clean references in courses and faculty FIRST
+			for course in sched.courses:
+				course.room = [r for r in course.room if r != room_name]
+			for fac in sched.faculty:
+				if room_name in fac.room_preferences:
+					fac.room_preferences.pop(room_name, None)
+			# Now remove from rooms to avoid validation on intermediate state
+			sched.rooms = [r for r in sched.rooms if r != room_name]
+		self._sync_scheduler()
+		return True
 
 	def edit_room(self, old_name: str, new_name: str) -> bool:
 		"""Rename a room. Returns True if successful, False if old_name not found or new_name exists."""
-		rooms = self.config['config'].get('rooms', [])
-		if old_name not in rooms or new_name in rooms:   
+		if not old_name or not new_name:
+			raise TypeError("old_name and new_name must be non-empty strings")
+
+		rooms = self.get_rooms()
+		if old_name not in rooms or new_name in rooms:
 			return False
-		idx = rooms.index(old_name)
-		rooms[idx] = new_name
-		#update room references in courses and faculty preferences
-		self._update_room_references(old_name, new_name)
+
+		with self._edit_context() as editable:
+			sched = editable.config if hasattr(editable, 'config') else editable
+			# To avoid validation errors, temporarily ensure new_name exists in rooms
+			if new_name not in sched.rooms:
+				sched.rooms = list(sched.rooms) + [new_name]
+			# Update room references in courses
+			for course in sched.courses:
+				course.room = [new_name if r == old_name else r for r in course.room]
+			# Update room preference keys in faculty
+			for fac in sched.faculty:
+				if old_name in fac.room_preferences:
+					val = fac.room_preferences.pop(old_name)
+					fac.room_preferences[new_name] = val
+			# Finally, remove the old name from rooms
+			sched.rooms = [r for r in sched.rooms if r != old_name]
+		self._sync_scheduler()
 		return True
 
 	def set_rooms(self, new_rooms: List[str]) -> dict:
@@ -50,38 +107,29 @@ class RoomManager:
 		Raises TypeError/ValueError for invalid input.
 		"""
 
-		"""
-		Checks that new_rooms is a proper list of strings by checking if new_rooms is a list, and that all values in new_rooms are strings.
-		"""
 		# Validate type
 		if not isinstance(new_rooms, list) or not all(isinstance(r, str) for r in new_rooms):
 			raise TypeError("new_rooms must be a list of strings")
-
-		"""
-		Checks the length of new_rooms and then turns it to a set and checks that length to make sure all values are unique.
-		"""
 		# Validate uniqueness
 		if len(new_rooms) != len(set(new_rooms)):
 			raise ValueError("room names must be unique")
 
-		old_rooms = set(self.config['config'].get('rooms', []))
+		old_rooms = set(self.get_rooms())
 		new_set = set(new_rooms)
 
-		# Replace rooms list
-		self.config['config']['rooms'] = list(new_rooms)
-
-		# Remove references in courses that point to removed rooms
-		for course in self.config['config'].get('courses', []):
-			if 'room' in course and isinstance(course['room'], list):
-				course['room'] = [r for r in course['room'] if r in new_set]
-
-		# Remove room preferences for removed rooms in faculty
-		removed = old_rooms - new_set
-		for faculty in self.config['config'].get('faculty', []):
-			prefs = faculty.get('room_preferences')
-			if isinstance(prefs, dict):
+		with self._edit_context() as editable:
+			sched = editable.config if hasattr(editable, 'config') else editable
+			# Compute removed before changes
+			removed = old_rooms - new_set
+			# First, clean references for rooms that will be removed
+			for course in sched.courses:
+				course.room = [r for r in course.room if r in new_set]
+			for fac in sched.faculty:
 				for rm in list(removed):
-					prefs.pop(rm, None)
+					fac.room_preferences.pop(rm, None)
+			# Now replace rooms with the new list
+			sched.rooms = list(new_rooms)
+		self._sync_scheduler()
 
 		return {
 			'added': sorted(list(new_set - old_rooms)),
@@ -89,15 +137,16 @@ class RoomManager:
 		}
 
 	def _update_room_references(self, old_name: str, new_name: str):
-		# Update room references in courses
-		for course in self.config['config'].get('courses', []):
-			if 'room' in course and isinstance(course['room'], list):
-				course['room'] = [new_name if r == old_name else r for r in course['room']]  
-		# Update room preferences in faculty
-		for faculty in self.config['config'].get('faculty', []):
-			if 'room_preferences' in faculty and isinstance(faculty['room_preferences'], dict):
-				if old_name in faculty['room_preferences']:
-					faculty['room_preferences'][new_name] = faculty['room_preferences'].pop(old_name)
+		"""Utility kept for compatibility if needed; uses scheduler model."""
+		with self._edit_context() as editable:
+			sched = editable.config if hasattr(editable, 'config') else editable
+			for course in sched.courses:
+				course.room = [new_name if r == old_name else r for r in course.room]
+			for fac in sched.faculty:
+				if old_name in fac.room_preferences:
+					val = fac.room_preferences.pop(old_name)
+					fac.room_preferences[new_name] = val
+		self._sync_scheduler()
 
 	def display_rooms(self) -> None:
 		"""Display all rooms in a formatted list."""
@@ -193,18 +242,15 @@ class RoomManager:
 		
 		# Check courses using this room
 		affected_courses = []
-		config = self.config.get('config', {})
-		for course in config.get('courses', []):
-			if 'room' in course and isinstance(course['room'], list):
-				if room_name in course['room']:
-					affected_courses.append(course.get('course_id', 'Unknown'))
+		for course in self._scheduler.courses:
+			if room_name in list(course.room):
+				affected_courses.append(str(course.course_id))
 		
 		# Check faculty preferences
 		affected_faculty = []
-		for faculty in config.get('faculty', []):
-			room_prefs = faculty.get('room_preferences', {})
-			if room_name in room_prefs:
-				affected_faculty.append(faculty.get('name', 'Unknown'))
+		for faculty in self._scheduler.faculty:
+			if room_name in dict(faculty.room_preferences).keys():
+				affected_faculty.append(str(faculty.name))
 		
 		if affected_courses:
 			print(f"📚 Courses using this room ({len(affected_courses)}):")
@@ -265,12 +311,29 @@ class RoomManager:
 			elif choice == '4':
 				self.delete_room_interactive()
 			elif choice == '5':
-				# Save changes back to full config
-				from main import save_config_to_file
-				save_config_to_file(self.config['config'], time_slots, config_file)
-				return self.config['config']
+				# Save changes back to file as combined JSON
+				config_dict = self._scheduler.model_dump()
+				full_json = {"config": config_dict, "time_slot_config": time_slots}
+				try:
+					with open(config_file, 'w', encoding='utf-8') as f:
+						import json as _json
+						_json.dump(full_json, f, indent=2, ensure_ascii=False)
+					print(f"✅ Configuration saved successfully to {config_file}")
+				except Exception as e:
+					print(f"❌ Error saving configuration: {e}")
+				return config_dict
 			elif choice == '6':
 				print("Exiting without saving changes.")
-				return self.config['config']
+				return self._scheduler.model_dump()
 			else:
 				print("Invalid choice. Please select 1-6.")
+
+	# Serialization helpers
+	def to_combined_dict(self) -> Dict[str, Any]:
+		"""Return a serializable dict for saving.
+
+		If CombinedConfig is available, dump the full combined dict; otherwise dump only the scheduler config under 'config'.
+		"""
+		if self._combined is not None:
+			return self._combined.model_dump()
+		return {"config": self._scheduler.model_dump()}

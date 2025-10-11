@@ -21,21 +21,17 @@ from PyQt5.QtCore import Qt
 def load_config(config_file: str) -> dict:
     """
     Load configuration from the specified config file.
-    Args:
-        config_file: Path to the configuration file
-    Returns:
-        Dictionary containing configuration data
+    Args: config_file: Path to the configuration file
+    Returns: Dictionary containing configuration data
     """
     try:
         with open(config_file, 'r') as f:
             data = json.load(f)
-        
+
         if 'config' in data:
             return data['config']
         else:
             return data
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in config file {config_file}: {e}")
     except FileNotFoundError:
         raise FileNotFoundError(f"Config file not found: {config_file}")
     except Exception as e:
@@ -44,21 +40,17 @@ def load_config(config_file: str) -> dict:
 def load_time_slot_config(time_slot_config: str) -> dict:
     """
     Load time slot configuration from the specified file.
-    Args:
-        time_slot_config: Path to the time slot configuration file
-    Returns:
-        Dictionary containing time slot configuration
+    Args: time_slot_config: Path to the time slot configuration file
+    Returns: Dictionary containing time slot configuration
     """
     try:
         with open(time_slot_config, 'r') as f:
             data = json.load(f)
-        
+
         if 'time_slot_config' in data:
             return data['time_slot_config']
         else:
             return data
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in time slot config file {time_slot_config}: {e}")
     except FileNotFoundError:
         raise FileNotFoundError(f"Time slot config file not found: {time_slot_config}")
     except Exception as e:
@@ -67,9 +59,8 @@ def load_time_slot_config(time_slot_config: str) -> dict:
 def print_config_summary(config: dict, time_slots: dict) -> None:
     """
     Print a readable summary of the configuration.
-    Args:
-        config: Configuration dictionary
-        time_slots: Time slot configuration dictionary
+    Args: config: Configuration dictionary
+          time_slots: Time slot configuration dictionary
     """
     print("\n" + "="*60)
     print("CONFIGURATION SUMMARY")
@@ -248,10 +239,10 @@ def show_main_menu() -> str:
     print("2. 🏢 Room Management")
     print("3. 🔬 Lab Management")
     print("4. 👥 Faculty Management")
-    print("5. 📅 Generate Schedules")
+    print("5. 📅 Schedule Management (Generate/Import/Export)")
     print("6. 🚪 Exit")
     print("="*50)
-    
+
     return input("Select an option (1-6): ").strip()
 
 def get_user_input():
@@ -421,25 +412,252 @@ def generate_schedules_interactive(config_file: str, full_config: dict, time_slo
             return
         
         print(f"\n✅ Successfully generated {len(schedules)} schedule(s)!")
-        
+
         # Save schedules
         save_schedules_to_file(schedules, output_file, output_format)
-        
-        # Show preview of first schedule
-        if schedules:
-            print(f"\n📋 PREVIEW OF FIRST SCHEDULE:")
-            print("-" * 40)
-            for course in schedules[0]:
-                print(f"   {course.as_csv()}")
-            print("-" * 40)
-        
+
         print(f"\n💾 Schedules saved to: {output_file}")
+
+        # Navigate through schedules
+        if schedules:
+            navigate_schedules(schedules)
         
     except Exception as e:
         print(f"❌ Error generating schedules: {e}")
         print("   The scheduler encountered an issue with the configuration.")
     
     input("\nPress Enter to continue...")
+
+def navigate_schedules(schedules: list) -> None:
+    """
+    Interactive navigation through generated schedules.
+    Args: schedules: List of generated schedules to navigate through
+    """
+    if not schedules:
+        print("No schedules to display.")
+        return
+
+    current_index = 0
+    total_schedules = len(schedules)
+
+    while True:
+        # Clear display and show current schedule
+        print("\n" + "="*60)
+        print(f"SCHEDULE VIEWER - Schedule {current_index + 1} of {total_schedules}")
+        print("="*60)
+
+        # Display current schedule
+        for course in schedules[current_index]:
+            print(f"   {course.as_csv()}")
+
+        print("-" * 60)
+
+        # Navigation menu
+        print("\n📋 NAVIGATION OPTIONS:")
+        print("   [d] Next schedule")
+        print("   [a] Previous schedule")
+        print("   [w] Go to specific schedule")
+        print("   [s] Return to main menu")
+        print("-" * 60)
+
+        choice = input("Select an option: ").strip().lower()
+
+        if choice == 'd':
+            if current_index < total_schedules - 1:
+                current_index += 1
+            else:
+                print("Already at the last schedule.")
+                input("Press Enter to continue...")
+        elif choice == 'a':
+            if current_index > 0:
+                current_index -= 1
+            else:
+                print("Already at the first schedule.")
+                input("Press Enter to continue...")
+        elif choice == 'w':
+            try:
+                schedule_num = int(input(f"Enter schedule number (1-{total_schedules}): ").strip())
+                if 1 <= schedule_num <= total_schedules:
+                    current_index = schedule_num - 1
+                else:
+                    print(f"Invalid schedule number. Please enter a number between 1 and {total_schedules}.")
+                    input("Press Enter to continue...")
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+                input("Press Enter to continue...")
+        elif choice == 's':
+            break
+        else:
+            print("Invalid option. Please select w, a, s, or d.")
+            input("Press Enter to continue...")
+
+def load_schedules_from_json(file_path: str) -> list:
+    """
+    Load schedules from a JSON file.
+    """
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        schedules = []
+        for schedule_data in data:
+            if isinstance(schedule_data, dict) and 'courses' in schedule_data:
+                schedules.append(schedule_data['courses'])
+            else:
+                # Handle simple list format
+                schedules.append(schedule_data)
+
+        return schedules
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Schedule file not found: {file_path}")
+    except Exception as e:
+        raise Exception(f"Error loading schedule file {file_path}: {e}")
+
+def navigate_raw_schedules(schedules: list) -> None:
+    """
+    Interactive navigation through schedules loaded from JSON (raw strings).
+    Args: schedules: List of schedules (each schedule is a list of course strings)
+    """
+    if not schedules:
+        print("No schedules to display.")
+        return
+
+    current_index = 0
+    total_schedules = len(schedules)
+
+    while True:
+        # Clear display and show current schedule
+        print("\n" + "="*60)
+        print(f"SCHEDULE VIEWER - Schedule {current_index + 1} of {total_schedules}")
+        print("="*60)
+
+        # Display current schedule
+        current_schedule = schedules[current_index]
+        if isinstance(current_schedule, list):
+            for course in current_schedule:
+                print(f"   {course}")
+        else:
+            print(f"   {current_schedule}")
+
+        print("-" * 60)
+
+        # Navigation menu
+        print("\n📋 NAVIGATION OPTIONS:")
+        print("   [d] Next schedule")
+        print("   [a] Previous schedule")
+        print("   [w] Go to specific schedule")
+        print("   [s] Return to main menu")
+        print("-" * 60)
+
+        choice = input("Select an option: ").strip().lower()
+
+        if choice == 'd':
+            if current_index < total_schedules - 1:
+                current_index += 1
+            else:
+                print("Already at the last schedule.")
+                input("Press Enter to continue...")
+        elif choice == 'a':
+            if current_index > 0:
+                current_index -= 1
+            else:
+                print("Already at the first schedule.")
+                input("Press Enter to continue...")
+        elif choice == 'w':
+            try:
+                schedule_num = int(input(f"Enter schedule number (1-{total_schedules}): ").strip())
+                if 1 <= schedule_num <= total_schedules:
+                    current_index = schedule_num - 1
+                else:
+                    print(f"Invalid schedule number. Please enter a number between 1 and {total_schedules}.")
+                    input("Press Enter to continue...")
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+                input("Press Enter to continue...")
+        elif choice == 's':
+            break
+        else:
+            print("Invalid option. Please select w, a, s, or d.")
+            input("Press Enter to continue...")
+
+def show_schedule_management_menu() -> str:
+    """Display schedule management submenu and get user choice."""
+    print("\n" + "="*60)
+    print("SCHEDULE IMPORT/EXPORT MANAGEMENT")
+    print("="*60)
+    print("1. 📝 Generate New Schedules")
+    print("2. 📥 Import Schedules from JSON")
+    print("3. 🔙 Return to Main Menu")
+    print("="*60)
+
+    return input("Select an option (1-3): ").strip()
+
+def import_schedules_interactive() -> None:
+    """
+    Import and view schedules from a JSON file.
+    """
+    print("\n" + "="*60)
+    print("IMPORT SCHEDULES")
+    print("="*60)
+
+    # Get file path
+    print("\n📂 SELECT JSON FILE TO IMPORT:")
+    print("   Example: generated_schedules.json")
+    print("   Example: /path/to/schedules.json")
+    file_path = input("Enter path to schedule JSON file: ").strip()
+
+    if not file_path:
+        print("No file path provided. Import cancelled.")
+        input("\nPress Enter to continue...")
+        return
+
+    try:
+        # Load schedules from JSON
+        print(f"\n🔄 Loading schedules from {file_path}...")
+        schedules = load_schedules_from_json(file_path)
+
+        if not schedules:
+            print("❌ No schedules found in the file.")
+            input("\nPress Enter to continue...")
+            return
+
+        print(f"✅ Successfully loaded {len(schedules)} schedule(s)!")
+
+        # Navigate through imported schedules
+        navigate_raw_schedules(schedules)
+
+    except FileNotFoundError as e:
+        print(f"❌ {e}")
+        input("\nPress Enter to continue...")
+    except ValueError as e:
+        print(f"❌ {e}")
+        input("\nPress Enter to continue...")
+    except Exception as e:
+        print(f"❌ Error importing schedules: {e}")
+        input("\nPress Enter to continue...")
+
+def schedule_management_menu(config_file: str, full_config: dict, time_slots: dict) -> None:
+    """
+    Schedule management menu with import/export options.
+    """
+    while True:
+        choice = show_schedule_management_menu()
+
+        if choice == '1':
+            # Generate new schedules
+            generate_schedules_interactive(config_file, full_config, time_slots)
+
+        elif choice == '2':
+            # Import existing schedules
+            import_schedules_interactive()
+
+        elif choice == '3':
+            # Return to main menu
+            break
+
+        else:
+            print("Invalid choice. Please select 1, 2, or 3.")
+            input("\nPress Enter to continue...")
 
 def save_schedules_to_file(schedules: list, output_file: str, format_type: str) -> None:
     """Save generated schedules to file."""
@@ -460,10 +678,10 @@ def save_schedules_to_file(schedules: list, output_file: str, format_type: str) 
                     'courses': [course.as_csv() for course in schedule]
                 }
                 json_schedules.append(schedule_data)
-            
+
             with open(output_file, 'w', encoding='utf-8') as f:
                 json.dump(json_schedules, f, indent=2, ensure_ascii=False)
-                
+
     except Exception as e:
         print(f"❌ Error saving schedules: {e}")
 
@@ -489,9 +707,10 @@ def run_cli():
     print(f"Loading time slot configuration from: {config_path}")
     time_slots = load_time_slot_config(str(config_path))
     
-    # Load full config for room manager (needs both config and time_slot_config)
-    with open(str(config_path), 'r') as f:
-        full_config = json.load(f)
+    # Load combined scheduler config for RoomManager
+    combined_for_rooms = load_config_from_file(CombinedConfig, str(config_path))
+    # Maintain a dict view for components still expecting raw dicts
+    full_config = combined_for_rooms.model_dump()
 
     while True:
         choice = show_main_menu()
@@ -500,9 +719,19 @@ def run_cli():
             config = course_manager.course_management_menu(config, str(config_path), time_slots)
             
         elif choice == '2':
-            room_manager = RoomManager(full_config) # Room Management
+            room_manager = RoomManager(combined_for_rooms) # Room Management
             config = room_manager.room_management_menu(str(config_path), time_slots)
-            full_config['config'] = config
+            # Keep combined_for_rooms in sync if needed
+            try:
+                # If config changed, update combined object
+                with combined_for_rooms.edit_mode() as editable:
+                    editable.config = CombinedConfig.model_validate({"config": config, "time_slot_config": combined_for_rooms.time_slot_config}).config
+            except Exception:
+                pass
+            # Update dict view after any changes
+            full_config = combined_for_rooms.model_dump()
+            # Also refresh 'config' reference used by other menus
+            config = full_config.get('config', config)
             
         elif choice == '3':
             lab_manager = LabManager() # Lab Management
@@ -516,8 +745,8 @@ def run_cli():
             full_config['config'] = config
             
         elif choice == '5':
-            # Generate Schedules
-            generate_schedules_interactive(str(config_path), full_config, time_slots)
+            # Schedule Management (Generate/Import/Export)
+            schedule_management_menu(str(config_path), full_config, time_slots)
             
         elif choice == '6':
             # Exit

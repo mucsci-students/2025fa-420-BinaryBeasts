@@ -13,7 +13,7 @@ from io import StringIO
 import sys
 
 # Import the modules to test
-import main
+from src.main import main
 
 
 class TestJSONLoading(unittest.TestCase):

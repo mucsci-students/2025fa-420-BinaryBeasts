@@ -4,7 +4,9 @@
       "Roddy 136",
       "Roddy 140",
       "Roddy 147",
-      "Roddy 1501"
+      "Roddy 15000",
+      "TEST",
+      "TEST2"
     ],
     "labs": [
       "Linux",
@@ -1084,13 +1086,6 @@
     "max_time_gap": 30,
     "min_time_overlap": 45
   },
-  "limit": 100,
-  "optimizer_flags": [
-    "faculty_course",
-    "faculty_room",
-    "faculty_lab",
-    "same_room",
-    "same_lab",
-    "pack_rooms"
-  ]
+  "limit": 10,
+  "optimizer_flags": []
 }
