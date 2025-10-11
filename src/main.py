@@ -12,7 +12,7 @@ from courses import CourseManager
 from room import RoomManager
 from lab_manager import LabManager
 from faculty import FacultyManager
-from src.views.cli import schedules_view
+from src.views.cli import schedules_view, main_view
 # from views.gui.main_gui import MainGUI
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QHBoxLayout, QSpacerItem, QSizePolicy
