@@ -1,5 +1,13 @@
 import src.models.main_model as main_model
 import src.views.cli.main_view as main_view
+#from src.controllers.course_controller import course_controller
+#from src.views.cli.course_view import course_view
+#from src.controllers.lab_controller import lab_controller
+#from src.views.cli.lab_view import lab_view
+#from src.controllers.faculty_controller import faculty_controller
+#from src.views.cli.faculty_view import faculty_view
+#from src.controllers.room_controller import room_controller
+#from src.views.cli.room_view import room_view
 from src.controllers import schedules_controllers as schedules_controller
 from src.views.cli import schedules_view
 from scheduler import (

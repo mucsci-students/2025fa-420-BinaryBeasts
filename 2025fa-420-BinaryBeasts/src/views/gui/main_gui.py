@@ -174,6 +174,7 @@ class MainGUI(QWidget):
             from src.controllers.main_controller import main_controller
             from src.models.main_model import main_model
             from src.views.gui.facultyDisplay import FacultyDisplay
+            from src.views.gui.roomDisplay import RoomDisplay
 
             model = main_model()
             model.set_config(self.config)
@@ -185,8 +186,22 @@ class MainGUI(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")
             return
-    # Open the FacultyDisplay UI with the generated schedules
-        self.schedule_display = FacultyDisplay(schedules)
+        # Ask user how to display the generated schedules
+        view_choice, ok = QInputDialog.getItem(
+            self,
+            "Display Schedules",
+            "Display schedules by:",
+            ["Faculty", "Room"],
+            0,
+            False,
+        )
+        if not ok:
+            return
+
+        if view_choice == "Room":
+            self.schedule_display = RoomDisplay(schedules)
+        else:
+            self.schedule_display = FacultyDisplay(schedules)
         self.schedule_display.show()
         self.close()
     

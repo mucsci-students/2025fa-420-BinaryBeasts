@@ -1,6 +1,12 @@
 from __future__ import annotations
 
 from typing import List, Dict, Any
+import os
+import sys
+# Ensure Python can resolve the top-level 'src' package when running this file directly
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea
 from PyQt5.QtGui import QFont
@@ -10,6 +16,7 @@ from PyQt5.QtCore import Qt
 from scheduler.models.day import Day
 from scheduler.models.time_slot import TimeInstance, TimeSlot
 from scheduler.models.course import CourseInstance, Course
+# GUI keeps its own navigation state to avoid CLI prints
 
 
 WEEKDAYS = [Day.MON, Day.TUE, Day.WED, Day.THU, Day.FRI]
@@ -60,8 +67,8 @@ class RoomDisplay(QWidget):
         super().__init__()
         self.setWindowTitle("College Course Scheduler - Room View")
         self.setMinimumSize(900, 600)
-
         self.schedules = schedules
+        # Local navigation index (avoid CLI controller side-effects/prints)
         self.index = 0 if schedules else -1
 
         root = QVBoxLayout(self)
@@ -167,7 +174,8 @@ class RoomDisplay(QWidget):
                 faculty = inst.faculty or ""
                 lab = inst.lab or None
                 fac_lab = f"{faculty} ({lab})" if lab else faculty
-                day_cols = times_to_day_columns_models(inst.times, lab_index=inst.lab_index, mark_lab=bool(lab))
+                # Do not mark caret in GUI display
+                day_cols = times_to_day_columns_models(inst.times, lab_index=inst.lab_index, mark_lab=False)
                 cells = [course_str, fac_lab] + ["; ".join(day_cols.get(d.name, [])) for d in WEEKDAYS]
             else:
                 course_str = inst.get("course", "")
@@ -187,8 +195,7 @@ class RoomDisplay(QWidget):
                     stop = start + dur
                     stop_str = f"{stop // 60:02d}:{stop % 60:02d}"
                     s = f"{start_str}-{stop_str}"
-                    if lab and lab_idx is not None and idx == lab_idx:
-                        s = f"^{s}"
+                    # Do not mark caret in GUI display
                     cols.setdefault(day_name, []).append(s)
                 day_cols = cols
                 cells = [course_str, fac_lab] + ["; ".join(day_cols.get(d.name, [])) for d in WEEKDAYS]
