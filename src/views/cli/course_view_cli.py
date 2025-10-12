@@ -267,4 +267,3 @@ class CourseView:
     def get_menu_choice() -> str:
         """Get user's menu choice."""
         return input("Select an option (1-6): ").strip()
-

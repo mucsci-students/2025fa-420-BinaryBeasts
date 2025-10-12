@@ -11,14 +11,14 @@ from scheduler.config import CombinedConfig
 from courses import CourseManager
 from room import RoomManager
 from lab_manager import LabManager
-from faculty import FacultyManager
+from BinaryBeastsProjects.src.faculty import FacultyManager
 from src.views.cli import schedules_view, main_view
 # from views.gui.main_gui import MainGUI
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QHBoxLayout, QSpacerItem, QSizePolicy
+    QApplication
 )
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+
+
 def load_config(config_file: str) -> dict:
     """
     Load configuration from the specified config file.
