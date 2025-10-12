@@ -1,8 +1,9 @@
 from PyQt5 import QtWidgets
-from typing import List, Optional
-#from room import RoomManager
+from PyQt5.QtGui import QFont
+from PyQt5.QtCore import Qt
+from typing import Optional, Any
+from src.room import RoomManager
 import json
-#import main
 from PyQt5.QtWidgets import QFileDialog
 
 
@@ -10,12 +11,21 @@ class AddRoomDialog(QtWidgets.QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Add Room")
-        self.resize(300, 100)
+        self.setMinimumSize(280, 120)
 
         self.input = QtWidgets.QLineEdit()
         self.input.setPlaceholderText("Enter Room name")
         save_btn = QtWidgets.QPushButton("Save")
         cancel_btn = QtWidgets.QPushButton("Cancel")
+
+        # Match main_gui button styling
+        btn_style = (
+            "padding: 10px; background-color: #4CAF50; color: white; "
+            "border-radius: 5px; width: 100px;"
+        )
+        for b in (save_btn, cancel_btn):
+            b.setFont(QFont("Arial", 8))
+            b.setStyleSheet(btn_style)
 
         layout = QtWidgets.QVBoxLayout()
         layout.addWidget(self.input)
@@ -35,12 +45,22 @@ class AddRoomDialog(QtWidgets.QDialog):
 
 
 class RoomGUI(QtWidgets.QWidget):
-    def __init__(self, config, loaded_path: Optional[str] = None, parent=None):
+    def __init__(self, config: Any, loaded_path: Optional[str] = None, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Room Manager")
-        self.resize(400, 300)
+        # Window/title to match main_gui feel and allow small size
+        self.setWindowTitle("College Course Scheduler - Rooms")
+        self.setMinimumSize(360, 260)
 
-        self.manager = RoomManager(config)
+        # Build RoomManager with scheduler models only (CombinedConfig or SchedulerConfig)
+        try:
+            from scheduler.config import CombinedConfig, SchedulerConfig  # type: ignore
+        except Exception as e:
+            raise TypeError(f"RoomGUI requires scheduler models available: {e}")
+
+        if isinstance(config, CombinedConfig) or isinstance(config, SchedulerConfig):
+            self.manager = RoomManager(config)
+        else:
+            raise TypeError("RoomGUI now only accepts CombinedConfig or SchedulerConfig instances")
         # Path to the file this config was loaded from (if any). If set, Save will
         # overwrite this file instead of prompting for a location.
         self.loaded_path = loaded_path
@@ -53,6 +73,15 @@ class RoomGUI(QtWidgets.QWidget):
         self.del_btn = QtWidgets.QPushButton("Delete Room")
         self.save_btn = QtWidgets.QPushButton("Save Config")
 
+        # Match main_gui fonts and green button style
+        btn_style = (
+            "padding: 10px; background-color: #4CAF50; color: white; "
+            "border-radius: 5px; width: 100px;"
+        )
+        for b in (self.add_btn, self.edit_btn, self.del_btn, self.save_btn):
+            b.setFont(QFont("Arial", 8))
+            b.setStyleSheet(btn_style)
+
         # Layout
         btn_layout = QtWidgets.QHBoxLayout()
         btn_layout.addWidget(self.add_btn)
@@ -62,6 +91,11 @@ class RoomGUI(QtWidgets.QWidget):
         btn_layout.addWidget(self.save_btn)
 
         layout = QtWidgets.QVBoxLayout(self)
+        # Add title to match main_gui
+        title = QtWidgets.QLabel("College Course Scheduler - Rooms")
+        title.setFont(QFont("Arial", 16, QFont.Bold))
+        title.setAlignment(Qt.AlignCenter)
+        layout.addWidget(title)
         layout.addWidget(self.list_widget)
         layout.addLayout(btn_layout)
 
@@ -141,7 +175,10 @@ class RoomGUI(QtWidgets.QWidget):
         self.del_btn.setEnabled(has)
 
     def save_config(self):
-        """Prompt for a file path and save the full config dict to that file."""
+        """Prompt for a file path and save the full config dict to that file.
+
+        Returns True if the config was saved successfully, False otherwise.
+        """
         # If we have a loaded file path, overwrite it directly. Otherwise ask the user.
         if self.loaded_path:
             path = self.loaded_path
@@ -149,21 +186,17 @@ class RoomGUI(QtWidgets.QWidget):
             options = QFileDialog.Options()
             path, _ = QFileDialog.getSaveFileName(self, "Save Config", "config.json", "JSON Files (*.json);;All Files (*)", options=options)
             if not path:
-                return
+                return False
         try:
-            # The RoomManager stores the config dict by reference. Prefer to validate
-            # and serialize using the scheduler package's CombinedConfig if available
-            # (keeps Pydantic serialization rules), otherwise fall back to a plain JSON dump.
-            try:
-                # Try to import the scheduler CombinedConfig for validation/serialization
-                from scheduler.config import CombinedConfig  # type: ignore
+            # Gather combined config for saving via manager
+            data = self.manager.to_combined_dict()
 
-                # Attempt to construct/validate a CombinedConfig and then dump
-                combined = CombinedConfig.model_validate(self.manager.config)
-                data = combined.model_dump()
+            # Optionally validate with CombinedConfig before write
+            try:
+                from scheduler.config import CombinedConfig  # type: ignore
+                data = CombinedConfig.model_validate(data).model_dump()
             except Exception:
-                # If scheduler isn't importable or validation fails, fallback to raw dict
-                data = self.manager.config
+                pass
 
             # Write JSON to disk using standard library for portability
             with open(path, "w", encoding="utf-8") as f:
@@ -173,14 +206,49 @@ class RoomGUI(QtWidgets.QWidget):
             if not self.loaded_path:
                 self.loaded_path = path
             QtWidgets.QMessageBox.information(self, "Saved", f"Config saved to {path}")
+            return True
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error", f"Failed to save config: {e}")
+            return False
+
+    def closeEvent(self, event):
+        """Ask the user whether to save before exiting.
+
+        Options: Save, Don't Save, Cancel
+        - Save: attempt to save; close only if successful
+        - Don't Save: close without saving
+        - Cancel: abort close
+        """
+        msg = QtWidgets.QMessageBox(self)
+        msg.setWindowTitle("Confirm Exit")
+        msg.setText("Do you want to save your changes before exiting?")
+        msg.setIcon(QtWidgets.QMessageBox.Question)
+        msg.setStandardButtons(
+            QtWidgets.QMessageBox.Save | QtWidgets.QMessageBox.Discard | QtWidgets.QMessageBox.Cancel
+        )
+        msg.setDefaultButton(QtWidgets.QMessageBox.Save)
+        choice = msg.exec_()
+
+        if choice == QtWidgets.QMessageBox.Save:
+            if self.save_config():
+                event.accept()
+            else:
+                # Save canceled or failed; stay open
+                event.ignore()
+        elif choice == QtWidgets.QMessageBox.Discard:
+            event.accept()
+        else:
+            # Cancel
+            event.ignore()
 
 
 if __name__ == "__main__":
     import sys
+    from scheduler.config import SchedulerConfig
 
-
-    w = RoomGUI(main.config)
+    # Minimal self-test runner using SchedulerConfig directly
+    sched = SchedulerConfig(rooms=["Room A", "Room B"], labs=[], courses=[], faculty=[])
+    app = QtWidgets.QApplication(sys.argv)
+    w = RoomGUI(sched)
     w.show()
     sys.exit(app.exec_())

@@ -344,7 +344,7 @@ class FacultyView:
         print("=" * 50)
         print("1. 👀 View all faculty")
         print("2. ➕ Add new faculty")
-        print("3. ✏️  Modify existing faculty")
+        print("3. ✏️ Modify existing faculty")
         print("4. ❌ Delete faculty")
         print("5. 💾 Save changes and exit")
         print("6. 🚪 Exit without saving")

@@ -9,7 +9,7 @@ from scheduler import (
 )
 from scheduler.config import CombinedConfig
 from courses import CourseManager
-from room import RoomManager
+from BinaryBeastsProjects.src.room import RoomManager
 from lab_manager import LabManager
 from BinaryBeastsProjects.src.faculty import FacultyManager
 from src.views.cli import schedules_view, main_view

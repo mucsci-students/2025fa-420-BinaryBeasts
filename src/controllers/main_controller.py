@@ -4,10 +4,10 @@ from src.controllers.course_controller import CourseController
 from src.models.course_model import CourseManager
 from src.controllers.faculty_controller import FacultyController
 from src.models.faculty_model import FacultyManager
+from src.controllers.room_controller import RoomController
+from src.models.room_model import RoomManager
 #from src.controllers.lab_controller import lab_controller
 #from src.views.cli.lab_view import lab_view
-#from src.controllers.room_controller import room_controller
-#from src.views.cli.room_view import room_view
 from src.controllers import schedules_controller
 from src.views.cli import schedules_view
 from scheduler import (
@@ -205,6 +205,69 @@ class main_controller():
             else:
                 print("❌ Invalid choice. Please select 1-6.")
 
+    def manage_rooms(self):
+        """Manage rooms using the room management system"""
+        # Create RoomManager and load rooms from CombinedConfig
+        manager = RoomManager(self.model.config.config)
+
+        # Create controller and run
+        controller = RoomController(manager)
+        from src.views.cli.room_view import RoomView
+
+        # Get course and faculty data for impact analysis
+        course_manager = CourseManager()
+        courses_data = []
+        for course in self.model.config.config.courses:
+            courses_data.append({
+                'course_id': course.course_id,
+                'credits': course.credits,
+                'room': course.room,
+                'lab': course.lab,
+                'faculty': course.faculty,
+                'conflicts': course.conflicts
+            })
+        course_manager.load_courses(courses_data)
+        courses_list = course_manager.get_all_courses()
+
+        faculty_manager = FacultyManager()
+        faculty_data = []
+        for faculty in self.model.config.config.faculty:
+            faculty_data.append({
+                'name': faculty.name,
+                'minimum_credits': faculty.minimum_credits,
+                'maximum_credits': faculty.maximum_credits,
+                'unique_course_limit': faculty.unique_course_limit,
+                'times': faculty.times,
+                'course_preferences': faculty.course_preferences,
+                'room_preferences': faculty.room_preferences,
+                'lab_preferences': faculty.lab_preferences
+            })
+        faculty_manager.load_faculty(faculty_data)
+        faculty_list = faculty_manager.get_all_faculty()
+
+        while True:
+            RoomView.show_menu()
+            choice = RoomView.get_menu_choice()
+
+            if choice == '1':
+                RoomView.display_rooms(controller)
+            elif choice == '2':
+                RoomView.add_room_interactive(controller)
+            elif choice == '3':
+                RoomView.modify_room_interactive(controller)
+            elif choice == '4':
+                RoomView.delete_room_interactive(controller, courses_list, faculty_list)
+            elif choice == '5':
+                # Save changes back to CombinedConfig
+                self.model.config.config = manager.save_with_combined_config(self.model.config.config)
+                print("✅ Configuration saved successfully")
+                return
+            elif choice == '6':
+                print("Exiting without saving changes.")
+                return
+            else:
+                print("❌ Invalid choice. Please select 1-6.")
+
     def process_input(self, input_data):
         #edit course has been selected
         if input_data == "1":
@@ -218,8 +281,7 @@ class main_controller():
             self.manage_faculty()
         #edit room has been selected
         elif input_data == "4":
-            print("Room management not yet implemented.")
-            input("Press Enter to continue...")
+            self.manage_rooms()
         #generate schedules has been selected
         elif input_data == "5":
             num = main_view.generate_schedules()
