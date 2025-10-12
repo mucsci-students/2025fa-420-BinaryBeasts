@@ -10,7 +10,6 @@ from PyQt5.QtCore import Qt
 from scheduler.models.day import Day
 from scheduler.models.time_slot import TimeInstance, TimeSlot
 from scheduler.models.course import CourseInstance, Course
-# GUI keeps its own navigation state to avoid CLI prints
 
 
 WEEKDAYS = [Day.MON, Day.TUE, Day.WED, Day.THU, Day.FRI]
@@ -33,19 +32,19 @@ def times_to_day_columns_models(times: List[TimeInstance], lab_index: int | None
     return {d.name: cols.get(d.name, []) for d in WEEKDAYS}
 
 
-def group_by_faculty(schedule: List[CourseInstance] | List[Dict[str, Any]]) -> Dict[str, List[Any]]:
+def group_by_room(schedule: List[CourseInstance] | List[Dict[str, Any]]) -> Dict[str, List[Any]]:
     grouped: Dict[str, List[Any]] = {}
     for inst in schedule:
         if isinstance(inst, CourseInstance):
-            fac = inst.faculty
+            room = inst.room or "Unassigned"
         else:
-            fac = inst.get("faculty", "Unknown")
-        grouped.setdefault(fac, []).append(inst)
+            room = inst.get("room") or "Unassigned"
+        grouped.setdefault(room, []).append(inst)
     return grouped
 
 
-class FacultyDisplay(QWidget):
-    """Display generated schedules grouped by faculty with navigation between schedules.
+class RoomDisplay(QWidget):
+    """Display generated schedules grouped by room with navigation between schedules.
 
     Expected input (primary):
     - schedules: List[List[CourseInstance]] as produced by `Scheduler.get_models()`
@@ -59,15 +58,15 @@ class FacultyDisplay(QWidget):
 
     def __init__(self, schedules: List[List[CourseInstance]] | List[List[Dict[str, Any]]]):
         super().__init__()
-        self.setWindowTitle("College Course Scheduler - Faculty View")
+        self.setWindowTitle("College Course Scheduler - Room View")
         self.setMinimumSize(900, 600)
+
         self.schedules = schedules
-        # Local navigation index (avoid CLI controller side-effects/prints)
         self.index = 0 if schedules else -1
 
         root = QVBoxLayout(self)
 
-        title = QLabel("Faculty Schedule Display")
+        title = QLabel("Room Schedule Display")
         title.setFont(QFont("Arial", 16, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
         root.addWidget(title)
@@ -102,19 +101,19 @@ class FacultyDisplay(QWidget):
         self.render_current()
 
     @staticmethod
-    def from_iterable(results: List[List[CourseInstance]] | List[List[Dict[str, Any]]] | Any) -> "FacultyDisplay":
+    def from_iterable(results: List[List[CourseInstance]] | List[List[Dict[str, Any]]] | Any) -> "RoomDisplay":
         """Convenience constructor when you have an iterable/generator of schedules.
 
         Example:
             scheduler = Scheduler(config)
-            display = FacultyDisplay.from_iterable(scheduler.get_models())
+            display = RoomDisplay.from_iterable(scheduler.get_models())
         """
         try:
             schedules_list = list(results)
         except TypeError:
             # Not iterable; assume already a list
             schedules_list = results  # type: ignore[assignment]
-        return FacultyDisplay(schedules_list)
+        return RoomDisplay(schedules_list)
 
     def prev_schedule(self) -> None:
         if self.schedules:
@@ -142,40 +141,39 @@ class FacultyDisplay(QWidget):
         self.page_label.setText(f"Schedule {self.index + 1} of {total}")
 
         schedule = self.schedules[self.index]
-        groups = group_by_faculty(schedule)
+        groups = group_by_room(schedule)
 
-        for faculty_name, items in groups.items():
-            self.container_layout.addWidget(self._build_faculty_block(faculty_name, items))
+        for room_name, items in groups.items():
+            self.container_layout.addWidget(self._build_room_block(room_name, items))
 
         self.container_layout.addStretch()
 
-    def _build_faculty_block(self, faculty_name: str, items: List[Any]) -> QWidget:
+    def _build_room_block(self, room_name: str, items: List[Any]) -> QWidget:
         block = QWidget()
         v = QVBoxLayout(block)
 
-        header = QLabel(faculty_name)
+        header = QLabel(room_name)
         header.setFont(QFont("Arial", 14, QFont.Bold))
         v.addWidget(header)
 
         # Table header similar to CUI
-        header_row = self._build_row(["Course", "Room (Lab)"] + [d.name for d in WEEKDAYS], bold=True)
+        header_row = self._build_row(["Course", "Faculty (Lab)"] + [d.name for d in WEEKDAYS], bold=True)
         v.addWidget(header_row)
 
         # Content rows
         for inst in items:
             if isinstance(inst, CourseInstance):
                 course_str = str(inst.course)
-                room = inst.room or ""
+                faculty = inst.faculty or ""
                 lab = inst.lab or None
-                room_lab = f"{room} ({lab})" if lab else room
-                # Do not mark caret in GUI display
-                day_cols = times_to_day_columns_models(inst.times, lab_index=inst.lab_index, mark_lab=False)
-                cells = [course_str, room_lab] + ["; ".join(day_cols.get(d.name, [])) for d in WEEKDAYS]
+                fac_lab = f"{faculty} ({lab})" if lab else faculty
+                day_cols = times_to_day_columns_models(inst.times, lab_index=inst.lab_index, mark_lab=bool(lab))
+                cells = [course_str, fac_lab] + ["; ".join(day_cols.get(d.name, [])) for d in WEEKDAYS]
             else:
                 course_str = inst.get("course", "")
-                room = inst.get("room") or ""
+                faculty = inst.get("faculty") or ""
                 lab = inst.get("lab") or None
-                room_lab = f"{room} ({lab})" if lab else room
+                fac_lab = f"{faculty} ({lab})" if lab else faculty
                 # fallback: if raw JSON-like dicts are provided, we try to adapt
                 times_list = inst.get("times", [])
                 lab_idx = inst.get("lab_index")
@@ -189,10 +187,11 @@ class FacultyDisplay(QWidget):
                     stop = start + dur
                     stop_str = f"{stop // 60:02d}:{stop % 60:02d}"
                     s = f"{start_str}-{stop_str}"
-                    # Do not mark caret in GUI display
+                    if lab and lab_idx is not None and idx == lab_idx:
+                        s = f"^{s}"
                     cols.setdefault(day_name, []).append(s)
                 day_cols = cols
-                cells = [course_str, room_lab] + ["; ".join(day_cols.get(d.name, [])) for d in WEEKDAYS]
+                cells = [course_str, fac_lab] + ["; ".join(day_cols.get(d.name, [])) for d in WEEKDAYS]
             v.addWidget(self._build_row(cells))
 
         return block
@@ -219,7 +218,7 @@ class FacultyDisplay(QWidget):
 
 
 if __name__ == "__main__":
-    # Minimal demo with two schedules using scheduler models
+    # Minimal demo mirroring FacultyDisplay but grouped by rooms
     import sys
     from PyQt5.QtWidgets import QApplication
     from scheduler.models.time_slot import TimePoint, Duration
@@ -251,20 +250,12 @@ if __name__ == "__main__":
         room="Roddy 147",
         lab="Linux",
     )
-    zoppetti161_02 = CourseInstance(
-        course=Course(course_id="CMSC 161", credits=3, section=2, labs=[], rooms=[], conflicts=[], faculties=[]),
-        time=TimeSlot(times=make_times([(Day.MON, 12*60, 50), (Day.WED, 11*60, 110), (Day.FRI, 11*60, 50)]), lab_index=1),
-        faculty="Zoppetti",
-        room="Roddy 147",
-        lab="Linux",
-    )
 
     demo_schedules: List[List[CourseInstance]] = [
         [hardy140_01, hardy140_02, zoppetti161_01],
-        [zoppetti161_02],
     ]
 
     app = QApplication(sys.argv)
-    w = FacultyDisplay(demo_schedules)
+    w = RoomDisplay(demo_schedules)
     w.show()
     sys.exit(app.exec_())
