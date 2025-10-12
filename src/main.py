@@ -8,11 +8,13 @@ from scheduler import (
     load_config_from_file,
 )
 from scheduler.config import CombinedConfig
-from courses import CourseManager
-from room import RoomManager
-from lab_manager import LabManager
-from faculty import FacultyManager
+from src.courses import CourseManager
+from src.room import RoomManager
+from src.lab_manager import LabManager
+from src.controllers.faculty_controller import FacultyController
 from src.views.cli import schedules_view, main_view
+from src.views.cli.faculty_view import FacultyView
+
 # from views.gui.main_gui import MainGUI
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QHBoxLayout, QSpacerItem, QSizePolicy
@@ -937,6 +939,8 @@ def run_cli():
     config_path = validate_file_path(config_file, must_exist=True)
     print(f"Loading configuration from: {config_path}")
     config = load_config(str(config_path))
+
+    combined_config = load_config_from_file(CombinedConfig, str(config_path))
     
     # Load time slots from same file (assuming nested structure like example.json)
     print(f"Loading time slot configuration from: {config_path}")
@@ -963,8 +967,10 @@ def run_cli():
             full_config['config'] = config
             
         elif choice == '4':
-            faculty_manager = FacultyManager(full_config) # Faculty Management
-            config = faculty_manager.faculty_management_menu(str(config_path), time_slots)
+            faculty_controller = FacultyController(combined_config)
+            faculty_view = FacultyView(faculty_controller)
+            faculty_controller.set_view(faculty_view)
+            config = faculty_controller.faculty_management_menu()
             # Update full_config with the new config
             full_config['config'] = config
             
