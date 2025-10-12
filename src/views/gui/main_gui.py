@@ -10,8 +10,8 @@ from PyQt5.QtCore import Qt
 import src.views.gui.generate_schedules_gui as generate_schedules_gui
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 import src.views.gui.courses_gui as courses_gui
-
-
+from src.controllers import schedules_controller
+from src.controllers import main_controller
 
 from scheduler import (
     Scheduler,
@@ -24,11 +24,14 @@ num_schedules = 0
 class MainGUI(QWidget):
     file_uploaded = False
 
-    def __init__(self):
-        config = any
 
+    def __init__(self, model, controller: main_controller):
         super().__init__()
+        self.model = model
+        self.controller = controller
+        self.file_uploaded = False
         self.init_ui()
+
 
     def init_ui(self):
         self.setWindowTitle('College Course Sceduler')
@@ -67,11 +70,6 @@ class MainGUI(QWidget):
         layout.addWidget(RoomButton)
         RoomButton.clicked.connect(self.open_room_manager)
 
-        self.selected_label = QLabel('No file selected')
-        self.selected_label.setFont(QFont('Arial', 10))
-        self.selected_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.selected_label)
-
         SaveButton = QPushButton('Save Configuration File')
         SaveButton.setFont(QFont('Arial', 8))
         SaveButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
@@ -102,12 +100,8 @@ class MainGUI(QWidget):
             file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON file', '', 'JSON Files (*.json)')
             if file_path:
                 self.file_uploaded = True
-                config_obj = load_config_from_file(CombinedConfig, file_path)
-                self.config = config_obj
-                self.selected_label.setText(f'Selected: {file_path}')
+                self.controller.load_config_gui(file_path)
                 return
-            else:
-                self.selected_label.setText('No file selected.')
 
         
     def open_course_manager(self):
@@ -148,7 +142,7 @@ class MainGUI(QWidget):
         folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
 
         if folder_path:  
-            main.save_config(self.config, folder_path)
+            self.controller.save_config(folder_path)
         else:
             self.selected_label.setText('No folder selected.')
 
@@ -160,8 +154,9 @@ class MainGUI(QWidget):
         if not ok:
             return
         self.close()
-        main.generate_schedules(self.config, num)
-        self.generate_schedule_window = generate_schedules_gui.MainGUI()
+        scheds = self.controller.generate_schedules(num)
+        sched_controller = schedules_controller.generate_controller(scheds)
+        self.generate_schedule_window = generate_schedules_gui.MainGUI(sched_controller)
         self.generate_schedule_window.show()
     
     def load_schedule(self):
@@ -177,6 +172,7 @@ if __name__ == '__main__':
     gui = MainGUI()
     gui.show()
     sys.exit(app.exec_())
+
 
 
 
