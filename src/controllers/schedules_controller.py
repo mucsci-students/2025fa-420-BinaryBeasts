@@ -6,6 +6,7 @@ from scheduler import (
 )
 from scheduler.config import CombinedConfig
 from src.views.cli import schedules_view
+import json
 
 class generate_controller():
     def __init__(self, schedules):
@@ -23,8 +24,34 @@ class generate_controller():
         if self.index < 0:
             self.index = len(self.schedules) - 1
 
-    def save_schedules(self):
-        pass
+    def _save_schedules_to_file(self, output_file: str, format_type: str):
+        """Save generated schedules to file"""
+        try:
+            if format_type == 'csv':
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write("Schedule,Course,Day,Time,Duration,Room,Lab,Faculty\n")
+                    for i, schedule in enumerate(self.schedules, 1):
+                        for course in schedule:
+                            csv_line = course.as_csv()
+                            f.write(f"{i},{csv_line}\n")
+            else:
+                # JSON format
+                json_schedules = []
+                for i, schedule in enumerate(self.schedules, 1):
+                    schedule_data = {
+                        'schedule_id': i,
+                        'courses': [course.as_csv() for course in schedule]
+                    }
+                    json_schedules.append(schedule_data)
+
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    json.dump(json_schedules, f, indent=2, ensure_ascii=False)
+
+            print(f"✅ Schedules saved successfully to {output_file}")
+        except Exception as e:
+            print(f"❌ Error saving schedules: {e}")
+
+        input("\nPress Enter to continue...")
 
     def entry(self):
         total_schedules = len(self.schedules)
@@ -90,12 +117,15 @@ class generate_controller():
                 schedules_view.display_schedule_by_faculty(current_schedule_strings)
                 input("\nPress Enter to continue...")
             elif user_input == "6":
+                # Save schedules to file
+                filename, format_type = schedules_view.save_schedules_view()
+                self._save_schedules_to_file(filename, format_type)
+            elif user_input == "7":
                 # Return to main menu
                 break
             else:
-                print("Invalid option. Please select 1-6.")
+                print("Invalid option. Please select 1-7.")
                 input("Press Enter to continue...")
-
 
 class raw_schedules_controller():
     """Controller for navigating imported/raw schedules (from JSON files)"""
@@ -178,9 +208,40 @@ class raw_schedules_controller():
                 schedules_view.display_schedule_by_faculty(self.schedules[self.index])
                 input("\nPress Enter to continue...")
             elif user_input == "6":
+                # Save schedules to file
+                filename, format_type = schedules_view.save_schedules_view()
+                self._save_schedules_to_file(filename, format_type)
+            elif user_input == "7":
                 # Return to main menu
                 break
             else:
-                print("Invalid option. Please select 1-6.")
+                print("Invalid option. Please select 1-7.")
                 input("Press Enter to continue...")
-            
+
+    def _save_schedules_to_file(self, output_file: str, format_type: str):
+        """Save raw schedules (from imported JSON) to file"""
+        try:
+            if format_type == 'csv':
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    f.write("Schedule,Course\n")
+                    for i, schedule in enumerate(self.schedules, 1):
+                        for course_str in schedule:
+                            f.write(f"{i},{course_str}\n")
+            else:
+                # JSON format
+                json_schedules = []
+                for i, schedule in enumerate(self.schedules, 1):
+                    schedule_data = {
+                        'schedule_id': i,
+                        'courses': schedule  # Already CSV strings
+                    }
+                    json_schedules.append(schedule_data)
+
+                with open(output_file, 'w', encoding='utf-8') as f:
+                    json.dump(json_schedules, f, indent=2, ensure_ascii=False)
+
+            print(f"✅ Schedules saved successfully to {output_file}")
+        except Exception as e:
+            print(f"❌ Error saving schedules: {e}")
+
+        input("\nPress Enter to continue...")

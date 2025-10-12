@@ -54,13 +54,16 @@ class main_controller():
             with open(path, 'r') as f:
                 data = json.load(f)
 
-            # Handle both single schedule and multiple schedules
+            # Handle different JSON formats
             if isinstance(data, list):
-                if data and isinstance(data[0], list):
-                    # Multiple schedules: [[schedule1], [schedule2], ...]
+                if data and isinstance(data[0], dict) and 'schedule_id' in data[0] and 'courses' in data[0]:
+                    # New format: [{"schedule_id": 1, "courses": [...]}, ...]
+                    schedules = [schedule_obj['courses'] for schedule_obj in data]
+                elif data and isinstance(data[0], list):
+                    # Multiple schedules (old format): [[schedule1], [schedule2], ...]
                     schedules = data
                 else:
-                    # Single schedule: [course1, course2, ...]
+                    # Single schedule (old format): [course1, course2, ...]
                     schedules = [data]
             else:
                 print("Invalid schedule format in JSON file.")
@@ -104,14 +107,11 @@ class main_controller():
             scheds = self.generate_schedules(num)
             controller = schedules_controller.generate_controller(scheds)
             controller.entry()
-        #save configuration has been selected
-        elif input_data == "6":
-            self.save_config("config.json")
         #import schedules has been selected
-        elif input_data == "7":
-            self.load_schedules()
+        elif input_data == "6":
+            (self.load_schedules())
         #exit has been selected
-        elif input_data == "8":
+        elif input_data == "7":
             print("Exiting program.")
             exit(0)
 

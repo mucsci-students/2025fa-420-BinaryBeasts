@@ -247,15 +247,25 @@ def schedule_navigation_view():
     print("   3. Go to specific schedule")
     print("   4. View by room/lab")
     print("   5. View by faculty")
-    print("   6. Return to main menu")
+    print("   6. Export schedules to file")
+    print("   7. Return to main menu")
     print("-" * 60)
-    return input("Select an option (1-6): ").strip()
+    return input("Select an option (1-7): ").strip()
 
 def save_schedules_view():
-    path = input("Enter the path to save schedules (default 'schedules.txt'): ").strip()
-    if not path:
-        path = "schedules.txt"
-    return path
+    """Get filename and format for saving schedules"""
+    filename = input("Enter filename to save schedules (default 'schedules'): ").strip()
+    if not filename:
+        filename = "schedules"
+
+    format_input = input("Output format (json/csv, default: json): ").strip().lower()
+    format_type = 'csv' if format_input in ['csv', 'c'] else 'json'
+
+    # Add extension if not provided
+    if not filename.endswith(f'.{format_type}'):
+        filename = f"{filename}.{format_type}"
+
+    return filename, format_type
 
 def display_schedule(schedule):
     """
