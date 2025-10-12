@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scheduler"
+version = "0.1.0"
+description = "Course Scheduler Project"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [
+  {name = "Andrew Delich"},
+  {name = "Collin Donnan"},
+  {name = "Kenner Jimenez"},
+  {name = "Naomi Ermold"},
+  {name = "Patrick Kreibick"},
+  {name = "Sophia Koziar"},
+  {name = "Tyler Brown"},
+]
+dependencies = [
+    "course-constraint-scheduler",
+]
+
+[project.optional-dependencies]
+gui = ["pyqt5>=5.15"]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+

@@ -1,7 +1,7 @@
 import src.models.main_model as main_model
 import src.views.cli.main_view as main_view
-#from src.controllers.course_controller import course_controller
-#from src.views.cli.course_view import course_view
+from src.controllers.course_controller import CourseController
+from src.models.course_model import CourseManager
 #from src.controllers.lab_controller import lab_controller
 #from src.views.cli.lab_view import lab_view
 #from src.controllers.faculty_controller import faculty_controller
@@ -84,23 +84,70 @@ class main_controller():
         with open(path, 'w') as f:
             f.write(str(self.schedules[self.current_schedule_index]))
 
+    def manage_courses(self):
+        """Manage courses using the course management system"""
+        # Create CourseManager and load courses from CombinedConfig
+        manager = CourseManager()
+
+        # Extract courses from CombinedConfig
+        courses_data = []
+        for course in self.model.config.config.courses:
+            courses_data.append({
+                'course_id': course.course_id,
+                'credits': course.credits,
+                'room': course.room,
+                'lab': course.lab,
+                'faculty': course.faculty,
+                'conflicts': course.conflicts
+            })
+
+        manager.load_courses(courses_data)
+
+        # Create controller and run
+        controller = CourseController(manager)
+        from src.views.cli.course_view_cli import CourseView
+
+        while True:
+            CourseView.show_menu()
+            choice = CourseView.get_menu_choice()
+
+            if choice == '1':
+                CourseView.display_courses(controller)
+            elif choice == '2':
+                CourseView.add_course_interactive(controller)
+            elif choice == '3':
+                CourseView.modify_course_interactive(controller)
+            elif choice == '4':
+                CourseView.delete_course_interactive(controller)
+            elif choice == '5':
+                # Save changes back to CombinedConfig
+                if manager.save_with_combined_config(self.model.config):
+                    print("✅ Configuration saved successfully")
+                else:
+                    print("❌ Failed to save configuration")
+                return
+            elif choice == '6':
+                print("Exiting without saving changes.")
+                return
+            else:
+                print("❌ Invalid choice. Please select 1-6.")
+
     def process_input(self, input_data):
         #edit course has been selected
         if input_data == "1":
-            course_controller(self.model.config)
-            course_view()
+            self.manage_courses()
         #edit lab has been selected
         elif input_data == "2":
-            lab_controller(self.model.config)
-            lab_view()
+            print("Lab management not yet implemented.")
+            input("Press Enter to continue...")
         #edit faculty has been selected
         elif input_data == "3":
-            faculty_controller(self.model.config)
-            faculty_view()
+            print("Faculty management not yet implemented.")
+            input("Press Enter to continue...")
         #edit room has been selected
         elif input_data == "4":
-            room_controller(self.model.config)
-            room_view()
+            print("Room management not yet implemented.")
+            input("Press Enter to continue...")
         #generate schedules has been selected
         elif input_data == "5":
             num = main_view.generate_schedules()
@@ -109,7 +156,7 @@ class main_controller():
             controller.entry()
         #import schedules has been selected
         elif input_data == "6":
-            (self.load_schedules())
+            self.load_schedules()
         #exit has been selected
         elif input_data == "7":
             print("Exiting program.")
