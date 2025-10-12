@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from typing import List, Dict, Any
+import json
 import os
 import sys
 # Ensure Python can resolve the top-level 'src' package when running this file directly
@@ -8,7 +9,7 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QScrollArea, QFileDialog, QMessageBox
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 
@@ -82,13 +83,20 @@ class RoomDisplay(QWidget):
         nav_layout = QHBoxLayout()
         self.prev_btn = QPushButton("← Prev")
         self.next_btn = QPushButton("Next →")
+        self.save_btn = QPushButton("Save…")
+        self.load_btn = QPushButton("Load…")
         for b in (self.prev_btn, self.next_btn):
             b.setFont(QFont("Arial", 9))
             b.setStyleSheet("padding: 8px; background-color: #4CAF50; color: white; border-radius: 5px;")
+        for b in (self.save_btn, self.load_btn):
+            b.setFont(QFont("Arial", 9))
+            b.setStyleSheet("padding: 8px; background-color: #2196F3; color: white; border-radius: 5px;")
         self.page_label = QLabel("")
         self.page_label.setAlignment(Qt.AlignCenter)
         nav_layout.addWidget(self.prev_btn)
         nav_layout.addWidget(self.page_label, 1)
+        nav_layout.addWidget(self.save_btn)
+        nav_layout.addWidget(self.load_btn)
         nav_layout.addWidget(self.next_btn)
         root.addLayout(nav_layout)
 
@@ -101,7 +109,8 @@ class RoomDisplay(QWidget):
         self.scroll.setWidget(self.container)
         self.container_layout = QVBoxLayout(self.container)
         self.container_layout.setAlignment(Qt.AlignTop)
-
+        
+        # Hook up actions
         self.prev_btn.clicked.connect(self.prev_schedule)
         self.next_btn.clicked.connect(self.next_schedule)
 
@@ -222,6 +231,8 @@ class RoomDisplay(QWidget):
             h.addWidget(lbl)
         h.addStretch()
         return row
+
+    # Note: Save/Load functionality intentionally omitted here.
 
 
 if __name__ == "__main__":

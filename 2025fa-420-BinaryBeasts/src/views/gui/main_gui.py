@@ -203,14 +203,23 @@ class MainGUI(QWidget):
             self.schedule_display = RoomDisplay(schedules)
         else:
             self.schedule_display = FacultyDisplay(schedules)
+        # Wire display Save/Load buttons to main GUI stub handlers
+        if hasattr(self.schedule_display, "save_btn"):
+            self.schedule_display.save_btn.clicked.connect(self.save_schedule)
+        if hasattr(self.schedule_display, "load_btn"):
+            self.schedule_display.load_btn.clicked.connect(self.load_schedule)
         self.schedule_display.show()
         self.close()
     
     def load_schedule(self):
         print("Schedule Loaded")
 
+    def save_schedule(self):
+        print("Schedule Saved")
+
     def gen_sched(self):
         scheduler = Scheduler(self.config)
+
 
 
 
