@@ -103,14 +103,8 @@ class FacultyView:
 			else:
 				times[day] = []
 
-		# Get course preferences
-		available_courses = set()
-		# prefer controller-managed config if present
-		cfg = getattr(self.controller, 'manager').config
-		for course in cfg.get('config', {}).get('courses', []):
-			course_id = course.get('course_id')
-			if course_id:
-				available_courses.add(course_id)
+		# allow faculty manager to handle non existing courses/rooms/labs
+		available_courses = self.controller.get_courses()
 
 		print(f"\nCourse preferences (available courses: {', '.join(sorted(available_courses))})")
 		print("Format: CourseID:preference (0-10), press Enter to finish:")
@@ -134,7 +128,8 @@ class FacultyView:
 				print("Error: Format should be CourseID:preference (e.g., CMSC140:8)")
 
 		# Get room preferences
-		available_rooms = cfg.get('config', {}).get('rooms', [])
+		available_rooms = self.controller.get_rooms()
+
 		print(f"\nRoom preferences (available rooms: {', '.join(available_rooms)})")
 		print("Format: RoomName:preference (0-10), press Enter to finish:")
 		room_preferences = {}
@@ -157,7 +152,8 @@ class FacultyView:
 				print("Error: Format should be RoomName:preference (e.g., Roddy136:8)")
 
 		# Get lab preferences
-		available_labs = cfg.get('config', {}).get('labs', [])
+		available_labs = self.controller.get_labs()
+
 		print(f"\nLab preferences (available labs: {', '.join(available_labs)})")
 		print("Format: LabName:preference (0-10), press Enter to finish:")
 		lab_preferences = {}

@@ -14,8 +14,10 @@ class FacultyController:
     """
 
     def __init__(self, combined_config: CombinedConfig):
-        self.combined_config = combined_config
-        self.manager = FacultyManager(combined_config)
+        # create a copy to avoid mutating the original config
+        self.combined_config = CombinedConfig(**combined_config.model_dump())
+        #send copy to manager to ensure shared state
+        self.manager = FacultyManager(self.combined_config)
         self.view = None #set later to avoid circular import
 
     #@set as object instead of FacultyView to avoid circular import    
@@ -29,8 +31,33 @@ class FacultyController:
             print(f"Error getting faculty: {e}")
             return []
 
+    def get_courses(self) -> List[str]:
+        # allows faculty manager to return a List of available course's'
+        try:
+            return self.manager.get_courses()
+        except Exception as e:
+            print(f"Error getting courses: {e}")
+            return []
+
+    def get_rooms(self) -> List[str]:
+        # allows faculty manager to return a List of available rooms
+        try:
+            return self.manager.get_rooms()
+        except Exception as e:
+            print(f"Error getting rooms: {e}")
+            return []
+
+    def get_labs(self) -> List[str]:
+        # allows faculty manager to return a List of available labs
+        try:
+            return self.manager.get_labs()
+        except Exception as e:
+            print(f"Error getting labs: {e}")
+            return []
+
     def add_faculty(self, faculty: Dict[str, Any]) -> Optional[Exception]:
         try:
+            print("Adding faculty...")
             ok = self.manager.add_faculty(faculty)
             if ok:
                 return None
