@@ -192,7 +192,7 @@ class SchedulesGUI(QWidget):
                 format_type = 'csv' if file_path.endswith('.csv') or 'CSV' in selected_filter else 'json'
 
                 # Use controller's save method
-                self.controller._save_schedules_to_file(file_path, format_type)
+                self.controller.save_schedules(file_path, format_type)
                 QMessageBox.information(self, "Success", f"Schedules saved to {file_path}")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save schedules:\n{e}")
