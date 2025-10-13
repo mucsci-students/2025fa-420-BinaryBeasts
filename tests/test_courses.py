@@ -1,4 +1,4 @@
-from courses import Course, CourseManager
+from src.models.course_model import Course, CourseManager
 
 def test1():
     # Sample config
