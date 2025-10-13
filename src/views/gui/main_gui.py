@@ -10,10 +10,13 @@ from src.views.gui.schedules_gui import SchedulesGUI
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 from src.views.gui.course_view_gui import CoursesDialog
 from src.views.gui.roomGui import RoomsDialog
+from src.views.gui.faculty_gui import FacultiesDialog
 from src.controllers.course_controller import CourseController
 from src.controllers.room_controller import RoomController
+from src.controllers.faculty_controller import FacultyController
 from src.models.course_model import CourseManager
 from src.models.room_model import RoomManager
+from src.models.faculty_model import FacultyManager
 import json
 
 from scheduler import (
@@ -154,8 +157,35 @@ class MainGUI(QWidget):
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
             return
+        try:
+            # Create FacultyManager and load faculty from config
+            faculty_manager = FacultyManager()
+            faculty_data = []
+            for faculty in self.config.config.faculty:
+                faculty_data.append({
+                    'name': faculty.name,
+                    'minimum_credits': faculty.minimum_credits,
+                    'maximum_credits': faculty.maximum_credits,
+                    'unique_course_limit': faculty.unique_course_limit,
+                    'times': dict(faculty.times) if hasattr(faculty, 'times') else {},
+                    'course_preferences': dict(faculty.course_preferences) if hasattr(faculty, 'course_preferences') else {},
+                    'room_preferences': dict(faculty.room_preferences) if hasattr(faculty, 'room_preferences') else {},
+                    'lab_preferences': dict(faculty.lab_preferences) if hasattr(faculty, 'lab_preferences') else {}
+                })
+
+            faculty_manager.load_faculty(faculty_data)
+
+            # Create controller
+            controller = FacultyController(faculty_manager)
+
+            # Open the faculty dialog
+            self.faculty_window = FacultiesDialog(controller, self.config, self)
+            self.faculty_window.exec_()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Faculty Manager:\n{e}")
+
         print("Faculty Manager Opened")
-    
     def open_room_manager(self):
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
