@@ -7,13 +7,17 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 import src.views.gui.main_gui as main_gui
 from scheduler import Scheduler
-#import main
+from src.controllers.schedules_controller import generate_controller
 
 
 class MainGUI(QWidget):
 
-    def __init__(self):
+    def __init__(self, schedules=None, config=None):
         super().__init__()
+        self.schedules = schedules if schedules else []
+        self.config = config
+        # Use the schedules_controller for navigation and saving logic
+        self.controller = generate_controller(self.schedules)
         self.init_ui()
 
     def init_ui(self):
@@ -74,40 +78,108 @@ class MainGUI(QWidget):
 
         self.setLayout(layout)
 
-    """"
     def generate_schedules(self):
-        sched = main.next_schedule(num_schedules)
-        self.selected_label.setText(sched)
+        """Display the current schedule using controller's index"""
+        if not self.schedules:
+            return "No schedules generated yet."
+
+        # Use controller's index for consistency
+        schedule = self.schedules[self.controller.index]
+        text = f"Schedule {self.controller.index + 1} of {len(self.schedules)}\n\n"
+
+        for course in schedule:
+            text += f"{course.as_csv()}\n"
+
+        return text
 
     def save_schedule(self):
-        folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
-        if folder_path:  
-            print(folder_path)
-            main.save_schedule(folder_path)
+        """Save schedules to file using controller logic"""
+        if not self.schedules:
+            QMessageBox.warning(self, "No Schedules", "No schedules available to save.")
+            return
+
+        # Ask for file path and format
+        file_dialog = QFileDialog()
+        file_path, selected_filter = file_dialog.getSaveFileName(
+            self,
+            "Save Schedules",
+            "schedules.json",
+            "JSON Files (*.json);;CSV Files (*.csv)"
+        )
+
+        if file_path:
+            try:
+                # Determine format based on file extension or filter
+                format_type = 'csv' if file_path.endswith('.csv') or 'CSV' in selected_filter else 'json'
+
+                # Use controller's save method
+                self.controller._save_schedules_to_file(file_path, format_type)
+                QMessageBox.information(self, "Success", f"Schedules saved to {file_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save schedules:\n{e}")
 
     def next_schedule(self):
-        sched = main.next_schedule(num_schedules)
-        self.selected_label.setText(sched)
+        """Navigate to next schedule using controller logic"""
+        if not self.schedules:
+            QMessageBox.warning(self, "No Schedules", "No schedules available.")
+            return
 
+        # Use controller's navigation method
+        self.controller.next_schedule()
+        text = self.generate_schedules()
+        self.selected_label.setText(text)
 
     def previous_schedule(self):
-        sched = main.previous_schedule(num_schedules)
-        self.selected_label.setText(sched)
+        """Navigate to previous schedule using controller logic"""
+        if not self.schedules:
+            QMessageBox.warning(self, "No Schedules", "No schedules available.")
+            return
+
+        # Use controller's navigation method
+        self.controller.previous_schedule()
+        text = self.generate_schedules()
+        self.selected_label.setText(text)
 
     def back(self):
-        self.generate_schedule_window = main_gui.MainGUI()
-        self.generate_schedule_window.show()
+        """Return to main menu"""
+        from src.views.gui.main_gui import MainGUI as MainMenuGUI
+        self.main_menu_window = MainMenuGUI()
+        self.main_menu_window.show()
         self.close()
 
-    def sort_by_room(self):
-        # to be implemented
-        print("Sorting by room not yet implemented.")
-
     def view_by_room(self):
-        # to be implemented
-        print("Viewing by room not yet implemented.")
+        """View schedule organized by room using schedules_view logic"""
+        if not self.schedules or not self.schedules[self.controller.index]:
+            QMessageBox.warning(self, "No Schedule", "No schedule available to view.")
+            return
 
-"""
+        # Use the same logic as schedules_view.display_schedule_by_room
+        # Convert schedule objects to CSV strings
+        current_schedule_strings = [course.as_csv() for course in self.schedules[self.controller.index] if course is not None]
+
+        # Parse and group by room
+        from src.views.cli.schedules_view import parse_course_string
+        room_schedule = {}
+        for course_str in current_schedule_strings:
+            course = parse_course_string(course_str)
+            if course:
+                room = course['room']
+                if room not in room_schedule:
+                    room_schedule[room] = []
+                room_schedule[room].append(course)
+
+        # Build display text
+        text = f"Schedule {self.controller.index + 1} - View by Room\n\n"
+        for room in sorted(room_schedule.keys()):
+            text += f"Room: {room}\n"
+            text += "-" * 60 + "\n"
+            for course in room_schedule[room]:
+                text += f"  {course['course_id']} - {course['faculty']}\n"
+                for slot in course['time_slots']:
+                    text += f"    {slot}\n"
+            text += "\n"
+
+        self.selected_label.setText(text)
 if __name__ == "__main__":
 
     app = QApplication(sys.argv)

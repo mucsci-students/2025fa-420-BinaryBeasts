@@ -147,22 +147,43 @@ class MainGUI(QWidget):
             return
         folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
 
-        if folder_path:  
-            main.save_config(self.config, folder_path)
+        if folder_path:
+            try:
+                from scheduler import save_config_to_file
+                save_config_to_file(self.config, folder_path)
+                QMessageBox.information(self, "Success", f"Configuration saved to {folder_path}")
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save configuration:\n{e}")
         else:
             self.selected_label.setText('No folder selected.')
 
-    def generate_schedule(self): 
+    def generate_schedule(self):
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
-            return       
+            return
         num, ok = QInputDialog.getInt(self, "Input Required", "Pick an amount of schedules to generate:", min=1)
         if not ok:
             return
-        self.close()
-        main.generate_schedules(self.config, num)
-        self.generate_schedule_window = generate_schedules_gui.MainGUI()
-        self.generate_schedule_window.show()
+
+        try:
+            # Generate schedules using the Scheduler
+            scheduler = Scheduler(self.config)
+            schedules = []
+            for i, schedule in enumerate(scheduler.get_models()):
+                schedules.append(schedule)
+                if i + 1 >= num:
+                    break
+
+            if not schedules:
+                QMessageBox.warning(self, "No Schedules", "No valid schedules could be generated.")
+                return
+
+            # Close current window and open schedule viewer with the generated schedules
+            self.close()
+            self.generate_schedule_window = generate_schedules_gui.MainGUI(schedules=schedules, config=self.config)
+            self.generate_schedule_window.show()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")
     
     def load_schedule(self):
         print("Schedule Loaded")
