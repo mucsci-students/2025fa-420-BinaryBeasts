@@ -272,7 +272,7 @@ class raw_schedules_controller():
         except Exception as e:
             print(f"❌ Error saving schedules: {e}")
 
-        input("\nPress Enter to continue...")
+            input("\nPress Enter to continue...")
             print(f"✅ Schedules saved successfully to {output_file}")
         except Exception as e:
             print(f"❌ Error saving schedules: {e}")
