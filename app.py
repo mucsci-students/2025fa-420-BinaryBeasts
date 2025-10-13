@@ -13,7 +13,7 @@ def main():
         input_str = input("Enter 🖥️ GUI/gui (Graphical User Interface) \n   or 💻 CLI/cli (Command Line Interface): ").strip().lower()
         if input_str == "gui":
             app = QApplication(sys.argv)
-            window = MainGUI()
+            window = MainGUI(model, controller)
             window.show()
             sys.exit(app.exec_())
         elif input_str == "cli":
