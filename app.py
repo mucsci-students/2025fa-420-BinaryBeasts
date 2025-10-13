@@ -1,7 +1,7 @@
 from src.models import main_model
 import src.controllers.main_controller as main_controller
 import src.views.cli.main_view as main_view
-from src.views.gui import main_gui as MainGUI
+from src.views.gui.main_gui import MainGUI
 from PyQt5.QtWidgets import QApplication
 import sys
 
