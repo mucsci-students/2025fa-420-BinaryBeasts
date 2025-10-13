@@ -11,12 +11,15 @@ from PyQt5.QtWidgets import QInputDialog, QMessageBox
 from src.views.gui.course_view_gui import CoursesDialog
 from src.views.gui.roomGui import RoomsDialog
 from src.views.gui.faculty_gui import FacultiesDialog
+from src.views.gui.lab_gui import LabsDialog
 from src.controllers.course_controller import CourseController
 from src.controllers.room_controller import RoomController
 from src.controllers.faculty_controller import FacultyController
+from src.controllers.lab_controller import LabController
 from src.models.course_model import CourseManager
 from src.models.room_model import RoomManager
 from src.models.faculty_model import FacultyManager
+from src.models.lab_model import LabManager
 import json
 
 from scheduler import (
@@ -151,7 +154,19 @@ class MainGUI(QWidget):
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
             return
-        print("Lab Manager Opened")
+        try:
+            # Create LabManager and load labs from config
+            lab_manager = LabManager(self.config)
+
+            # Create controller
+            controller = LabController(lab_manager)
+
+            # Open the labs dialog
+            self.lab_window = LabsDialog(controller, self.config, self)
+            self.lab_window.exec_()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Lab Manager:\n{e}")
 
     def open_faculty_manager(self):
         if not self.file_uploaded:
