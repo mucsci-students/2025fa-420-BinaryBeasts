@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
-import src.views.gui.generate_schedules_gui as generate_schedules_gui
+from src.views.gui.schedules_gui import SchedulesGUI
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 import src.views.gui.course_view_gui as course_view_gui
 
@@ -180,7 +180,7 @@ class MainGUI(QWidget):
 
             # Close current window and open schedule viewer with the generated schedules
             self.close()
-            self.generate_schedule_window = generate_schedules_gui.MainGUI(schedules=schedules, config=self.config)
+            self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
             self.generate_schedule_window.show()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")

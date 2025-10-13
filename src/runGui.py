@@ -1,6 +1,6 @@
 import sys
 from PyQt5.QtWidgets import QApplication
-from views.gui.generate_schedules_gui import MainGUI
+from views.gui.schedules_gui import SchedulesGUI
 from views.gui.main_gui import MainGUI
 
 
