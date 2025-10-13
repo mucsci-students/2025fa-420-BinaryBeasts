@@ -1,6 +1,5 @@
 
 
-import src.views.gui.roomGui as roomGui
 import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel
@@ -9,7 +8,12 @@ from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from src.views.gui.schedules_gui import SchedulesGUI
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
-import src.views.gui.course_view_gui as course_view_gui
+from src.views.gui.course_view_gui import CoursesDialog
+from src.views.gui.roomGui import RoomsDialog
+from src.controllers.course_controller import CourseController
+from src.controllers.room_controller import RoomController
+from src.models.course_model import CourseManager
+from src.models.room_model import RoomManager
 import json
 
 from scheduler import (
@@ -113,9 +117,32 @@ class MainGUI(QWidget):
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
             return
-        #self.course_window = courses_gui.CoursesDialog(self.config)
-        #
-        #self.course_window.show()
+
+        try:
+
+            course_manager = CourseManager()
+            courses_data = []
+            for course in self.config.config.courses:
+                courses_data.append({
+                    'course_id': course.course_id,
+                    'credits': course.credits,
+                    'room': list(course.room) if hasattr(course.room, '__iter__') else [course.room],
+                    'lab': list(course.lab) if hasattr(course.lab, '__iter__') else [course.lab],
+                    'faculty': list(course.faculty) if hasattr(course.faculty, '__iter__') else [course.faculty],
+                    'conflicts': list(course.conflicts) if hasattr(course.conflicts, '__iter__') else [course.conflicts]
+                })
+
+            course_manager.load_courses(courses_data)
+
+            # Create controller
+            controller = CourseController(course_manager)
+
+            # Open the courses dialog
+            self.course_window = CoursesDialog(controller, self.config, self)
+            self.course_window.exec_()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Course Manager:\n{e}")
 
     def open_lab_manager(self):
         if not self.file_uploaded:
@@ -133,11 +160,19 @@ class MainGUI(QWidget):
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
             return
-        #try:
-        #    self.room_window = roomGui.RoomGUI(self.config)
-         #   self.room_window.show()
-        #except Exception as e:
-         #   QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
+        try:
+            # Create RoomManager and load rooms from config
+            room_manager = RoomManager(self.config)
+
+            # Create controller
+            controller = RoomController(room_manager)
+
+            # Open the rooms dialog
+            self.room_window = RoomsDialog(controller, self.config, self)
+            self.room_window.exec_()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
        
 
     def save_configuration(self):
@@ -388,8 +423,6 @@ def save_config(config, path: str):
 }
         with open(path, "w") as json_file:
             json.dump(final_config, json_file, indent=1)
-# You can now json.dumps(final_config) safely without serialization errors
-
 
 def serialize_time_ranges(day_slots):
         result = []

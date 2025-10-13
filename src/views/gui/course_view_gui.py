@@ -257,7 +257,7 @@ class CoursesDialog(QDialog):
         if dialog.exec_() == QDialog.Accepted:
             updated_section = dialog.result_course
             if updated_section:
-                if updated_section.course_id == course_id:
+                if updated_section['course_id'] == course_id:
                     self.controller.modify_course(course_id, section_index, updated_section)
                 else:
                     self.controller.delete_course(course_id, section_index)

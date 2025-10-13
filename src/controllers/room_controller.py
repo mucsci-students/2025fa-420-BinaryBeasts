@@ -104,3 +104,20 @@ class RoomController:
             faculty_dict: Dictionary of faculty to update
         """
         self.mgr.remove_room_references(room_name, courses_dict, faculty_dict)
+
+    def save_to_combined_config(self, combined_config) -> bool:
+        """
+        Save rooms back to CombinedConfig.
+
+        Args:
+            combined_config: CombinedConfig object to update
+
+        Returns:
+            True if save was successful
+        """
+        try:
+            with combined_config.edit_mode() as editable_config:
+                editable_config.config.rooms = self.mgr.get_rooms()
+            return True
+        except Exception:
+            return False
