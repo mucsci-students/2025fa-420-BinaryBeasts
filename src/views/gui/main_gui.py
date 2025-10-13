@@ -30,7 +30,7 @@ class MainGUI(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle('College Course Sceduler')
+        self.setWindowTitle('College Course Scheduler')
         self.setMinimumWidth(800)
         self.setMinimumHeight(800)
         layout = QVBoxLayout()
@@ -184,7 +184,114 @@ class MainGUI(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")
     
     def load_schedule(self):
-        print("Schedule Loaded")
+        """Load a previously saved schedule from JSON or CSV file."""
+        if not self.file_uploaded:
+            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            return
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            'Open Schedule File',
+            '',
+            'Schedule Files (*.json *.csv);;JSON Files (*.json);;CSV Files (*.csv)'
+        )
+
+        if not file_path:
+            return
+
+        try:
+            # Parse the schedule file
+            if file_path.endswith('.json'):
+                schedules = self._load_schedule_from_json(file_path)
+            elif file_path.endswith('.csv'):
+                schedules = self._load_schedule_from_csv(file_path)
+            else:
+                QMessageBox.critical(self, "Error", "Unsupported file format. Please use JSON or CSV.")
+                return
+
+            if not schedules:
+                QMessageBox.warning(self, "No Schedules", "No schedules found in the file.")
+                return
+
+            # Close current window and open schedule viewer
+            self.close()
+            self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
+            self.generate_schedule_window.show()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to load schedule:\n{e}")
+
+    def _load_schedule_from_json(self, file_path):
+        """Load schedules from JSON file."""
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+
+        schedules = []
+
+        # Handle two possible JSON formats:
+        # 1. Array of objects with schedule_id and courses fields
+        # 2. Simple array of arrays of course CSV strings
+        for schedule_data in data:
+            schedule = []
+
+            # Format 1: Object with 'courses' field
+            if isinstance(schedule_data, dict) and 'courses' in schedule_data:
+                for course_csv in schedule_data['courses']:
+                    schedule.append(self._create_course_from_csv(course_csv))
+            # Format 2: Direct array of course CSV strings
+            elif isinstance(schedule_data, list):
+                for course_csv in schedule_data:
+                    schedule.append(self._create_course_from_csv(course_csv))
+            # Format 3: Single course CSV string
+            elif isinstance(schedule_data, str):
+                schedule.append(self._create_course_from_csv(schedule_data))
+
+            if schedule:
+                schedules.append(schedule)
+
+        return schedules
+
+    def _load_schedule_from_csv(self, file_path):
+        """Load schedules from CSV file."""
+        import csv
+
+        schedules = []
+        current_schedule = []
+
+        with open(file_path, 'r') as f:
+            reader = csv.reader(f)
+            for row in reader:
+                # Empty row separates schedules
+                if not row or all(cell.strip() == '' for cell in row):
+                    if current_schedule:
+                        schedules.append(current_schedule)
+                        current_schedule = []
+                    continue
+
+                # Skip header rows
+                if row[0].startswith('Schedule') or row[0].startswith('Course'):
+                    continue
+
+                # Reconstruct CSV format from row
+                course_csv = ','.join(row)
+                current_schedule.append(self._create_course_from_csv(course_csv))
+
+        # Add last schedule if exists
+        if current_schedule:
+            schedules.append(current_schedule)
+
+        return schedules
+
+    def _create_course_from_csv(self, course_csv):
+        """Create a simple course object from CSV string for display purposes."""
+        class ScheduleCourse:
+            def __init__(self, csv_string):
+                self._csv = csv_string
+
+            def as_csv(self):
+                return self._csv
+
+        return ScheduleCourse(course_csv)
 
     def gen_sched(self):
         scheduler = Scheduler(self.config)

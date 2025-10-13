@@ -23,6 +23,11 @@ class SchedulesGUI(QWidget):
         self.room_list = []
         self.current_room_index = 0
         self.room_schedule_data = {}
+        # Faculty view state
+        self.viewing_by_faculty = False
+        self.faculty_list = []
+        self.current_faculty_index = 0
+        self.faculty_schedule_data = {}
         self.init_ui()
 
     def init_ui(self):
@@ -44,6 +49,13 @@ class SchedulesGUI(QWidget):
         self.RoomButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px;')
         self.layout.addWidget(self.RoomButton)
         self.RoomButton.clicked.connect(self.view_by_room)
+
+        # View by Faculty button
+        self.FacultyButton = QPushButton('View by Faculty')
+        self.FacultyButton.setFont(QFont('Arial', 8))
+        self.FacultyButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px;')
+        self.layout.addWidget(self.FacultyButton)
+        self.FacultyButton.clicked.connect(self.view_by_faculty)
 
         # Display label
         self.selected_label = QLabel()
@@ -87,6 +99,21 @@ class SchedulesGUI(QWidget):
         self.layout.addWidget(self.PreviousRoomButton)
         self.PreviousRoomButton.clicked.connect(self.previous_room)
         self.PreviousRoomButton.hide()
+
+        # Faculty navigation buttons (hidden by default)
+        self.NextFacultyButton = QPushButton('Next Faculty')
+        self.NextFacultyButton.setFont(QFont('Arial', 8))
+        self.NextFacultyButton.setStyleSheet('padding: 10px; background-color: #9C27B0; color: white; border-radius: 5px;')
+        self.layout.addWidget(self.NextFacultyButton)
+        self.NextFacultyButton.clicked.connect(self.next_faculty)
+        self.NextFacultyButton.hide()
+
+        self.PreviousFacultyButton = QPushButton('Previous Faculty')
+        self.PreviousFacultyButton.setFont(QFont('Arial', 8))
+        self.PreviousFacultyButton.setStyleSheet('padding: 10px; background-color: #9C27B0; color: white; border-radius: 5px;')
+        self.layout.addWidget(self.PreviousFacultyButton)
+        self.PreviousFacultyButton.clicked.connect(self.previous_faculty)
+        self.PreviousFacultyButton.hide()
 
         # Back to schedule view button (hidden by default)
         self.BackToScheduleButton = QPushButton('Back to Schedule View')
@@ -226,6 +253,7 @@ class SchedulesGUI(QWidget):
 
         # Update UI for room viewing mode
         self.RoomButton.hide()
+        self.FacultyButton.hide()
         self.NextButton.hide()
         self.PreviousButton.hide()
         self.NextRoomButton.show()
@@ -294,19 +322,122 @@ class SchedulesGUI(QWidget):
         self.current_room_index = (self.current_room_index - 1) % len(self.room_list)
         self.display_current_room()
 
+    def view_by_faculty(self):
+        """Enter faculty-by-faculty navigation mode"""
+        if not self.schedules or not self.schedules[self.controller.index]:
+            QMessageBox.warning(self, "No Schedule", "No schedule available to view.")
+            return
+
+        # Convert schedule objects to CSV strings
+        current_schedule_strings = [course.as_csv() for course in self.schedules[self.controller.index] if course is not None]
+
+        # Parse and group by faculty
+        from src.views.cli.schedules_view import parse_course_string
+        self.faculty_schedule_data = {}
+        for course_str in current_schedule_strings:
+            course = parse_course_string(course_str)
+            if course:
+                faculty = course['faculty']
+                if faculty not in self.faculty_schedule_data:
+                    self.faculty_schedule_data[faculty] = []
+                self.faculty_schedule_data[faculty].append(course)
+
+        # Set up faculty navigation
+        self.faculty_list = sorted(self.faculty_schedule_data.keys())
+        self.current_faculty_index = 0
+        self.viewing_by_faculty = True
+
+        # Update UI for faculty viewing mode
+        self.RoomButton.hide()
+        self.FacultyButton.hide()
+        self.NextButton.hide()
+        self.PreviousButton.hide()
+        self.NextFacultyButton.show()
+        self.PreviousFacultyButton.show()
+        self.BackToScheduleButton.show()
+        self.title.setText('Faculty View')
+
+        # Display first faculty
+        self.display_current_faculty()
+
+    def display_current_faculty(self):
+        """Display the current faculty's schedule in weekly grid format"""
+        if not self.faculty_list:
+            self.selected_label.setText("No faculty found in schedule.")
+            return
+
+        faculty = self.faculty_list[self.current_faculty_index]
+        courses = self.faculty_schedule_data[faculty]
+
+        # Build weekly grid display for current faculty
+        text = f"Schedule {self.controller.index + 1} - Faculty {self.current_faculty_index + 1} of {len(self.faculty_list)}\n\n"
+        text += f"{faculty}\n"
+        text += "=" * 95 + "\n"
+
+        # Header with days of the week
+        text += f"| {'Course':<12} | {'Room':<12} | {'MON':<11} | {'TUE':<11} | {'WED':<11} | {'THU':<11} | {'FRI':<11} |\n"
+        text += "=" * 95 + "\n"
+
+        # Process each course and organize time slots by day
+        for course in courses:
+            course_id = course['course_id']
+            room = course['room']
+
+            # Parse time slots by day
+            day_times = {'MON': '', 'TUE': '', 'WED': '', 'THU': '', 'FRI': ''}
+
+            for slot in course['time_slots']:
+                # Extract day and time (format: "MON 14:00-14:50" or "MON 14:00-14:50^")
+                slot_clean = slot.replace('^', '')  # Remove lab indicator
+                parts = slot_clean.split(' ', 1)
+                if len(parts) == 2:
+                    day = parts[0].strip()
+                    time = parts[1].strip()
+                    if day in day_times:
+                        day_times[day] = time
+
+            # Print course row
+            text += f"| {course_id:<12} | {room:<12} | {day_times['MON']:<11} | {day_times['TUE']:<11} | {day_times['WED']:<11} | {day_times['THU']:<11} | {day_times['FRI']:<11} |\n"
+
+        text += "=" * 95 + "\n"
+        self.selected_label.setText(text)
+
+    def next_faculty(self):
+        """Navigate to next faculty"""
+        if not self.faculty_list:
+            return
+
+        self.current_faculty_index = (self.current_faculty_index + 1) % len(self.faculty_list)
+        self.display_current_faculty()
+
+    def previous_faculty(self):
+        """Navigate to previous faculty"""
+        if not self.faculty_list:
+            return
+
+        self.current_faculty_index = (self.current_faculty_index - 1) % len(self.faculty_list)
+        self.display_current_faculty()
+
     def back_to_schedule_view(self):
         """Return to normal schedule viewing mode"""
         self.viewing_by_room = False
         self.room_list = []
         self.room_schedule_data = {}
         self.current_room_index = 0
+        self.viewing_by_faculty = False
+        self.faculty_list = []
+        self.faculty_schedule_data = {}
+        self.current_faculty_index = 0
 
         # Update UI for schedule viewing mode
         self.RoomButton.show()
+        self.FacultyButton.show()
         self.NextButton.show()
         self.PreviousButton.show()
         self.NextRoomButton.hide()
         self.PreviousRoomButton.hide()
+        self.NextFacultyButton.hide()
+        self.PreviousFacultyButton.hide()
         self.BackToScheduleButton.hide()
         self.title.setText('Schedule Viewer')
 
