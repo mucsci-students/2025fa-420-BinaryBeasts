@@ -53,6 +53,34 @@ class generate_controller():
 
         input("\nPress Enter to continue...")
 
+    def save_schedules(self, output_file: str, format_type: str):
+            """Save generated schedules to file"""
+            try:
+                if format_type == 'csv':
+                    with open(output_file, 'w', encoding='utf-8') as f:
+                        f.write("Schedule,Course,Day,Time,Duration,Room,Lab,Faculty\n")
+                        for i, schedule in enumerate(self.schedules, 1):
+                            for course in schedule:
+                                csv_line = course.as_csv()
+                                f.write(f"{i},{csv_line}\n")
+                else:
+                    # JSON format
+                    json_schedules = []
+                    for i, schedule in enumerate(self.schedules, 1):
+                        schedule_data = {
+                        'schedule_id': i,
+                        'courses': [course.as_csv() for course in schedule]
+                    }
+                        json_schedules.append(schedule_data)
+
+                    with open(output_file, 'w', encoding='utf-8') as f:
+                        json.dump(json_schedules, f, indent=2, ensure_ascii=False)
+
+                print(f"✅ Schedules saved successfully to {output_file}")
+            except Exception as e:
+                print(f"❌ Error saving schedules: {e}")
+
+
     def entry(self):
         total_schedules = len(self.schedules)
 
@@ -240,6 +268,11 @@ class raw_schedules_controller():
                 with open(output_file, 'w', encoding='utf-8') as f:
                     json.dump(json_schedules, f, indent=2, ensure_ascii=False)
 
+            print(f"✅ Schedules saved successfully to {output_file}")
+        except Exception as e:
+            print(f"❌ Error saving schedules: {e}")
+
+        input("\nPress Enter to continue...")
             print(f"✅ Schedules saved successfully to {output_file}")
         except Exception as e:
             print(f"❌ Error saving schedules: {e}")
