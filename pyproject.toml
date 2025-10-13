@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "scheduler"
+version = "0.1.0"
+description = "Course Scheduler Project - A constraint-based academic scheduling system with CLI and GUI interfaces"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+keywords = ["scheduler", "course-scheduler", "constraint-solver", "academic", "timetable"]
+authors = [
+  {name = "Andrew Delich"},
+  {name = "Collin Donnan"},
+  {name = "Kenner Jimenez"},
+  {name = "Naomi Ermold"},
+  {name = "Patrick Kreibick"},
+  {name = "Sophia Koziar"},
+  {name = "Tyler Brown"},
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Education",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Education",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "course-constraint-scheduler",
+]
+
+[project.optional-dependencies]
+gui = ["pyqt5>=5.15"]
+dev = ["pytest>=8.0"]
+all = ["pyqt5>=5.15", "pytest>=8.0"]
+
+[project.scripts]
+scheduler = "app:main"
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+

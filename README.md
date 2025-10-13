@@ -1,29 +1,44 @@
-# Scheduler CLI Application
+# College Course Scheduler
 
 **Team BinaryBeasts** - CMSC 420 Fall 2025
-- Kenner Jimenez
-- Sophia 
 - Andrew Delich
-- Naomi
-- Collin
-- Patrick 
+- Collin Donnan
+- Kenner Jimenez
+- Naomi Ermold
+- Patrick Kreibick
+- Sophia Koziar
+- Tyler Brown
 
 ## Overview
 
-This is a course scheduling system with an command-line interface. The application allows you to manage courses, rooms, labs, faculty, and generate optimized class schedules.
+A comprehensive course scheduling system with both **Command-Line Interface (CLI)** and **Graphical User Interface (GUI)**. The application allows you to manage courses, rooms, labs, faculty, and generate optimized class schedules using constraint-based optimization.
 
 ## Features
 
+### Core Management System
 - **Course Management**: Add, modify, and delete courses with credits, room assignments, lab requirements, faculty assignments, and conflict resolution
-- **Room Management**: Manage classroom inventory with impact analysis for deletions
-- **Lab Management**: Assign and manage lab requirements for courses (Linux/Mac labs)
-- **Faculty Management**: Manage faculty with availability, preferences, and credit limits
-- **Schedule Generation**: Generate optimized schedules in CSV or JSON format
-- **Configuration Management**: Import/export configurations with validation
+- **Room Management**: Manage classroom inventory with automatic reference updates and impact analysis
+- **Lab Management**: Manage lab types (Mac, Linux, Windows) as global resources with automatic reference updates
+- **Faculty Management**: Comprehensive faculty profiles with availability, preferences (courses, rooms, labs), and credit limits
+- **Schedule Generation**: Generate optimized schedules using constraint-based solver
+- **Configuration Management**: Import/export configurations in JSON format with validation
+
+### Schedule Viewing & Navigation
+- **Multiple View Modes**:
+  - **Basic View**: Tabular schedule with all courses
+  - **Room View**: Navigate room-by-room with weekly grid layout
+  - **Faculty View**: Navigate faculty-by-faculty with course assignments
+- **Schedule Navigation**: Browse through multiple generated schedules
+- **Export Options**: Save schedules in JSON or CSV format
+
+### User Interfaces
+- **CLI**: Full-featured command-line interface with menu-driven navigation
+- **GUI**: Modern PyQt5-based graphical interface with modal dialogs
 
 ## Prerequisites
 
-- Python 3.7 or higher
+- Python 3.13.1 (or Python 3.7+)
+- PyQt5 (for GUI)
 - Git (for cloning the repository)
 
 ## Installation
@@ -35,267 +50,251 @@ git clone https://github.com/mucsci-students/2025fa-420-BinaryBeasts.git
 cd 2025fa-420-BinaryBeasts
 ```
 
-### Step 2: Set Up Python Environment (Optional but Recommended)
+### Step 2: Set Up Python Environment (Recommended)
 
 Create a virtual environment to isolate dependencies:
 
 ```bash
 # Create virtual environment
-python -m venv scheduler_env
+python -m venv .venv
 
 # Activate virtual environment
 # On Windows:
-scheduler_env\Scripts\activate
+.venv\Scripts\activate
 # On macOS/Linux:
-source scheduler_env/bin/activate
+source .venv/bin/activate
 ```
 
-### Step 3: Dependencies?
+### Step 3: Install Dependencies
 
-No external dependencies are required - the application uses only Python standard library modules.
+```bash
+pip install -r requirements.txt
+```
+
+**Required packages:**
+- PyQt5 (for GUI)
+- scheduler library (included in project)
 
 ## Usage
 
-### Quick Start
+### GUI Application (Recommended)
 
-1. **Navigate to the project directory:**
+1. **Start the GUI:**
    ```bash
-   cd 2025fa-420-BinaryBeasts
+   python app.py
    ```
 
-2. **Run the application:**
+2. **Upload Configuration:**
+   - Click "Upload Configuration File"
+   - Select a JSON configuration file 
+
+3. **Manage Resources:**
+   - **Edit Courses**: Add, modify, or delete course sections
+   - **Edit Faculty**: Manage faculty profiles and preferences
+   - **Edit Labs**: Manage lab types 
+   - **Edit Rooms**: Manage classroom inventory
+
+4. **Generate Schedules:**
+   - Click "Generate Schedule"
+   - Enter number of schedules to generate
+   - View schedules with navigation and multiple view modes
+   - Export to JSON or CSV
+
+5. **Load Saved Schedules:**
+   - Click "Upload Schedule"
+   - Select previously saved schedule file 
+   - Navigate and view schedules
+
+### CLI Application
+
+1. **Start the CLI:**
    ```bash
    python main.py
    ```
 
-3. **When prompted, enter the configuration file path:**
-   ```
-   Enter path to configuration file (JSON): example.json
-   ```
+2. **Provide Configuration:**
 
-### Step-by-Step Usage Guide
+3. **Main Menu Navigation:**
+## Detailed Feature Guide
 
-#### Initial Setup
+### 1. Course Management
 
-1. **Start the application:**
-   ```bash
-   python main.py
-   ```
+**CLI Features:**
+- View all courses with details (credits, rooms, labs, faculty, conflicts)
+- Add new course sections interactively
+- Modify existing course sections
+- Delete course sections (with option to delete all instances)
+- Automatic validation of course data
 
-2. **Provide a configuration file:**
-   - Use the included `example.json` for testing
-   - Or create your own JSON configuration file
-   - The application will load both configuration and time slot data from this file
+**GUI Features:**
+- Course list showing all course IDs
+- Section list for each course ID
+- Add/Edit/Delete buttons with validation
+- Modal dialogs for course entry
+- Save changes to configuration
 
-#### Main Menu Navigation
+**Course Fields:**
+- Course ID (e.g., "CMSC 140.01")
+- Credits (1-6)
+- Rooms (multiple allowed)
+- Labs (multiple allowed)
+- Faculty (multiple allowed)
+- Conflicts (other courses)
 
-The application presents a main menu with 6 options:
+### 2. Room Management
 
-```
-SCHEDULER CLI - MAIN MENU
-==================================================
-1. 🗂️  Course Management
-2. 🏢 Room Management  
-3. 🔬 Lab Management
-4. 👥 Faculty Management
-5. 📅 Generate Schedules
-6. 🚪 Exit
-==================================================
-```
+**Features:**
+- View all available rooms
+- Add new rooms
+- Rename rooms (automatically updates all course and faculty references)
+- Delete rooms with impact analysis showing:
+  - Affected courses
+  - Faculty with room preferences
+  - Confirmation before deletion
 
-#### 1. Course Management
+**Reference Updates:**
+- Course room assignments automatically updated
+- Faculty room preferences automatically updated
 
-Manage all course-related data:
+### 3. Lab Management
 
-- **View Courses**: Display all courses with details (credits, rooms, labs, faculty, conflicts)
-- **Add Course**: Create new courses with interactive prompts
-- **Modify Course**: Edit existing course details and assignments
-- **Delete Course**: Remove courses (supports multiple instances)
+**Features:**
+- View all lab types
+- Add new lab types (e.g., Mac, Linux, Windows, Android)
+- Rename labs (automatically updates all references)
+- Delete labs with impact analysis showing:
+  - Affected courses
+  - Faculty with lab preferences
+  - Confirmation before deletion
 
-**Example workflow:**
-1. Select option `1` from main menu
-2. Choose `2` to add a new course
-3. Enter course details when prompted:
-   - Course ID (e.g., "CMSC 140")
-   - Credits (1-6)
-   - Available rooms
-   - Required labs
-   - Assigned faculty
-   - Conflicting courses
+**Lab Types as Global Resources:**
+- Labs are managed as a global list
+- Courses reference labs from this list
+- Faculty can set preferences for each lab type
 
-#### 2. Room Management
+### 4. Faculty Management
 
-Manage classroom inventory:
+**Features:**
+- View all faculty with comprehensive details
+- Add new faculty with full profile
+- Modify faculty information and preferences
+- Delete faculty with impact analysis
 
-- **View Rooms**: List all available rooms
-- **Add Room**: Add new classroom spaces
-- **Edit Room**: Rename rooms (automatically updates all references)
-- **Delete Room**: Remove rooms with impact analysis
+**Faculty Profile Includes:**
+- Name
+- Credit limits (minimum and maximum)
+- Unique course limit
+- Weekly availability (MON-FRI with time ranges)
+- Course preferences (0-10 rating scale)
+- Room preferences (0-10 rating scale)
+- Lab preferences (0-10 rating scale)
 
-**Example workflow:**
-1. Select option `2` from main menu
-2. Choose `2` to add a new room
-3. Enter room name (e.g., "Roddy 101")
-4. System automatically updates course and faculty preferences
+### 5. Schedule Generation & Navigation
 
-#### 3. Lab Management
+**Generation:**
+- Specify number of schedules to generate
+- Uses constraint-based optimization
+- Respects faculty availability, preferences, and credit limits
+- Avoids course conflicts
 
-Manage lab assignments to courses:
+**Navigation (GUI):**
+- Next/Previous schedule buttons
+- Go to specific schedule number
+- View by room (room-by-room with weekly grid)
+- View by faculty (faculty-by-faculty with assignments)
+- Export to JSON or CSV
 
-- **View Labs**: Show lab usage across all courses
-- **Add Lab**: Assign labs to specific courses
-- **Modify Lab**: Change lab assignments for courses
-- **Remove Lab**: Remove lab requirements from courses
+**Schedule Views:**
+- **Basic View**: Tabular format with columns:
+  - Course ID
+  - Faculty
+  - Room
+  - Lab
+  - Time Slots (MON-FRI)
 
-**Example workflow:**
-1. Select option `3` from main menu
-2. Choose `2` to add lab to course
-3. Select course from the list
-4. Choose lab type (Linux/Mac)
+- **Room View**: For each room, shows weekly grid:
+  - Course assignments by day
+  - Faculty teaching each course
+  - Time slots
 
-#### 4. Faculty Management
+- **Faculty View**: For each faculty, shows:
+  - Courses assigned
+  - Rooms for each course
+  - Time slots by day
 
-Manage faculty information and preferences:
+### 6. Import/Export
 
-- **View Faculty**: Display all faculty with availability, preferences, and credit limits
-- **Add Faculty**: Create new faculty profiles with comprehensive details
-- **Edit Faculty**: Modify faculty information and preferences
-- **Delete Faculty**: Remove faculty with course impact analysis
+**Configuration Files:**
+- Save configuration changes to JSON
+- Load configuration from JSON
+- Preserves all data including preferences
 
-**Faculty details include:**
-- Name and contact information
-- Credit range (minimum/maximum)
-- Unique course limits
-- Weekly availability schedule
-- Course preferences (1-5 rating scale)
-- Room preferences (1-5 rating scale)
-- Lab preferences (1-5 rating scale)
+**Schedule Files:**
+- Export schedules to JSON (with schedule IDs)
+- Export schedules to CSV (spreadsheet format)
+- Import previously saved schedules for viewing
 
-#### 5. Generate Schedules
 
-Create optimized class schedules:
+## Architecture
 
-1. **Configure generation parameters:**
-   - Output file location
-   - Number of schedules to generate (1-1000)
-   - Output format (JSON/CSV)
-   - Enable optimization
-   - Show configuration preview
+The application follows the **Model-View-Controller (MVC)** pattern:
 
-2. **Review configuration** (if enabled):
-   - Courses summary
-   - Room availability
-   - Faculty assignments
-   - Time slot patterns
+- **Models**: Manage data and business logic (CourseManager, FacultyManager, RoomManager, LabManager)
+- **Views**: Handle user interface (CLI views with static methods, GUI views with PyQt5 dialogs)
+- **Controllers**: Bridge between models and views (CourseController, FacultyController, etc.)
 
-3. **Generate and save** schedules to specified output file
-
-## Configuration File Format
-
-The application uses JSON configuration files with the following structure:
-
-```json
-{
-  "config": {
-    "rooms": ["Roddy 136", "Roddy 140", "Roddy 147"],
-    "labs": ["Linux", "Mac"],
-    "courses": [
-      {
-        "course_id": "CMSC 140",
-        "credits": 4,
-        "room": ["Roddy 136", "Roddy 140"],
-        "lab": ["Linux"],
-        "conflicts": ["CMSC 161"],
-        "faculty": ["Dr. Smith"]
-      }
-    ],
-    "faculty": [
-      {
-        "name": "Dr. Smith",
-        "minimum_credits": 8,
-        "maximum_credits": 12,
-        "unique_course_limit": 3,
-        "times": {
-          "MON": ["09:00-17:00"],
-          "TUE": [],
-          "WED": ["09:00-17:00"],
-          "THU": [],
-          "FRI": ["09:00-15:00"]
-        },
-        "course_preferences": {
-          "CMSC 140": 5,
-          "CMSC 161": 4
-        },
-        "room_preferences": {
-          "Roddy 136": 5,
-          "Roddy 140": 3
-        },
-        "lab_preferences": {
-          "Linux": 5,
-          "Mac": 2
-        }
-      }
-    ]
-  },
-  "time_slot_config": {
-    "times": {
-      "MON": [{"start": "08:00", "spacing": 60, "end": "19:00"}]
-    },
-    "classes": [
-      {
-        "credits": 4,
-        "meetings": [
-          {"day": "MON", "duration": 110, "lab": true},
-          {"day": "WED", "duration": 110}
-        ]
-      }
-    ]
-  }
-}
-```
-
-## File Management
-
-### Input Files
-- **Configuration File**: Contains course, room, lab, and faculty data
-- **Time Slot File**: Defines available time slots and class patterns (can be same file)
-
-### Output Files
-- **JSON Format**: Structured schedule data for programmatic use
-- **CSV Format**: Spreadsheet-compatible schedule data
-
-### Backup and Recovery
-- All management operations include save/cancel options
-- Changes are only persisted when explicitly saved
-- Original configuration files are preserved until save operation
+**Key Design Principles:**
+- Separation of concerns
+- Consistent patterns across all resource types
+- Automatic reference updates (renaming rooms/labs updates all references)
+- Impact analysis before deletions
+- Validation at all input points
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **File Not Found Error**
+1. **PyQt5 Import Error**
+   ```
+   Solution: Install PyQt5 using: pip install PyQt5
+   ```
+
+2. **File Not Found Error**
    ```
    Solution: Ensure the configuration file path is correct and the file exists
    ```
 
-2. **Permission Denied**
+3. **Permission Denied**
    ```
    Solution: Check file permissions and ensure write access for output directory
    ```
 
-3. **Invalid JSON Format**
+4. **Invalid JSON Format**
    ```
-   Solution: Validate JSON syntax using a JSON validator
+   Solution: Validate JSON syntax using a JSON validator (e.g., jsonlint.com)
    ```
 
-4. **Faculty Management Errors**
+5. **No Schedules Generated**
    ```
-   Solution: Ensure faculty names are unique and preference values are 1-5
+   Solution: Check that:
+   - Courses have assigned faculty
+   - Faculty have availability in their time slots
+   - There are sufficient rooms for courses
+   - Time slot configuration is valid
    ```
+
+### Getting Help
+
+For questions or issues:
+- Check the configuration file format
+- Verify all required fields are present
+- Ensure faculty availability matches time slot configuration
+- Contact Team BinaryBeasts
+
 ## Contributing
 
-This project is part of CMSC 420. For questions, contact the BinaryBeasts
+This project is part of CMSC 420 Fall 2025. For questions, contact Team BinaryBeasts.
 
-.
+## License
 
-
+This project is developed for education
