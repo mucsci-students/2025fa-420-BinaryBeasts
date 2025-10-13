@@ -1,4 +1,4 @@
-from room import RoomManager
+from src.models.room_model import RoomManager
 
 def test_room_manager():
     # Sample config dictionary
