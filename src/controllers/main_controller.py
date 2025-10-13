@@ -399,5 +399,7 @@ class main_controller():
         elif input_data == "7":
             print("Exiting program.")
             exit(0)
-
+            
+    def load_config_gui(self, path):
+        self.model.config = load_config_from_file(CombinedConfig, path)
 
