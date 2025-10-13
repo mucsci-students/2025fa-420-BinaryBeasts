@@ -279,7 +279,7 @@ def save_config(config, path: str):
     "limit": config.limit,
     "optimizer_flags": config.optimizer_flags
 }
-        with open("config.json", "w") as json_file:
+        with open(path, "w") as json_file:
             json.dump(final_config, json_file, indent=1)
 # You can now json.dumps(final_config) safely without serialization errors
 
