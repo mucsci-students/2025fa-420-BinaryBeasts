@@ -23,13 +23,13 @@ num_schedules = 0
 
 class MainGUI(QWidget):
     file_uploaded = False
-
-    def __init__(self):
-        config = any
-
+    def __init__(self, model, controller: main_controller):
         super().__init__()
+        self.model = model
+        self.controller = controller
+        self.file_uploaded = False
         self.init_ui()
-
+        
     def init_ui(self):
         self.setWindowTitle('College Course Sceduler')
         self.setMinimumWidth(800)
@@ -148,7 +148,7 @@ class MainGUI(QWidget):
         folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
 
         if folder_path:  
-            main.save_config(self.config, folder_path)
+            self.controller.save_config(folder_path)
         else:
             self.selected_label.setText('No folder selected.')
 
