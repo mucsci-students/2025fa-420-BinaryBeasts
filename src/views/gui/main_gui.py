@@ -241,7 +241,6 @@ class MainGUI(QWidget):
         num, ok = QInputDialog.getInt(self, "Input Required", "Pick an amount of schedules to generate:", min=1)
         if not ok:
             return
-        self.config.optimizer_flags = []
         opt_dialog = QDialog(self)
         opt_dialog.setWindowTitle("Optimization Options")
         opt_layout = QVBoxLayout(opt_dialog)
@@ -265,7 +264,6 @@ class MainGUI(QWidget):
                 (cb_pack_rooms, "pack_rooms"),
                 (cb_pack_labs, "pack_labs"),
             ]
-
             # Pre-fill from existing config flags if available
         existing_flags = getattr(self.config, "optimizer_flags", None)
         if isinstance(existing_flags, (list, set, tuple)):
@@ -287,7 +285,6 @@ class MainGUI(QWidget):
                 # store as a list of strings for enabled options
             selected_flags = [name for cb, name in flag_map if cb.isChecked()]
             self.config.optimizer_flags = selected_flags
-        print(self.config.optimizer_flags)
         try:
             # Generate schedules using the Scheduler
             scheduler = Scheduler(self.config)

@@ -453,7 +453,9 @@ class main_controller():
             self.manage_rooms()
         #generate schedules has been selected
         elif input_data == "5":
-            num = main_view.generate_schedules()
+            config_flags = main_view.generate_schedules()
+            num = config_flags[0]
+            self.model.config.optimizer_flags = config_flags[1]
             scheds = self.generate_schedules(num)
             controller = schedules_controller.generate_controller(scheds)
             controller.entry()
