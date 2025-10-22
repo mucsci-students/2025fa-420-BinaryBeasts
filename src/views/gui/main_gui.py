@@ -2,7 +2,10 @@
 
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel
+    QWidget, QVBoxLayout, QGridLayout, QLabel, QPushButton,
+    QFrame, QTabWidget, QHBoxLayout, QFileDialog,
+    QHBoxLayout, QVBoxLayout, QStackedWidget, QLabel, QPushButton,
+    QFrame, QGridLayout, QSizePolicy
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
@@ -29,6 +32,45 @@ from scheduler import (
 from scheduler.config import CombinedConfig
 
 num_schedules = 0
+TITLE_FONT = QFont("Arial", 18, QFont.Bold)
+SECTION_FONT = QFont("Arial", 11, QFont.Bold)
+LABEL_FONT = QFont("Arial", 10)
+BUTTON_FONT = QFont("Arial", 10)
+
+BUTTON_STYLE = """
+    QPushButton {
+        padding: 3px 6px;
+        background-color: #327f66;
+        color: white;
+        border-radius: 6px;
+        border: none;
+        font-size: 10pt;
+    }
+    QPushButton:hover {
+        background-color: #43A047;
+    }
+"""
+PRIMARY_BUTTON_STYLE = """
+    QPushButton {
+        padding: 6px 10px;
+        background-color: #327f66;
+        color: white;
+        border-radius: 6px;
+        border: none;
+        font-weight: bold;
+        font-size: 13pt;
+    }
+    QPushButton:hover {
+        background-color: #1D4ED8;
+    }
+"""
+
+#TITLE_FONT = QFont("Arial", 18, QFont.Bold)
+#SECTION_FONT = QFont("Arial", 14, QFont.Bold)
+#LABEL_FONT = QFont("Arial", 13)
+#BUTTON_FONT = QFont("Arial", 13)
+#BUTTON_STYLE = ("padding: 8px 12px; background-color: #327f66; color: white; "
+ #               "border-radius: 6px;")
 
 class MainGUI(QWidget):
     file_uploaded = False
@@ -40,70 +82,143 @@ class MainGUI(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle('College Course Scheduler')
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(800)
-        layout = QVBoxLayout()
+        self.setWindowTitle("College Course Scheduler")
+        self.setMinimumWidth(700)
+        self.setMinimumHeight(500)
 
-        title = QLabel('College Course Scheduler')
-        title.setFont(QFont('Arial', 16, QFont.Bold))
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(12)
+
+        # Header
+        title = QLabel("College Course Scheduler")
+        title.setFont(TITLE_FONT)
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setFrameShadow(QFrame.Sunken)
+        layout.addWidget(line)
 
-        CourseButton = QPushButton('Edit Courses')
-        CourseButton.setFont(QFont('Arial', 8))
-        CourseButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(CourseButton)
-        CourseButton.clicked.connect(self.open_course_manager)
-
-        FacultyButton = QPushButton('Edit Faculty')
-        FacultyButton .setFont(QFont('Arial', 8))
-        FacultyButton .setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(FacultyButton)
-        FacultyButton .clicked.connect(self.open_faculty_manager)
+        # Tabs
+        tabs = QTabWidget()
+        layout.addWidget(tabs)
 
 
-        LabButton = QPushButton('Edit Labs')
-        LabButton.setFont(QFont('Arial', 8))
-        LabButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(LabButton)
-        LabButton.clicked.connect(self.open_lab_manager)
 
-        RoomButton = QPushButton('Edit Rooms')
-        RoomButton.setFont(QFont('Arial', 8))
-        RoomButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(RoomButton)
-        RoomButton.clicked.connect(self.open_room_manager)
+        # ===== Tab 2: Files =====
+        files_tab = QWidget()
+        files_layout = QVBoxLayout(files_tab)
+        files_layout.setSpacing(10)
 
-        self.selected_label = QLabel('No file selected')
-        self.selected_label.setFont(QFont('Arial', 10))
+        files_label = QLabel("Files & Schedules")
+        files_label.setFont(SECTION_FONT)
+        files_layout.addWidget(files_label)
+
+        self.selected_label = QLabel("No file selected")
+        self.selected_label.setFont(LABEL_FONT)
         self.selected_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.selected_label)
+        files_layout.addWidget(self.selected_label)
 
-        SaveButton = QPushButton('Save Configuration File')
-        SaveButton.setFont(QFont('Arial', 8))
-        SaveButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(SaveButton)
-        SaveButton.clicked.connect(self.save_configuration)
+        upload_config_btn = QPushButton("Upload Configuration File");
+        upload_config_btn.setFont(BUTTON_FONT);
+        upload_config_btn.setStyleSheet(BUTTON_STYLE);
+        upload_config_btn.clicked.connect(self.open_file_dialog)
+        upload_schedule_btn = QPushButton("Upload Schedule");
+        upload_schedule_btn.setFont(BUTTON_FONT);
+        upload_schedule_btn.setStyleSheet(BUTTON_STYLE);
+        upload_schedule_btn.clicked.connect(self.load_schedule)
+        save_btn = QPushButton("Save Configuration File");
+        save_btn.setFont(BUTTON_FONT);
+        save_btn.setStyleSheet(BUTTON_STYLE);
+        save_btn.clicked.connect(self.save_configuration)
 
-        self.button = QPushButton('Upload Configuration File')
-        self.button.setFont(QFont('Arial', 8))
-        self.button.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(self.button)
-        self.button.clicked.connect(self.open_file_dialog)
+        upload_config_btn.setMinimumHeight(24)
+        upload_schedule_btn.setMinimumHeight(24)
+        save_btn.setMinimumHeight(24)
 
-        self.button = QPushButton('Upload Schedule')
-        self.button.setFont(QFont('Arial', 8))
-        self.button.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(self.button)
-        self.button.clicked.connect(self.load_schedule)
+        files_layout.addWidget(upload_config_btn)
+        files_layout.addWidget(upload_schedule_btn)
+        files_layout.addWidget(save_btn)
+        files_layout.addStretch(1)
+        tabs.addTab(files_tab, "Files")
 
-        GenerateButton = QPushButton('Generate Schedule')
-        GenerateButton.setFont(QFont('Arial', 8))
-        GenerateButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(GenerateButton)
-        GenerateButton.clicked.connect(self.generate_schedule)
+        # ===== Tab 1: Data =====
+        data_tab = QWidget()
+        data_layout = QVBoxLayout(data_tab)
+        data_layout.setSpacing(10)
+
+        manage_label = QLabel("Manage Data")
+        manage_label.setFont(SECTION_FONT)
+        data_layout.addWidget(manage_label)
+
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(10)
+        grid.setVerticalSpacing(10)
+        data_layout.addLayout(grid)
+
+        courses_btn = QPushButton("Edit Courses");
+        courses_btn.setFont(BUTTON_FONT);
+        courses_btn.setStyleSheet(BUTTON_STYLE);
+        courses_btn.clicked.connect(self.open_course_manager)
+        faculty_btn = QPushButton("Edit Faculty");
+        faculty_btn.setFont(BUTTON_FONT);
+        faculty_btn.setStyleSheet(BUTTON_STYLE);
+        faculty_btn.clicked.connect(self.open_faculty_manager)
+        labs_btn = QPushButton("Edit Labs");
+        labs_btn.setFont(BUTTON_FONT);
+        labs_btn.setStyleSheet(BUTTON_STYLE);
+        labs_btn.clicked.connect(self.open_lab_manager)
+        rooms_btn = QPushButton("Edit Rooms");
+        rooms_btn.setFont(BUTTON_FONT);
+        rooms_btn.setStyleSheet(BUTTON_STYLE);
+        rooms_btn.clicked.connect(self.open_room_manager)
+
+        courses_btn.setMinimumHeight(36)
+        faculty_btn.setMinimumHeight(36)
+        labs_btn.setMinimumHeight(36)
+        rooms_btn.setMinimumHeight(36)
+
+        grid.addWidget(courses_btn, 0, 0)
+        grid.addWidget(faculty_btn, 0, 1)
+        grid.addWidget(labs_btn, 1, 0)
+        grid.addWidget(rooms_btn, 1, 1)
+
+        data_layout.addStretch(1)
+        tabs.addTab(data_tab, "Data")
+
+        # ===== Tab 3: Generate =====
+        generate_tab = QWidget()
+        generate_layout = QVBoxLayout(generate_tab)
+        generate_layout.setSpacing(10)
+
+        gen_label = QLabel("Generate Schedule")
+        gen_label.setFont(SECTION_FONT)
+        gen_label.setAlignment(Qt.AlignLeft)
+        generate_layout.addWidget(gen_label)
+
+        # Primary action
+        generate_btn = QPushButton("Generate Schedule")
+        generate_btn.setFont(BUTTON_FONT)
+        generate_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
+        generate_btn.setMinimumHeight(44)
+        generate_btn.clicked.connect(self.generate_schedule)
+        generate_layout.addWidget(generate_btn)
+
+        # (optional) a small row for status later
+        status_row = QHBoxLayout()
+        self.status_label = QLabel("")  # you can set messages like "Generated OK" or errors here
+        self.status_label.setFont(LABEL_FONT)
+        self.status_label.setAlignment(Qt.AlignLeft)
+        status_row.addWidget(self.status_label)
+        status_row.addStretch(1)
+        generate_layout.addLayout(status_row)
+
+        generate_layout.addStretch(1)
+        tabs.addTab(generate_tab, "Generate")
+
+        layout.addStretch(1)
 
 
         self.setLayout(layout)
