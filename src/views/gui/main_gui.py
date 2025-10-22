@@ -2,7 +2,7 @@
 
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel
+    QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QCheckBox, QDialogButtonBox, QDialog
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
@@ -20,8 +20,7 @@ from src.models.course_model import CourseManager
 from src.models.room_model import RoomManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
-import json
-
+import json 
 from scheduler import (
     Scheduler,
     load_config_from_file,
@@ -242,7 +241,50 @@ class MainGUI(QWidget):
         num, ok = QInputDialog.getInt(self, "Input Required", "Pick an amount of schedules to generate:", min=1)
         if not ok:
             return
+        opt_dialog = QDialog(self)
+        opt_dialog.setWindowTitle("Optimization Options")
+        opt_layout = QVBoxLayout(opt_dialog)
+        opt_layout.addWidget(QLabel("Select optimization options:"))
 
+        cb_fac_course = QCheckBox("Optimize faculty course")
+        cb_fac_room = QCheckBox("Optimize faculty room")
+        cb_fac_lab = QCheckBox("Optimize faculty lab")
+        cb_same_room = QCheckBox("Same room")
+        cb_same_lab = QCheckBox("Same lab")
+        cb_pack_rooms = QCheckBox("Pack rooms")
+        cb_pack_labs = QCheckBox("Pack labs")
+
+            # Map checkboxes to flag names
+        flag_map = [
+                (cb_fac_course, "faculty_course"),
+                (cb_fac_room, "faculty_room"),
+                (cb_fac_lab, "faculty_lab"),
+                (cb_same_room, "same_room"),
+                (cb_same_lab, "same_lab"),
+                (cb_pack_rooms, "pack_rooms"),
+                (cb_pack_labs, "pack_labs"),
+            ]
+            # Pre-fill from existing config flags if available
+        existing_flags = getattr(self.config, "optimizer_flags", None)
+        if isinstance(existing_flags, (list, set, tuple)):
+            for cb, name in flag_map:
+                cb.setChecked(name in existing_flags)
+        elif isinstance(existing_flags, dict):
+            for cb, name in flag_map:
+                cb.setChecked(existing_flags.get(name, False))
+
+        for cb, _ in flag_map:
+            opt_layout.addWidget(cb)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        buttons.accepted.connect(opt_dialog.accept)
+        buttons.rejected.connect(opt_dialog.reject)
+        opt_layout.addWidget(buttons)
+
+        if opt_dialog.exec_() == QDialog.Accepted:
+                # store as a list of strings for enabled options
+            selected_flags = [name for cb, name in flag_map if cb.isChecked()]
+            self.config.optimizer_flags = selected_flags
         try:
             # Generate schedules using the Scheduler
             scheduler = Scheduler(self.config)
@@ -264,11 +306,10 @@ class MainGUI(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")
     
     def load_schedule(self):
-        """Load a previously saved schedule from JSON or CSV file."""
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
             return
-
+        """Load a previously saved schedule from JSON or CSV file."""
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             'Open Schedule File',
@@ -334,7 +375,6 @@ class MainGUI(QWidget):
     def _load_schedule_from_csv(self, file_path):
         """Load schedules from CSV file."""
         import csv
-
         schedules = []
         current_schedule = []
 

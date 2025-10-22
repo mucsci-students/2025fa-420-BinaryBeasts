@@ -20,7 +20,44 @@ def load_config():
 
 def generate_schedules():
        num = input("How many schedules would you like? ")
-       return int(num)
+       flags = []
+       while True:
+            print("Select optimization flags")
+            print("1. Optimize Using Faculty Course Preferences")
+            print("2. Optimize Using Faculty Room Preferences")
+            print("3. Optimize Using Faculty Lab Preferences")
+            print("4. Same Room")
+            print("5. Same Lab")
+            print("6. Pack Rooms")
+            print("7. Pack Labs")
+            print("8. No more flags")
+            choice = input("Enter your choice (1-8): ").strip()
+            if choice == '1':
+                if "faculty_course" not in flags:
+                    flags.append("faculty_course")
+            elif choice == '2':
+                if "faculty_room" not in flags:
+                    flags.append("faculty_room")
+            elif choice == '3':
+                if "faculty_lab" not in flags:
+                    flags.append("faculty_lab")
+            elif choice == '4':
+                if "same_room" not in flags:
+                    flags.append("same_room")
+            elif choice == '5':
+                if "same_lab" not in flags:
+                    flags.append("same_lab")
+            elif choice == '6':
+                if "pack_rooms" not in flags:
+                    flags.append("pack_rooms")
+            elif choice == '7':
+                if "pack_labs" not in flags:
+                    flags.append("pack_labs")
+            elif choice == '8':
+                break
+            else:
+                print("Invalid choice. Please try again.")
+       return [int(num), flags]
 
 def import_schedules():
         path = input("Enter path to schedules JSON file (default 'schedules.json'): ").strip()
