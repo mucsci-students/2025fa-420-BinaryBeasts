@@ -10,7 +10,7 @@ def main():
     app = QApplication(sys.argv)
 
     try:
-        combined_config = load_config_from_file(CombinedConfig, 'test_config.json')
+        combined_config = load_config_from_file(CombinedConfig, "test_config.json")
     except FileNotFoundError:
         print("Error: test_config.json not found!")
         print("Please create a test configuration file first.")
@@ -20,7 +20,7 @@ def main():
     result = dialog.exec_()
 
     if result:
-        combined_config.save('test_config.json')
+        combined_config.save("test_config.json")
         print("Changes saved to test_config.json")
     else:
         print("Cancelled - no changes saved")

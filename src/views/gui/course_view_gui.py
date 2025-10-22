@@ -3,9 +3,18 @@ from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-    QListWidget, QListWidgetItem, QLabel, QFormLayout, QLineEdit,
-    QSpinBox, QDialogButtonBox, QMessageBox
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QListWidget,
+    QListWidgetItem,
+    QLabel,
+    QFormLayout,
+    QLineEdit,
+    QSpinBox,
+    QDialogButtonBox,
+    QMessageBox,
 )
 from scheduler.config import CombinedConfig, CourseConfig
 
@@ -14,9 +23,10 @@ BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
 )
-TITLE_FONT = QFont('Arial', 19, QFont.Bold)
-LABEL_FONT = QFont('Arial', 15)
-BUTTON_FONT = QFont('Arial', 15)
+TITLE_FONT = QFont("Arial", 19, QFont.Bold)
+LABEL_FONT = QFont("Arial", 15)
+BUTTON_FONT = QFont("Arial", 15)
+
 
 class CourseDialog(QDialog):
     """
@@ -66,9 +76,11 @@ class CourseDialog(QDialog):
         form_layout.addRow("Faculty", self.faculty_input)
         form_layout.addRow("Conflicts", self.conflicts_input)
 
-        tip = QLabel("Tip: separate multiple values with commas (e.g. Roddy 140, Roddy 141)\n" 
-                     "* Required: Course ID, Credits, at least one Room, at least one Faculty")
-        tip.setFont(QFont('Arial', 13))
+        tip = QLabel(
+            "Tip: separate multiple values with commas (e.g. Roddy 140, Roddy 141)\n"
+            "* Required: Course ID, Credits, at least one Room, at least one Faculty"
+        )
+        tip.setFont(QFont("Arial", 13))
         tip.setAlignment(Qt.AlignCenter)
 
         # Save / Cancel buttons
@@ -100,27 +112,34 @@ class CourseDialog(QDialog):
         # turn comma text into lists
         room_list = [s.strip() for s in self.rooms_input.text().split(",") if s.strip()]
         lab_list = [s.strip() for s in self.labs_input.text().split(",") if s.strip()]
-        faculty_list = [s.strip() for s in self.faculty_input.text().split(",") if s.strip()]
-        conflict_list = [s.strip() for s in self.conflicts_input.text().split(",") if s.strip()]
+        faculty_list = [
+            s.strip() for s in self.faculty_input.text().split(",") if s.strip()
+        ]
+        conflict_list = [
+            s.strip() for s in self.conflicts_input.text().split(",") if s.strip()
+        ]
 
         if not room_list:
             QMessageBox.warning(self, "Error", "At least one room is required")
             return
 
         if not faculty_list:
-            QMessageBox.warning(self, "Error", "At least one faculty member is required")
+            QMessageBox.warning(
+                self, "Error", "At least one faculty member is required"
+            )
             return
 
         self.result_course = {
-            'course_id': course_id,
-            'credits': credits,
-            'room': room_list,
-            'lab': lab_list,
-            'faculty': faculty_list,
-            'conflicts': conflict_list
+            "course_id": course_id,
+            "credits": credits,
+            "room": room_list,
+            "lab": lab_list,
+            "faculty": faculty_list,
+            "conflicts": conflict_list,
         }
 
         super().accept()
+
 
 class CoursesDialog(QDialog):
     """
@@ -130,7 +149,7 @@ class CoursesDialog(QDialog):
     Buttons: Add / Edit / Delete / Save & Close / Cancel
     """
 
-    def __init__(self, controller, combined_config, parent = None):
+    def __init__(self, controller, combined_config, parent=None):
         super().__init__(parent)
 
         self.controller = controller
@@ -161,8 +180,13 @@ class CoursesDialog(QDialog):
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
 
-        for b in (self.add_button, self.edit_button, self.delete_button,
-                  self.save_button, self.cancel_button):
+        for b in (
+            self.add_button,
+            self.edit_button,
+            self.delete_button,
+            self.save_button,
+            self.cancel_button,
+        ):
             b.setFont(BUTTON_FONT)
             b.setStyleSheet(BUTTON_STYLE)
 
@@ -248,7 +272,9 @@ class CoursesDialog(QDialog):
     def edit_section(self):
         item = self.section_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No section selected", "Please select a section to edit.")
+            QMessageBox.information(
+                self, "No section selected", "Please select a section to edit."
+            )
             return
         course_id, section_index = item.data(Qt.UserRole)
         current_section = self.controller.get_course(course_id)[section_index]
@@ -257,8 +283,10 @@ class CoursesDialog(QDialog):
         if dialog.exec_() == QDialog.Accepted:
             updated_section = dialog.result_course
             if updated_section:
-                if updated_section['course_id'] == course_id:
-                    self.controller.modify_course(course_id, section_index, updated_section)
+                if updated_section["course_id"] == course_id:
+                    self.controller.modify_course(
+                        course_id, section_index, updated_section
+                    )
                 else:
                     self.controller.delete_course(course_id, section_index)
                     self.controller.add_course(updated_section)
@@ -267,10 +295,14 @@ class CoursesDialog(QDialog):
     def delete_section(self):
         item = self.section_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No section selected", "Please select a section to continue.")
+            QMessageBox.information(
+                self, "No section selected", "Please select a section to continue."
+            )
             return
         course_id, section_index = item.data(Qt.UserRole)
-        confirm = QMessageBox.question(self, "Confirm", f"Delete {course_id} section {section_index+1}?")
+        confirm = QMessageBox.question(
+            self, "Confirm", f"Delete {course_id} section {section_index + 1}?"
+        )
         if confirm == QMessageBox.Yes:
             self.controller.delete_course(course_id, section_index)
             self.refresh_course_ids()

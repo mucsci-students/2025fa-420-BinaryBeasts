@@ -80,8 +80,9 @@ class RoomController:
         """
         return self.mgr.room_exists(room_name)
 
-    def update_room_references(self, old_name: str, new_name: str,
-                               courses_dict: Dict, faculty_dict: Dict) -> None:
+    def update_room_references(
+        self, old_name: str, new_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Update room references in courses and faculty when a room is renamed.
 
@@ -93,8 +94,9 @@ class RoomController:
         """
         self.mgr.update_room_references(old_name, new_name, courses_dict, faculty_dict)
 
-    def remove_room_references(self, room_name: str,
-                               courses_dict: Dict, faculty_dict: Dict) -> None:
+    def remove_room_references(
+        self, room_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Remove room references from courses and faculty when a room is deleted.
 

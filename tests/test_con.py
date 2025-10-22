@@ -1,5 +1,11 @@
 from typing import Dict, List
-from conflicts import ConflictManager, load_conflicts_from_config, detect_conflicting_assignments, suggest_conflict_resolution
+from conflicts import (
+    ConflictManager,
+    load_conflicts_from_config,
+    detect_conflicting_assignments,
+    suggest_conflict_resolution,
+)
+
 
 def demo_config() -> Dict:
     # Minimal realistic config like your project structure
@@ -14,9 +20,12 @@ def demo_config() -> Dict:
         }
     }
 
+
 def test_build_and_queries():
     cfg = demo_config()
-    cm = load_conflicts_from_config(cfg["config"])  # builds ConflictManager from "courses"
+    cm = load_conflicts_from_config(
+        cfg["config"]
+    )  # builds ConflictManager from "courses"
 
     # Basic map checks (bidirectional edges)
     assert cm.has_conflict("CMSC 140", "CMSC 161") is True
@@ -35,6 +44,7 @@ def test_build_and_queries():
     cm.remove_conflict("CMSC 152", "CMSC 161")
     assert cm.has_conflict("CMSC 152", "CMSC 161") is False
 
+
 def test_schedule_validation_and_groups():
     cfg = demo_config()
     cm = load_conflicts_from_config(cfg["config"])
@@ -49,8 +59,14 @@ def test_schedule_validation_and_groups():
     conflicts = cm.validate_schedule_conflicts(schedule)
     print("Conflicting pairs in schedule:", conflicts)
     # Only (140,161) should conflict
-    assert ("CMSC 140", "CMSC 161") in conflicts or ("CMSC 161", "CMSC 140") in conflicts
-    assert all(pair in {("CMSC 140", "CMSC 161"), ("CMSC 161", "CMSC 140")} for pair in conflicts)
+    assert ("CMSC 140", "CMSC 161") in conflicts or (
+        "CMSC 161",
+        "CMSC 140",
+    ) in conflicts
+    assert all(
+        pair in {("CMSC 140", "CMSC 161"), ("CMSC 161", "CMSC 140")}
+        for pair in conflicts
+    )
 
     # Conflict groups (connected components)
     groups = cm.get_conflict_groups()
@@ -61,8 +77,11 @@ def test_schedule_validation_and_groups():
     assert frozenset({"CMSC 152"}) in flat_groups
 
     # Together scheduling checks
-    assert cm.can_schedule_together(["CMSC 152", "CMSC 161"]) is True  # in base config they don't conflict
+    assert (
+        cm.can_schedule_together(["CMSC 152", "CMSC 161"]) is True
+    )  # in base config they don't conflict
     assert cm.can_schedule_together(["CMSC 140", "CMSC 161"]) is False
+
 
 def test_independent_set_and_suggestions():
     cfg = demo_config()
@@ -87,11 +106,13 @@ def test_independent_set_and_suggestions():
     print("Suggestions:", sugg)
     assert isinstance(sugg, list) and len(sugg) >= 1
 
+
 def main():
     test_build_and_queries()
     test_schedule_validation_and_groups()
     test_independent_set_and_suggestions()
     print("\nAll ConflictManager tests passed ✅")
+
 
 if __name__ == "__main__":
     main()

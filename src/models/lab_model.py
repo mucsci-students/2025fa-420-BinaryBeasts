@@ -26,9 +26,9 @@ class LabManager:
             config: CombinedConfig object containing lab data
         """
         # Handle both CombinedConfig (config.config.labs) and SchedulerConfig (config.labs)
-        if hasattr(config, 'config') and hasattr(config.config, 'labs'):
+        if hasattr(config, "config") and hasattr(config.config, "labs"):
             self.labs = list(config.config.labs) if config.config.labs else []
-        elif hasattr(config, 'labs'):
+        elif hasattr(config, "labs"):
             self.labs = list(config.labs) if config.labs else []
         else:
             self.labs = []
@@ -129,9 +129,7 @@ class LabManager:
         Returns:
             Dictionary with 'labs' key containing list of lab names
         """
-        return {
-            'labs': self.labs
-        }
+        return {"labs": self.labs}
 
     def save_config(self, config: Dict) -> Dict:
         """
@@ -143,7 +141,7 @@ class LabManager:
         Returns:
             Updated configuration dictionary
         """
-        config['labs'] = self.labs
+        config["labs"] = self.labs
         return config
 
     def save_with_combined_config(self, config: CombinedConfig) -> CombinedConfig:
@@ -161,8 +159,9 @@ class LabManager:
         return config
 
     @staticmethod
-    def update_lab_references(old_name: str, new_name: str,
-                              courses_dict: Dict, faculty_dict: Dict) -> None:
+    def update_lab_references(
+        old_name: str, new_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Update lab references in courses and faculty when a lab is renamed.
 
@@ -175,19 +174,23 @@ class LabManager:
         # Update course lab assignments
         for course_id, instances in courses_dict.items():
             for course in instances:
-                if hasattr(course, 'lab') and old_name in course.lab:
+                if hasattr(course, "lab") and old_name in course.lab:
                     course.lab = [new_name if l == old_name else l for l in course.lab]
 
         # Update faculty lab preferences
         for name, faculty in faculty_dict.items():
-            if hasattr(faculty, 'lab_preferences') and old_name in faculty.lab_preferences:
+            if (
+                hasattr(faculty, "lab_preferences")
+                and old_name in faculty.lab_preferences
+            ):
                 preference = faculty.lab_preferences[old_name]
                 del faculty.lab_preferences[old_name]
                 faculty.lab_preferences[new_name] = preference
 
     @staticmethod
-    def remove_lab_references(lab_name: str,
-                              courses_dict: Dict, faculty_dict: Dict) -> None:
+    def remove_lab_references(
+        lab_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Remove lab references from courses and faculty when a lab is deleted.
 
@@ -199,10 +202,13 @@ class LabManager:
         # Remove from course lab assignments
         for course_id, instances in courses_dict.items():
             for course in instances:
-                if hasattr(course, 'lab') and lab_name in course.lab:
+                if hasattr(course, "lab") and lab_name in course.lab:
                     course.lab = [l for l in course.lab if l != lab_name]
 
         # Remove from faculty lab preferences
         for name, faculty in faculty_dict.items():
-            if hasattr(faculty, 'lab_preferences') and lab_name in faculty.lab_preferences:
+            if (
+                hasattr(faculty, "lab_preferences")
+                and lab_name in faculty.lab_preferences
+            ):
                 del faculty.lab_preferences[lab_name]

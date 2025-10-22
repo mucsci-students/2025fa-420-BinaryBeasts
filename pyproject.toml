@@ -30,6 +30,9 @@ classifiers = [
 ]
 dependencies = [
     "course-constraint-scheduler",
+    "pytest>=8.4.2",
+    "ruff>=0.14.1",
+    "ty>=0.0.1a23",
 ]
 
 [project.optional-dependencies]

@@ -9,20 +9,25 @@ class Faculty:
     Represents an individual faculty member.
     """
 
-    def __init__(self, name: str,
-                 minimum_credits: int = 0,
-                 maximum_credits: int = 9,
-                 unique_course_limit: int = 1,
-                 times: Dict[str, List[str]] = None,
-                 course_preferences: Dict[str, int] = None,
-                 room_preferences: Dict[str, int] = None,
-                 lab_preferences: Dict[str, int] = None):
+    def __init__(
+        self,
+        name: str,
+        minimum_credits: int = 0,
+        maximum_credits: int = 9,
+        unique_course_limit: int = 1,
+        times: Dict[str, List[str]] = None,
+        course_preferences: Dict[str, int] = None,
+        room_preferences: Dict[str, int] = None,
+        lab_preferences: Dict[str, int] = None,
+    ):
         self.name = name
         self.minimum_credits = minimum_credits
         self.maximum_credits = maximum_credits
         self.unique_course_limit = unique_course_limit
         self.times = times if times is not None else {}
-        self.course_preferences = course_preferences if course_preferences is not None else {}
+        self.course_preferences = (
+            course_preferences if course_preferences is not None else {}
+        )
         self.room_preferences = room_preferences if room_preferences is not None else {}
         self.lab_preferences = lab_preferences if lab_preferences is not None else {}
 
@@ -61,7 +66,7 @@ class FacultyManager:
                     times=dict(fd.get("times", {})),
                     course_preferences=dict(fd.get("course_preferences", {})),
                     room_preferences=dict(fd.get("room_preferences", {})),
-                    lab_preferences=dict(fd.get("lab_preferences", {}))
+                    lab_preferences=dict(fd.get("lab_preferences", {})),
                 )
                 self.add_faculty(faculty)
             except (ValueError, TypeError) as e:
@@ -151,27 +156,26 @@ class FacultyManager:
         """Convert faculty to dictionary format for saving."""
         faculty_list = []
         for faculty in self.faculty.values():
-            faculty_list.append({
-                'name': faculty.name,
-                'minimum_credits': faculty.minimum_credits,
-                'maximum_credits': faculty.maximum_credits,
-                'unique_course_limit': faculty.unique_course_limit,
-                'times': faculty.times,
-                'course_preferences': faculty.course_preferences,
-                'room_preferences': faculty.room_preferences,
-                'lab_preferences': faculty.lab_preferences
-            })
+            faculty_list.append(
+                {
+                    "name": faculty.name,
+                    "minimum_credits": faculty.minimum_credits,
+                    "maximum_credits": faculty.maximum_credits,
+                    "unique_course_limit": faculty.unique_course_limit,
+                    "times": faculty.times,
+                    "course_preferences": faculty.course_preferences,
+                    "room_preferences": faculty.room_preferences,
+                    "lab_preferences": faculty.lab_preferences,
+                }
+            )
         return faculty_list
 
     def save_config(self, config: dict, time_slots: dict, config_file: str) -> bool:
         """Save configuration to file (for CLI)."""
         try:
-            config['faculty'] = self.to_dict()
-            full_config = {
-                "config": config,
-                "time_slot_config": time_slots
-            }
-            with open(config_file, 'w', encoding='utf-8') as f:
+            config["faculty"] = self.to_dict()
+            full_config = {"config": config, "time_slot_config": time_slots}
+            with open(config_file, "w", encoding="utf-8") as f:
                 json.dump(full_config, f, indent=2, ensure_ascii=False)
             return True
         except Exception as e:
@@ -197,7 +201,7 @@ class FacultyManager:
                         times=faculty.times,
                         course_preferences=faculty.course_preferences,
                         room_preferences=faculty.room_preferences,
-                        lab_preferences=faculty.lab_preferences
+                        lab_preferences=faculty.lab_preferences,
                     )
                     editable_config.config.faculty.append(new_faculty)
             return True

@@ -10,7 +10,13 @@ def main():
     model = main_model.main_model()
     controller = main_controller.main_controller(model)
     while True:
-        input_str = input("Enter 🖥️ GUI/gui (Graphical User Interface) \n   or 💻 CLI/cli (Command Line Interface): ").strip().lower()
+        input_str = (
+            input(
+                "Enter 🖥️ GUI/gui (Graphical User Interface) \n   or 💻 CLI/cli (Command Line Interface): "
+            )
+            .strip()
+            .lower()
+        )
         if input_str == "gui":
             app = QApplication(sys.argv)
             window = MainGUI()
@@ -23,5 +29,6 @@ def main():
                 controller.process_input(input_str)
         else:
             print("Please enter a valid input")
+
 
 main()

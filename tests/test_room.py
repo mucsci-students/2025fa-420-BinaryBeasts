@@ -1,5 +1,6 @@
 from room import RoomManager
 
+
 def test_room_manager():
     # Sample config dictionary
     config = {
@@ -7,11 +8,11 @@ def test_room_manager():
             "rooms": ["Room A", "Room B"],
             "courses": [
                 {"course_id": "CS101", "room": ["Room A"]},
-                {"course_id": "CS102", "room": ["Room B"]}
+                {"course_id": "CS102", "room": ["Room B"]},
             ],
             "faculty": [
                 {"name": "Dr. Smith", "room_preferences": {"Room A": 10, "Room B": 5}}
-            ]
+            ],
         }
     }
     manager = RoomManager(config)
@@ -41,11 +42,11 @@ def test_set_rooms():
             "rooms": ["R1", "R2", "R3"],
             "courses": [
                 {"course_id": "C1", "room": ["R1", "R2"]},
-                {"course_id": "C2", "room": ["R3"]}
+                {"course_id": "C2", "room": ["R3"]},
             ],
             "faculty": [
                 {"name": "F1", "room_preferences": {"R1": 5, "R2": 3, "R3": 1}}
-            ]
+            ],
         }
     }
     manager = RoomManager(config)

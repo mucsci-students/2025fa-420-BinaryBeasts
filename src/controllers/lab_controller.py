@@ -80,8 +80,9 @@ class LabController:
         """
         return self.mgr.lab_exists(lab_name)
 
-    def update_lab_references(self, old_name: str, new_name: str,
-                              courses_dict: Dict, faculty_dict: Dict) -> None:
+    def update_lab_references(
+        self, old_name: str, new_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Update lab references in courses and faculty when a lab is renamed.
 
@@ -93,8 +94,9 @@ class LabController:
         """
         self.mgr.update_lab_references(old_name, new_name, courses_dict, faculty_dict)
 
-    def remove_lab_references(self, lab_name: str,
-                              courses_dict: Dict, faculty_dict: Dict) -> None:
+    def remove_lab_references(
+        self, lab_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Remove lab references from courses and faculty when a lab is deleted.
 
