@@ -1,4 +1,3 @@
-import src.models.main_model as main_model
 import src.views.cli.main_view as main_view
 from src.controllers.course_controller import CourseController
 from src.models.course_model import CourseManager
@@ -9,7 +8,6 @@ from src.models.room_model import RoomManager
 from src.controllers.lab_controller import LabController
 from src.models.lab_model import LabManager
 from src.controllers import schedules_controller
-from src.views.cli import schedules_view
 from scheduler import (
     Scheduler,
     load_config_from_file,

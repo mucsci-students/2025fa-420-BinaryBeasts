@@ -1,10 +1,3 @@
-import src.models.main_model as main_model
-import src.views.cli.main_view as main_view
-from scheduler import (
-    Scheduler,
-    load_config_from_file,
-)
-from scheduler.config import CombinedConfig
 from src.views.cli import schedules_view
 import json
 

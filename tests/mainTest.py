@@ -1,6 +1,5 @@
 import models.main_model as main_model
 import controllers.main_controller as main_controller
-import views.cli.main_view as main_view
 
 
 def main():

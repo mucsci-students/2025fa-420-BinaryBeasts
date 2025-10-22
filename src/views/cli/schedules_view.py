@@ -1,6 +1,3 @@
-from src.controllers import schedules_controller
-
-
 def parse_course_string(course_str: str) -> dict:
     """
     Parse a course CSV string into a dictionary.

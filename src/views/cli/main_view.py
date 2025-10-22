@@ -154,7 +154,7 @@ def print_config_summary(config: dict, time_slots: dict) -> None:
             )
 
     # Time slots summary
-    print(f"\n🕒 TIME SLOT CONFIGURATION:")
+    print("\n🕒 TIME SLOT CONFIGURATION:")
     times = time_slots.get("times", {})
     for day, slots in times.items():
         if slots:

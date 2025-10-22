@@ -41,7 +41,7 @@ class FacultyView:
                     f"      ⭐ Preferred courses: {', '.join([f'{c}({p})' for c, p in top_courses])}"
                 )
             else:
-                print(f"      ⭐ Preferred courses: None")
+                print("      ⭐ Preferred courses: None")
 
             # Show room preferences
             room_prefs = faculty.room_preferences
@@ -53,7 +53,7 @@ class FacultyView:
                     f"      🏢 Preferred rooms: {', '.join([f'{r}({p})' for r, p in top_rooms])}"
                 )
             else:
-                print(f"      🏢 Preferred rooms: None")
+                print("      🏢 Preferred rooms: None")
 
             # Show lab preferences
             lab_prefs = faculty.lab_preferences
@@ -65,7 +65,7 @@ class FacultyView:
                     f"      🔬 Preferred labs: {', '.join([f'{l}({p})' for l, p in top_labs])}"
                 )
             else:
-                print(f"      🔬 Preferred labs: None")
+                print("      🔬 Preferred labs: None")
 
         print("=" * 60)
 
@@ -331,7 +331,7 @@ class FacultyView:
                 if new_name != name:
                     print(f"📝 Note: Faculty renamed from '{name}' to '{new_name}'")
             else:
-                print(f"❌ Failed to modify faculty. Name may already exist.")
+                print("❌ Failed to modify faculty. Name may already exist.")
         except Exception as e:
             print(f"❌ Error modifying faculty: {e}")
 

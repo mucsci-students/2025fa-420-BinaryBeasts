@@ -1,6 +1,5 @@
 from typing import Dict, List
 from conflicts import (
-    ConflictManager,
     load_conflicts_from_config,
     detect_conflicting_assignments,
     suggest_conflict_resolution,

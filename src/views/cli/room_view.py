@@ -77,7 +77,7 @@ class RoomView:
                 if new_name in rooms:
                     print(f"❌ Room '{new_name}' already exists.")
                 else:
-                    print(f"❌ Failed to rename room.")
+                    print("❌ Failed to rename room.")
         except Exception as e:
             print(f"❌ Error editing room: {e}")
 

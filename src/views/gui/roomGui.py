@@ -4,7 +4,6 @@ from PyQt5.QtWidgets import (
     QHBoxLayout,
     QPushButton,
     QListWidget,
-    QListWidgetItem,
     QLabel,
     QLineEdit,
     QDialogButtonBox,

@@ -1,10 +1,8 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel
-from PyQt5.QtWidgets import QInputDialog, QMessageBox, QFileDialog
+from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
-import src.views.gui.main_gui as main_gui
-from scheduler import Scheduler
 from src.controllers.schedules_controller import generate_controller
 
 
