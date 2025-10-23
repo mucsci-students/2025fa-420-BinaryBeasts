@@ -32,10 +32,9 @@ from scheduler import (
 from scheduler.config import CombinedConfig
 
 num_schedules = 0
-TITLE_FONT = QFont("Arial", 18, QFont.Bold)
-SECTION_FONT = QFont("Arial", 11, QFont.Bold)
-LABEL_FONT = QFont("Arial", 10)
-BUTTON_FONT = QFont("Arial", 10)
+LABEL_FONT = QFont('Arial', 16, QFont.Bold)
+FONT = QFont("Arial", 13)
+FONT2 = QFont("Arial", 14)
 
 BUTTON_STYLE = """
     QPushButton {
@@ -64,6 +63,8 @@ PRIMARY_BUTTON_STYLE = """
         background-color: #1D4ED8;
     }
 """
+FRAME_STYLE_SHEET = ("QFrame { background-color: #3a3a3a; "
+                     "border-radius: 8px; padding: 15px; }")
 
 #TITLE_FONT = QFont("Arial", 18, QFont.Bold)
 #SECTION_FONT = QFont("Arial", 14, QFont.Bold)
@@ -82,17 +83,17 @@ class MainGUI(QWidget):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("College Course Scheduler")
-        self.setMinimumWidth(700)
-        self.setMinimumHeight(500)
+        self.setWindowTitle("Scheduler")
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(600)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(20, 20, 20, 20)
-        layout.setSpacing(12)
+        layout.setContentsMargins(30,30, 30, 30)
+        layout.setSpacing(20)
 
         # Header
         title = QLabel("College Course Scheduler")
-        title.setFont(TITLE_FONT)
+        title.setFont(LABEL_FONT)
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
@@ -101,126 +102,111 @@ class MainGUI(QWidget):
         line.setFrameShadow(QFrame.Sunken)
         layout.addWidget(line)
 
-        # Tabs
-        tabs = QTabWidget()
-        layout.addWidget(tabs)
-
-
-
-        # ===== Tab 2: Files =====
-        files_tab = QWidget()
-        files_layout = QVBoxLayout(files_tab)
-        files_layout.setSpacing(10)
-
-        files_label = QLabel("Files & Schedules")
-        files_label.setFont(SECTION_FONT)
-        files_layout.addWidget(files_label)
+        #config section
+        config_section = QFrame()
+        config_section.setFrameShape(QFrame.StyledPanel)
+        config_section.setStyleSheet(FRAME_STYLE_SHEET)
+        config_layout = QVBoxLayout(config_section)
 
         self.selected_label = QLabel("No file selected")
-        self.selected_label.setFont(LABEL_FONT)
+        self.selected_label.setFont(FONT2)
         self.selected_label.setAlignment(Qt.AlignCenter)
-        files_layout.addWidget(self.selected_label)
+        config_layout.addWidget(self.selected_label)
 
-        upload_config_btn = QPushButton("Upload Configuration File");
-        upload_config_btn.setFont(BUTTON_FONT);
-        upload_config_btn.setStyleSheet(BUTTON_STYLE);
+        config_buttons = QHBoxLayout()
+
+        upload_config_btn = QPushButton("Upload Configuration File")
+        upload_config_btn.setFont(FONT2)
+        upload_config_btn.setStyleSheet(BUTTON_STYLE)
+        upload_config_btn.setMinimumHeight(36)
         upload_config_btn.clicked.connect(self.open_file_dialog)
-        upload_schedule_btn = QPushButton("Upload Schedule");
-        upload_schedule_btn.setFont(BUTTON_FONT);
-        upload_schedule_btn.setStyleSheet(BUTTON_STYLE);
+
+        upload_schedule_btn = QPushButton("Upload Schedule")
+        upload_schedule_btn.setFont(FONT2)
+        upload_schedule_btn.setStyleSheet(BUTTON_STYLE)
+        upload_schedule_btn.setMinimumHeight(36)
         upload_schedule_btn.clicked.connect(self.load_schedule)
-        save_btn = QPushButton("Save Configuration File");
-        save_btn.setFont(BUTTON_FONT);
-        save_btn.setStyleSheet(BUTTON_STYLE);
+
+        save_btn = QPushButton("Save Configuration File")
+        save_btn.setFont(FONT2)
+        save_btn.setStyleSheet(BUTTON_STYLE)
+        save_btn.setMinimumHeight(36)
         save_btn.clicked.connect(self.save_configuration)
 
-        upload_config_btn.setMinimumHeight(24)
-        upload_schedule_btn.setMinimumHeight(24)
-        save_btn.setMinimumHeight(24)
+        config_buttons.addWidget(upload_config_btn)
+        config_buttons.addWidget(upload_schedule_btn)
+        config_buttons.addWidget(save_btn)
+        config_layout.addLayout(config_buttons)
 
-        files_layout.addWidget(upload_config_btn)
-        files_layout.addWidget(upload_schedule_btn)
-        files_layout.addWidget(save_btn)
-        files_layout.addStretch(1)
-        tabs.addTab(files_tab, "Files")
+        layout.addWidget(config_section)
 
-        # ===== Tab 1: Data =====
-        data_tab = QWidget()
-        data_layout = QVBoxLayout(data_tab)
-        data_layout.setSpacing(10)
 
-        manage_label = QLabel("Manage Data")
-        manage_label.setFont(SECTION_FONT)
-        data_layout.addWidget(manage_label)
+        # Edit =====
+
+        edit_section = QFrame()
+        edit_section.setFrameShape(QFrame.StyledPanel)
+        edit_section.setStyleSheet(FRAME_STYLE_SHEET)
+        edit_layout = QVBoxLayout(edit_section)
 
         grid = QGridLayout()
         grid.setHorizontalSpacing(10)
         grid.setVerticalSpacing(10)
-        data_layout.addLayout(grid)
 
         courses_btn = QPushButton("Edit Courses");
-        courses_btn.setFont(BUTTON_FONT);
+        courses_btn.setFont(FONT2);
         courses_btn.setStyleSheet(BUTTON_STYLE);
+        courses_btn.setMinimumHeight(36)
         courses_btn.clicked.connect(self.open_course_manager)
+
         faculty_btn = QPushButton("Edit Faculty");
-        faculty_btn.setFont(BUTTON_FONT);
+        faculty_btn.setFont(FONT2);
         faculty_btn.setStyleSheet(BUTTON_STYLE);
+        faculty_btn.setMinimumHeight(36)
         faculty_btn.clicked.connect(self.open_faculty_manager)
+
         labs_btn = QPushButton("Edit Labs");
-        labs_btn.setFont(BUTTON_FONT);
+        labs_btn.setFont(FONT2);
         labs_btn.setStyleSheet(BUTTON_STYLE);
+        labs_btn.setMinimumHeight(36)
         labs_btn.clicked.connect(self.open_lab_manager)
+
         rooms_btn = QPushButton("Edit Rooms");
-        rooms_btn.setFont(BUTTON_FONT);
+        rooms_btn.setFont(FONT2);
         rooms_btn.setStyleSheet(BUTTON_STYLE);
+        rooms_btn.setMinimumHeight(36)
         rooms_btn.clicked.connect(self.open_room_manager)
 
-        courses_btn.setMinimumHeight(36)
-        faculty_btn.setMinimumHeight(36)
-        labs_btn.setMinimumHeight(36)
-        rooms_btn.setMinimumHeight(36)
 
         grid.addWidget(courses_btn, 0, 0)
         grid.addWidget(faculty_btn, 0, 1)
         grid.addWidget(labs_btn, 1, 0)
         grid.addWidget(rooms_btn, 1, 1)
 
-        data_layout.addStretch(1)
-        tabs.addTab(data_tab, "Data")
+        edit_layout.addLayout(grid)
+        layout.addWidget(edit_section)
 
         # ===== Tab 3: Generate =====
-        generate_tab = QWidget()
-        generate_layout = QVBoxLayout(generate_tab)
-        generate_layout.setSpacing(10)
 
-        gen_label = QLabel("Generate Schedule")
-        gen_label.setFont(SECTION_FONT)
-        gen_label.setAlignment(Qt.AlignLeft)
-        generate_layout.addWidget(gen_label)
+        generate_section = QFrame()
+        generate_section.setFrameShape(QFrame.StyledPanel)
+        generate_section.setStyleSheet(FRAME_STYLE_SHEET)
+        generate_layout = QVBoxLayout(generate_section)
 
         # Primary action
         generate_btn = QPushButton("Generate Schedule")
-        generate_btn.setFont(BUTTON_FONT)
+        generate_btn.setFont(FONT2)
         generate_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
         generate_btn.setMinimumHeight(44)
         generate_btn.clicked.connect(self.generate_schedule)
         generate_layout.addWidget(generate_btn)
 
-        # (optional) a small row for status later
-        status_row = QHBoxLayout()
-        self.status_label = QLabel("")  # you can set messages like "Generated OK" or errors here
+        self.status_label = QLabel("")
         self.status_label.setFont(LABEL_FONT)
-        self.status_label.setAlignment(Qt.AlignLeft)
-        status_row.addWidget(self.status_label)
-        status_row.addStretch(1)
-        generate_layout.addLayout(status_row)
+        generate_layout.addWidget(self.status_label)
 
-        generate_layout.addStretch(1)
-        tabs.addTab(generate_tab, "Generate")
+        layout.addWidget(generate_section)
 
         layout.addStretch(1)
-
-
         self.setLayout(layout)
     def open_file_dialog(self):
             file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON file', '', 'JSON Files (*.json)')
@@ -228,12 +214,14 @@ class MainGUI(QWidget):
                 self.file_uploaded = True
                 config_obj = load_config_from_file(CombinedConfig, file_path)
                 self.config = config_obj
-                self.selected_label.setText(f'Selected: {file_path}')
+                file_name = file_path.split('/')[-1]
+                self.selected_label.setText(f"<span style='font-size: 11px; color: green;'>'"
+                                            f"{file_name}' successfully uploaded</span>")
                 return
             else:
                 self.selected_label.setText('No file selected.')
 
-        
+
     def open_course_manager(self):
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
@@ -333,7 +321,7 @@ class MainGUI(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
-       
+
 
     def save_configuration(self):
         if not self.file_uploaded:
@@ -377,12 +365,12 @@ class MainGUI(QWidget):
             self.generate_schedule_window.show()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")
-    
+
     def load_schedule(self):
         """Load a previously saved schedule from JSON or CSV file."""
-        if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
-            return
+    #    if not self.file_uploaded:
+    #        QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+    #       return
 
         file_path, _ = QFileDialog.getOpenFileName(
             self,
