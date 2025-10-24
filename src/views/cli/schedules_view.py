@@ -6,7 +6,7 @@ def parse_course_string(course_str: str) -> dict:
     """
     parts = course_str.split(",")
     if len(parts) < 4:
-        return None
+        return {}
 
     course_id = parts[0].strip()
     faculty = parts[1].strip()

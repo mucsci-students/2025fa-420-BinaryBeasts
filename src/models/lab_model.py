@@ -7,7 +7,7 @@ from scheduler.config import CombinedConfig
 class LabManager:
     """Manages lab data with support for both dict-based and CombinedConfig-based workflows."""
 
-    def __init__(self, config: CombinedConfig = None):
+    def __init__(self, config):
         """
         Initialize LabManager.
 
@@ -29,7 +29,7 @@ class LabManager:
         if hasattr(config, "config") and hasattr(config.config, "labs"):
             self.labs = list(config.config.labs) if config.config.labs else []
         elif hasattr(config, "labs"):
-            self.labs = list(config.labs) if config.labs else []
+            self.labs = list(self.config.labs) if config.labs else []
         else:
             self.labs = []
 
@@ -155,7 +155,7 @@ class LabManager:
             Updated CombinedConfig object
         """
         # Update labs in the config
-        config.labs = self.labs.copy()
+        config.config.labs = self.labs.copy()
         return config
 
     @staticmethod

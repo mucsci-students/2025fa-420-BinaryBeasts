@@ -7,7 +7,7 @@ from scheduler.config import CombinedConfig
 class RoomManager:
     """Manages room data with support for both dict-based and CombinedConfig-based workflows."""
 
-    def __init__(self, config: CombinedConfig = None):
+    def __init__(self, config):
         """
         Initialize RoomManager.
 
@@ -29,7 +29,7 @@ class RoomManager:
         if hasattr(config, "config") and hasattr(config.config, "rooms"):
             self.rooms = list(config.config.rooms) if config.config.rooms else []
         elif hasattr(config, "rooms"):
-            self.rooms = list(config.rooms) if config.rooms else []
+            self.rooms = list(config.config.rooms) if config.rooms else []
         else:
             self.rooms = []
 
@@ -155,7 +155,7 @@ class RoomManager:
             Updated CombinedConfig object
         """
         # Update rooms in the config
-        config.rooms = self.rooms.copy()
+        config.config.rooms = self.rooms.copy()
         return config
 
     def update_room_references(

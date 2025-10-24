@@ -1,7 +1,7 @@
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
-from PyQt5.QtWidgets import (
-    QDialog,
+from PyQt5.QtCore import Qt # type : ignore
+from PyQt5.QtGui import QFont # type : ignore
+from PyQt5.QtWidgets import ( # type : ignore
+    QDialog, 
     QVBoxLayout,
     QHBoxLayout,
     QPushButton,
@@ -13,7 +13,7 @@ from PyQt5.QtWidgets import (
     QSpinBox,
     QDialogButtonBox,
     QMessageBox,
-)
+) # type : ignore
 
 
 BUTTON_STYLE = (

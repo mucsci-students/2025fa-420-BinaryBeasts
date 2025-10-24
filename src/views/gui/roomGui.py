@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import (
+from PyQt5.QtWidgets import ( # type : ignore
     QDialog,
     QVBoxLayout,
     QHBoxLayout,
@@ -8,9 +8,9 @@ from PyQt5.QtWidgets import (
     QLineEdit,
     QDialogButtonBox,
     QMessageBox,
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+) # type : ignore
+from PyQt5.QtCore import Qt # type : ignore
+from PyQt5.QtGui import QFont # type : ignore
 
 BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "

@@ -15,10 +15,10 @@ class Faculty:
         minimum_credits: int = 0,
         maximum_credits: int = 9,
         unique_course_limit: int = 1,
-        times: Dict[str, List[str]] = None,
-        course_preferences: Dict[str, int] = None,
-        room_preferences: Dict[str, int] = None,
-        lab_preferences: Dict[str, int] = None,
+        times: Dict[str, List[str]] = {},
+        course_preferences: Dict[str, int] = {},
+        room_preferences: Dict[str, int] = {},
+        lab_preferences: Dict[str, int] = {},
     ):
         self.name = name
         self.minimum_credits = minimum_credits

@@ -13,10 +13,10 @@ class Course:
         self,
         course_id: str,
         credits: int,
-        room: List[str] = None,
-        lab: List[str] = None,
-        conflicts: List[str] = None,
-        faculty: List[str] = None,
+        room: List[str] = [],
+        lab: List[str] = [],
+        conflicts: List[str] = [],
+        faculty: List[str] = [],
     ):
         self.course_id = course_id
         self.credits = credits

@@ -1,8 +1,8 @@
 import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel
-from PyQt5.QtWidgets import QMessageBox, QFileDialog
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QLabel # type : ignore
+from PyQt5.QtWidgets import QMessageBox, QFileDialog # type : ignore
+from PyQt5.QtGui import QFont # type : ignore
+from PyQt5.QtCore import Qt # type : ignore
 from src.controllers.schedules_controller import generate_controller
 
 

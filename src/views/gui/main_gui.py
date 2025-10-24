@@ -1,5 +1,5 @@
 import sys
-from PyQt5.QtWidgets import (
+from PyQt5.QtWidgets import ( # type : ignore
     QApplication,
     QWidget,
     QPushButton,
@@ -9,11 +9,11 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QDialogButtonBox,
     QDialog,
-)
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+) # type : ignore
+from PyQt5.QtGui import QFont # type : ignore
+from PyQt5.QtCore import Qt # type : ignore
 from src.views.gui.schedules_gui import SchedulesGUI
-from PyQt5.QtWidgets import QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QInputDialog, QMessageBox # type : ignore
 from src.views.gui.course_view_gui import CoursesDialog
 from src.views.gui.roomGui import RoomsDialog
 from src.views.gui.faculty_gui import FacultiesDialog
