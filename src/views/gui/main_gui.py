@@ -40,7 +40,6 @@ class MainGUI(QWidget):
     file_uploaded = False
 
     def __init__(self):
-        config = any
 
         super().__init__()
         self.init_ui()
@@ -489,7 +488,7 @@ class MainGUI(QWidget):
         return ScheduleCourse(course_csv)
 
     def gen_sched(self):
-        scheduler = Scheduler(self.config)
+        Scheduler(self.config)
 
 
 if __name__ == "__main__":

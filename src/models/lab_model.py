@@ -175,7 +175,7 @@ class LabManager:
         for course_id, instances in courses_dict.items():
             for course in instances:
                 if hasattr(course, "lab") and old_name in course.lab:
-                    course.lab = [new_name if l == old_name else l for l in course.lab]
+                    course.lab = [new_name if lab_name == old_name else lab_name for lab_name in course.lab]
 
         # Update faculty lab preferences
         for name, faculty in faculty_dict.items():
@@ -203,7 +203,7 @@ class LabManager:
         for course_id, instances in courses_dict.items():
             for course in instances:
                 if hasattr(course, "lab") and lab_name in course.lab:
-                    course.lab = [l for l in course.lab if l != lab_name]
+                    course.lab = [course_lab for course_lab in course.lab if course_lab != lab_name]
 
         # Remove from faculty lab preferences
         for name, faculty in faculty_dict.items():

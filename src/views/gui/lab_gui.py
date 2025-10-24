@@ -194,8 +194,8 @@ class LabsDialog(QDialog):
                                         course.lab, list
                                     ):
                                         course.lab = [
-                                            dialog.result_lab if l == old_name else l
-                                            for l in course.lab
+                                            dialog.result_lab if lab == old_name else lab
+                                            for lab in course.lab
                                         ]
 
                                 # Update faculty lab preferences
@@ -299,7 +299,7 @@ class LabsDialog(QDialog):
                                 ):
                                     if lab_name in course.lab:
                                         course.lab = [
-                                            l for l in course.lab if l != lab_name
+                                            lab for lab in course.lab if lab != lab_name
                                         ]
 
                             # Remove from faculty

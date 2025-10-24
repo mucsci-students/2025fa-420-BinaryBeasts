@@ -62,7 +62,7 @@ class FacultyView:
                     :3
                 ]
                 print(
-                    f"      🔬 Preferred labs: {', '.join([f'{l}({p})' for l, p in top_labs])}"
+                    f"      🔬 Preferred labs: {', '.join([f'{lab}({pref})' for lab, pref in top_labs])}"
                 )
             else:
                 print("      🔬 Preferred labs: None")
