@@ -64,7 +64,7 @@ class SchedulesGUI(QWidget):
         self.selected_label.setText(text)
         self.selected_label.setAlignment(Qt.AlignLeft | Qt.AlignTop) # type : ignore
         self.layout.addWidget(self.selected_label)
-
+ 
         # Save button
         self.SaveButton = QPushButton("Save Current Schedule")
         self.SaveButton.setFont(QFont("Arial", 8))
