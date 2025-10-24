@@ -14,6 +14,33 @@ FONT = QFont("Arial", 13)
 FONT2 = QFont("Arial", 14)
 LABEL_FONT = QFont('Arial', 16, QFont.Bold)
 
+TABLE_STYLE = """
+               QTableWidget {
+                   background-color: white;
+                   gridline-color: #dcdcdc;
+                   border: 1px solid #bbb;
+                   font-size: 10px;
+                   color: black;
+               }
+               QTableWidget::item {
+                   padding: 6px;
+                   color: black;
+                   background-color: white;
+               }
+               QTableWidget::item:selected {
+                   background-color: #e3f2fd;
+                   color: black;
+               }
+               QHeaderView::section {
+                   background-color: #f0f0f0;
+                   color: #222;
+                   padding: 8px;
+                   border: 1px solid #ccc;
+                   font-weight: bold;
+                   font-size: 10px;
+               }
+           """
+
 
 class SchedulesGUI(QWidget):
 
@@ -94,7 +121,6 @@ class SchedulesGUI(QWidget):
         self.layout.addLayout(nav_layout)
 
         #schedule display
-
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setMinimumHeight(400)
@@ -224,37 +250,11 @@ class SchedulesGUI(QWidget):
         self.schedule_table.setHorizontalHeaderLabels(
             ['Course', 'Room/Faculty', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
 
-        # Style the table - subtle and clean
-        self.schedule_table.setStyleSheet("""
-               QTableWidget {
-                   background-color: white;
-                   gridline-color: #dcdcdc;
-                   border: 1px solid #bbb;
-                   font-size: 10px;
-                   color: black;
-               }
-               QTableWidget::item {
-                   padding: 6px;
-                   color: black;
-                   background-color: white;
-               }
-               QTableWidget::item:selected {
-                   background-color: #e3f2fd;
-                   color: black;
-               }
-               QHeaderView::section {
-                   background-color: #f0f0f0;
-                   color: #222;
-                   padding: 8px;
-                   border: 1px solid #ccc;
-                   font-weight: bold;
-                   font-size: 10px;
-               }
-           """)
+        self.schedule_table.setStyleSheet(TABLE_SHEET)
 
         self.schedule_table.setRowCount(len(courses))
 
-        # populate table
+        #populate table
         for row, course in enumerate(courses):
 
             if row % 2 == 0:

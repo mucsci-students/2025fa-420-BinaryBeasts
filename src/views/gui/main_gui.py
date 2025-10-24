@@ -1,5 +1,3 @@
-
-
 import sys
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QGridLayout, QLabel, QPushButton,
@@ -34,45 +32,36 @@ from scheduler.config import CombinedConfig
 num_schedules = 0
 LABEL_FONT = QFont('Arial', 16, QFont.Bold)
 FONT = QFont("Arial", 13)
-FONT2 = QFont("Arial", 14)
+
+FRAME_STYLE = """
+QFrame {
+  background-color: palette(Base);
+  border: 1px solid palette(Midlight);
+  border-radius: 10px;
+  padding: 12px;
+}
+"""
 
 BUTTON_STYLE = """
-    QPushButton {
-        padding: 3px 6px;
-        background-color: #327f66;
-        color: white;
-        border-radius: 6px;
-        border: none;
-        font-size: 10pt;
-    }
-    QPushButton:hover {
-        background-color: #43A047;
-    }
+QPushButton {
+  padding: 6px 12px;
+  background-color: #327f66;   /* your green */
+  color: white;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+}
+QPushButton:hover {
+  background-color: #3da879;   /* lighter green on hover */
+}
+QPushButton:pressed {
+  background-color: #2a6a52;   /* darker green when pressed */
+}
+QPushButton:disabled {
+  background-color: palette(Mid);
+  color: palette(Midlight);
+}
 """
-PRIMARY_BUTTON_STYLE = """
-    QPushButton {
-        padding: 6px 10px;
-        background-color: #327f66;
-        color: white;
-        border-radius: 6px;
-        border: none;
-        font-weight: bold;
-        font-size: 13pt;
-    }
-    QPushButton:hover {
-        background-color: #1D4ED8;
-    }
-"""
-FRAME_STYLE_SHEET = ("QFrame { background-color: #3a3a3a; "
-                     "border-radius: 8px; padding: 15px; }")
-
-#TITLE_FONT = QFont("Arial", 18, QFont.Bold)
-#SECTION_FONT = QFont("Arial", 14, QFont.Bold)
-#LABEL_FONT = QFont("Arial", 13)
-#BUTTON_FONT = QFont("Arial", 13)
-#BUTTON_STYLE = ("padding: 8px 12px; background-color: #327f66; color: white; "
- #               "border-radius: 6px;")
-
 class MainGUI(QWidget):
     file_uploaded = False
 
@@ -84,12 +73,12 @@ class MainGUI(QWidget):
 
     def init_ui(self):
         self.setWindowTitle("Scheduler")
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
+        self.setMinimumWidth(860)
+        self.setMinimumHeight(580)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(30,30, 30, 30)
-        layout.setSpacing(20)
+        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setSpacing(16)
 
         # Header
         title = QLabel("College Course Scheduler")
@@ -97,85 +86,67 @@ class MainGUI(QWidget):
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
-        line = QFrame()
-        line.setFrameShape(QFrame.HLine)
-        line.setFrameShadow(QFrame.Sunken)
-        layout.addWidget(line)
-
-        #config section
+        # config section
         config_section = QFrame()
-        config_section.setFrameShape(QFrame.StyledPanel)
-        config_section.setStyleSheet(FRAME_STYLE_SHEET)
-        config_layout = QVBoxLayout(config_section)
+        config_section.setStyleSheet(FRAME_STYLE)
+        cfg = QVBoxLayout(config_section)
+        cfg.setContentsMargins(10, 6, 10, 6)
+        cfg.setSpacing(10)
 
         self.selected_label = QLabel("No file selected")
-        self.selected_label.setFont(FONT2)
+        self.selected_label.setFont(FONT)
+        self.selected_label.setStyleSheet("color:#cccccc;")
         self.selected_label.setAlignment(Qt.AlignCenter)
-        config_layout.addWidget(self.selected_label)
+        cfg.addWidget(self.selected_label)
 
         config_buttons = QHBoxLayout()
+        config_buttons.setSpacing(8)
 
         upload_config_btn = QPushButton("Upload Configuration File")
-        upload_config_btn.setFont(FONT2)
         upload_config_btn.setStyleSheet(BUTTON_STYLE)
-        upload_config_btn.setMinimumHeight(36)
+        upload_config_btn.setMinimumHeight(32)
         upload_config_btn.clicked.connect(self.open_file_dialog)
 
         upload_schedule_btn = QPushButton("Upload Schedule")
-        upload_schedule_btn.setFont(FONT2)
         upload_schedule_btn.setStyleSheet(BUTTON_STYLE)
-        upload_schedule_btn.setMinimumHeight(36)
+        upload_schedule_btn.setMinimumHeight(32)
         upload_schedule_btn.clicked.connect(self.load_schedule)
 
         save_btn = QPushButton("Save Configuration File")
-        save_btn.setFont(FONT2)
         save_btn.setStyleSheet(BUTTON_STYLE)
-        save_btn.setMinimumHeight(36)
+        save_btn.setMinimumHeight(32)
         save_btn.clicked.connect(self.save_configuration)
 
         config_buttons.addWidget(upload_config_btn)
         config_buttons.addWidget(upload_schedule_btn)
+        config_buttons.addStretch(1)
         config_buttons.addWidget(save_btn)
-        config_layout.addLayout(config_buttons)
 
+        cfg.addLayout(config_buttons)
         layout.addWidget(config_section)
 
-
-        # Edit =====
-
+        # edit section
         edit_section = QFrame()
-        edit_section.setFrameShape(QFrame.StyledPanel)
-        edit_section.setStyleSheet(FRAME_STYLE_SHEET)
+        edit_section.setStyleSheet(FRAME_STYLE)
         edit_layout = QVBoxLayout(edit_section)
+        edit_layout.setContentsMargins(8, 8, 8, 8)
 
         grid = QGridLayout()
-        grid.setHorizontalSpacing(10)
-        grid.setVerticalSpacing(10)
+        grid.setHorizontalSpacing(8)
+        grid.setVerticalSpacing(8)
 
-        courses_btn = QPushButton("Edit Courses");
-        courses_btn.setFont(FONT2);
-        courses_btn.setStyleSheet(BUTTON_STYLE);
-        courses_btn.setMinimumHeight(36)
-        courses_btn.clicked.connect(self.open_course_manager)
+        def make_edit_btn(label, slot):
+            btn = QPushButton(label)
+            btn.setStyleSheet(BUTTON_STYLE)
+            btn.setMinimumHeight(32)
+            btn.setMinimumWidth(100)
+            btn.clicked.connect(slot)
+            return btn
 
-        faculty_btn = QPushButton("Edit Faculty");
-        faculty_btn.setFont(FONT2);
-        faculty_btn.setStyleSheet(BUTTON_STYLE);
-        faculty_btn.setMinimumHeight(36)
-        faculty_btn.clicked.connect(self.open_faculty_manager)
-
-        labs_btn = QPushButton("Edit Labs");
-        labs_btn.setFont(FONT2);
-        labs_btn.setStyleSheet(BUTTON_STYLE);
-        labs_btn.setMinimumHeight(36)
-        labs_btn.clicked.connect(self.open_lab_manager)
-
-        rooms_btn = QPushButton("Edit Rooms");
-        rooms_btn.setFont(FONT2);
-        rooms_btn.setStyleSheet(BUTTON_STYLE);
-        rooms_btn.setMinimumHeight(36)
-        rooms_btn.clicked.connect(self.open_room_manager)
-
+        courses_btn = make_edit_btn("Edit Courses", self.open_course_manager)
+        faculty_btn = make_edit_btn("Edit Faculty", self.open_faculty_manager)
+        labs_btn = make_edit_btn("Edit Labs", self.open_lab_manager)
+        rooms_btn = make_edit_btn("Edit Rooms", self.open_room_manager)
 
         grid.addWidget(courses_btn, 0, 0)
         grid.addWidget(faculty_btn, 0, 1)
@@ -185,28 +156,24 @@ class MainGUI(QWidget):
         edit_layout.addLayout(grid)
         layout.addWidget(edit_section)
 
-        # ===== Tab 3: Generate =====
-
+        # generate section
         generate_section = QFrame()
-        generate_section.setFrameShape(QFrame.StyledPanel)
-        generate_section.setStyleSheet(FRAME_STYLE_SHEET)
-        generate_layout = QVBoxLayout(generate_section)
+        generate_section.setStyleSheet(FRAME_STYLE)
+        gen = QVBoxLayout(generate_section)
+        gen.setContentsMargins(10, 6, 10, 6)
+        gen.setSpacing(10)
 
-        # Primary action
         generate_btn = QPushButton("Generate Schedule")
-        generate_btn.setFont(FONT2)
-        generate_btn.setStyleSheet(PRIMARY_BUTTON_STYLE)
-        generate_btn.setMinimumHeight(44)
+        generate_btn.setStyleSheet(BUTTON_STYLE)
+        generate_btn.setMinimumHeight(36)
         generate_btn.clicked.connect(self.generate_schedule)
-        generate_layout.addWidget(generate_btn)
+        generate_btn.setCursor(Qt.PointingHandCursor)
+        gen.addWidget(generate_btn, alignment=Qt.AlignCenter)
 
-        self.status_label = QLabel("")
-        self.status_label.setFont(LABEL_FONT)
-        generate_layout.addWidget(self.status_label)
 
         layout.addWidget(generate_section)
-
         layout.addStretch(1)
+
         self.setLayout(layout)
     def open_file_dialog(self):
             file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON file', '', 'JSON Files (*.json)')
@@ -215,7 +182,7 @@ class MainGUI(QWidget):
                 config_obj = load_config_from_file(CombinedConfig, file_path)
                 self.config = config_obj
                 file_name = file_path.split('/')[-1]
-                self.selected_label.setText(f"<span style='font-size: 11px; color: green;'>'"
+                self.selected_label.setText(f"<span style='font-size: 13px; color: green;'>'"
                                             f"{file_name}' successfully uploaded</span>")
                 return
             else:
