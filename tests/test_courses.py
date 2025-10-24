@@ -14,7 +14,7 @@ def test1():
                 {"course_id": "CMSC 161", "credits": 4, "room": ["Roddy 136", "Roddy 140", "Roddy 147"], "lab": ["Linux"], "conflicts": [], "faculty": ["Hardy"]},
                 {"course_id": "CMSC 161", "credits": 4, "room": ["Roddy 136", "Roddy 140", "Roddy 147"], "lab": ["Linux"], "conflicts": ["CMSC 140"], "faculty": []},
                 {"course_id": "CMSC 162", "credits": 4, "room": ["Roddy 140"], "lab": ["Linux"], "conflicts": ["CMSC 140"], "faculty": ["Hobbs"]}
-            ]
+            ],
         }
     }
 
