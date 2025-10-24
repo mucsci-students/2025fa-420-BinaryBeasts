@@ -564,6 +564,7 @@ dependencies = [
     { name = "pyqt5" },
     { name = "pytest" },
     { name = "pytest-codecov" },
+    { name = "pytest-cov" },
     { name = "ruff" },
     { name = "ty" },
 ]
@@ -590,6 +591,7 @@ requires-dist = [
     { name = "pytest", marker = "extra == 'all'", specifier = ">=8.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-codecov", specifier = ">=0.7.0" },
+    { name = "pytest-cov", specifier = ">=7.0.0" },
     { name = "ruff", specifier = ">=0.14.1" },
     { name = "ty", specifier = ">=0.0.1a23" },
 ]
