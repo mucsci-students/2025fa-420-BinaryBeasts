@@ -250,7 +250,7 @@ class SchedulesGUI(QWidget):
         self.schedule_table.setHorizontalHeaderLabels(
             ['Course', 'Room/Faculty', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'])
 
-        self.schedule_table.setStyleSheet(TABLE_SHEET)
+        self.schedule_table.setStyleSheet(TABLE_STYLE)
 
         self.schedule_table.setRowCount(len(courses))
 
