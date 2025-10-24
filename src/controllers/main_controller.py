@@ -10,6 +10,8 @@ from src.controllers.lab_controller import LabController
 from src.models.lab_model import LabManager
 from src.controllers import schedules_controller
 from src.views.cli import schedules_view
+from src.controllers.nl_controller import NLController
+from src.views.cli.nl_view import NLView
 from scheduler import (
     Scheduler,
     load_config_from_file,
@@ -438,6 +440,78 @@ class main_controller():
             else:
                 print("❌ Invalid choice. Please select 1-6.")
 
+    def manage_ai(self):
+        """Manage configuration using natural language AI assistant"""
+        # Create all managers and load data from CombinedConfig
+        course_manager = CourseManager()
+        courses_data = []
+        for course in self.model.config.config.courses:
+            courses_data.append({
+                'course_id': course.course_id,
+                'credits': course.credits,
+                'room': course.room,
+                'lab': course.lab,
+                'faculty': course.faculty,
+                'conflicts': course.conflicts
+            })
+        course_manager.load_courses(courses_data)
+
+        faculty_manager = FacultyManager()
+        faculty_data = []
+        for faculty in self.model.config.config.faculty:
+            faculty_data.append({
+                'name': faculty.name,
+                'minimum_credits': faculty.minimum_credits,
+                'maximum_credits': faculty.maximum_credits,
+                'unique_course_limit': faculty.unique_course_limit,
+                'times': faculty.times,
+                'course_preferences': faculty.course_preferences,
+                'room_preferences': faculty.room_preferences,
+                'lab_preferences': faculty.lab_preferences
+            })
+        faculty_manager.load_faculty(faculty_data)
+
+        room_manager = RoomManager(self.model.config.config)
+        lab_manager = LabManager(self.model.config)
+
+        # Create domain controllers
+        course_controller = CourseController(course_manager)
+        faculty_controller = FacultyController(faculty_manager)
+        room_controller = RoomController(room_manager)
+        lab_controller = LabController(lab_manager)
+
+        # Create NL controller with all domain controllers
+        nl_controller = NLController(
+            course_controller=course_controller,
+            faculty_controller=faculty_controller,
+            lab_controller=lab_controller,
+            room_controller=room_controller
+        )
+
+        # Run natural language interface
+        NLView.run_nl_mode(nl_controller)
+
+        # After exiting NL mode, save all changes back to CombinedConfig
+        print("\n💾 Saving configuration changes...")
+
+        # Save courses
+        if course_manager.save_with_combined_config(self.model.config):
+            print("✅ Course changes saved")
+
+        # Save faculty
+        if faculty_manager.save_with_combined_config(self.model.config):
+            print("✅ Faculty changes saved")
+
+        # Save rooms
+        self.model.config.config = room_manager.save_with_combined_config(self.model.config.config)
+        print("✅ Room changes saved")
+
+        # Save labs
+        if lab_controller.save_to_combined_config(self.model.config):
+            print("✅ Lab changes saved")
+
+        print("✅ All configuration changes saved successfully")
+
     def process_input(self, input_data):
         #edit course has been selected
         if input_data == "1":
@@ -462,8 +536,11 @@ class main_controller():
         #import schedules has been selected
         elif input_data == "6":
             self.load_schedules()
-        #exit has been selected
+        #ai assistant has been selected
         elif input_data == "7":
+            self.manage_ai()
+        #exit has been selected
+        elif input_data == "8":
             print("Exiting program.")
             exit(0)
             

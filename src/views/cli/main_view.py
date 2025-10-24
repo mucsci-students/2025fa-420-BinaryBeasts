@@ -1,15 +1,49 @@
 
-
 def get_user_input():
-        print("Main Menu:")
+        while True:
+                print("\nMain Menu:")
+                print("1. 📝 Edit Manually")
+                print("2. 📅 Generate Schedules")
+                print("3. 📥 Import Schedules")
+                print("4. 🤖 AI Assistant")
+                print("5. 🚪 Exit")
+                choice = input("Enter your choice (1-5): ").strip()
+
+                if choice == '1':
+                        # Show manual edit submenu
+                        manual_choice = manual_edit_options()
+                        if manual_choice:  # If not None (back button)
+                                return manual_choice  # Return 1-4 from manual edit menu
+                        # If None, loop continues to show main menu again
+                elif choice == '2':
+                        return '5'  # Map to old option 5 (Generate Schedules)
+                elif choice == '3':
+                        return '6'  # Map to old option 6 (Import Schedules)
+                elif choice == '4':
+                        return '7'  # AI Assistant
+                elif choice == '5':
+                        return '8'  # Exit
+                else:
+                        print("Please try again.")
+
+
+def manual_edit_options():
+    """Display manual edit submenu and return the choice."""
+    while True:
+        print("\nManual Edit Menu:")
         print("1. 📚 Edit Course")
         print("2. 🔬 Edit Lab")
         print("3. 👥 Edit Faculty")
         print("4. 🏢 Edit Room")
-        print("5. 📅 Generate Schedules")
-        print("6. 📥 Import Schedules")
-        print("7. 🚪 Exit")
-        return input("Enter your choice (1-7): ").strip()
+        print("5. 🔙 Back to Main Menu")
+        choice = input("Enter your choice (1-5): ").strip()
+
+        if choice in ['1', '2', '3', '4']:
+            return choice
+        elif choice == '5':
+            return None  # go back to main menu
+        else:
+            print("Please try again.")
 
 def load_config():
         path = input("Enter path to configuration file (default 'config.json'): ").strip()
@@ -22,7 +56,7 @@ def generate_schedules():
        num = input("How many schedules would you like? ")
        flags = []
        while True:
-            print("Select optimization flags")
+            print("Would you like to optimize generation?")
             print("1. ⭐ Optimize Using Faculty Course Preferences")
             print("2. 🏢 Optimize Using Faculty Room Preferences")
             print("3. 🔬 Optimize Using Faculty Lab Preferences")
