@@ -2,13 +2,13 @@
 
 def get_user_input():
         print("Main Menu:")
-        print("1. Edit Course")
-        print("2. Edit Lab")
-        print("3. Edit Faculty")
-        print("4. Edit Room")
-        print("5. Generate Schedules")
-        print("6. Import Schedules")
-        print("7. Exit")
+        print("1. 📚 Edit Course")
+        print("2. 🔬 Edit Lab")
+        print("3. 👥 Edit Faculty")
+        print("4. 🏢 Edit Room")
+        print("5. 📅 Generate Schedules")
+        print("6. 📥 Import Schedules")
+        print("7. 🚪 Exit")
         return input("Enter your choice (1-7): ").strip()
 
 def load_config():
@@ -23,14 +23,14 @@ def generate_schedules():
        flags = []
        while True:
             print("Select optimization flags")
-            print("1. Optimize Using Faculty Course Preferences")
-            print("2. Optimize Using Faculty Room Preferences")
-            print("3. Optimize Using Faculty Lab Preferences")
-            print("4. Same Room")
-            print("5. Same Lab")
-            print("6. Pack Rooms")
-            print("7. Pack Labs")
-            print("8. No more flags")
+            print("1. ⭐ Optimize Using Faculty Course Preferences")
+            print("2. 🏢 Optimize Using Faculty Room Preferences")
+            print("3. 🔬 Optimize Using Faculty Lab Preferences")
+            print("4. 📍 Same Room")
+            print("5. 🧪 Same Lab")
+            print("6. 📦 Pack Rooms")
+            print("7. 🗃️  Pack Labs")
+            print("8. ✅ No more flags")
             choice = input("Enter your choice (1-8): ").strip()
             if choice == '1':
                 if "faculty_course" not in flags:
