@@ -33,7 +33,7 @@ jobs:
       uses: codecov/codecov-action@v5
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
-      
+       
     - name: Lint with ruff
       run: uv run ruff check
 
