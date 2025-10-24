@@ -52,7 +52,7 @@ class MainGUI(QWidget):
 
         title = QLabel("College Course Scheduler")
         title.setFont(QFont("Arial", 16, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignCenter) # type : ignore
         layout.addWidget(title)
 
         CourseButton = QPushButton("Edit Courses")
@@ -89,7 +89,7 @@ class MainGUI(QWidget):
 
         self.selected_label = QLabel("No file selected")
         self.selected_label.setFont(QFont("Arial", 10))
-        self.selected_label.setAlignment(Qt.AlignCenter)
+        self.selected_label.setAlignment(Qt.AlignCenter) # type : ignore
         layout.addWidget(self.selected_label)
 
         SaveButton = QPushButton("Save Configuration File")

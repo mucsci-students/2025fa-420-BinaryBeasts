@@ -38,7 +38,7 @@ class FacultyDialog(QDialog):
         # Title
         title_label = QLabel("Add Faculty" if faculty_data is None else "Edit Faculty")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Form inputs
         form_layout = QFormLayout()
@@ -227,7 +227,7 @@ class FacultiesDialog(QDialog):
 
         header = QLabel("Edit Faculty")
         header.setFont(TITLE_FONT)
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Faculty list
         self.faculty_list = QListWidget()

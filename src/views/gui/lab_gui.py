@@ -34,7 +34,7 @@ class LabDialog(QDialog):
         # Title
         title_label = QLabel("Add Lab" if lab_name is None else "Edit Lab")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Lab name input
         self.lab_input = QLineEdit()
@@ -89,7 +89,7 @@ class LabsDialog(QDialog):
 
         header = QLabel("Edit Labs")
         header.setFont(TITLE_FONT)
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Lab list
         self.lab_list = QListWidget()

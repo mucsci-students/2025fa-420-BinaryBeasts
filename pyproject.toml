@@ -30,6 +30,7 @@ classifiers = [
 ]
 dependencies = [
     "course-constraint-scheduler",
+    "pyqt5>=5.15.11",
     "pytest>=8.4.2",
     "pytest-codecov>=0.7.0",
     "ruff>=0.14.1",

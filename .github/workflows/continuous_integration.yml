@@ -34,9 +34,6 @@ jobs:
     - name: Format with ruff
       run: uv run ruff format
 
-    - name: Ensure pyqt5 type stubs are installed
-      run: uv run pip install PyQt5-stubs
-
     - name: Type check with ty
       run: uv run ty check .
       

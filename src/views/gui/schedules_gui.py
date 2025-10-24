@@ -34,7 +34,7 @@ class SchedulesGUI(QWidget):
 
         self.title = QLabel("Schedule Viewer")
         self.title.setFont(QFont("Arial", 16, QFont.Bold))
-        self.title.setAlignment(Qt.AlignCenter)
+        self.title.setAlignment(Qt.AlignCenter) # type : ignore
         self.layout.addWidget(self.title)
 
         # View by Room button
@@ -62,7 +62,7 @@ class SchedulesGUI(QWidget):
             QFont("Courier", 9)
         )  # Monospace font for better alignment
         self.selected_label.setText(text)
-        self.selected_label.setAlignment(Qt.AlignLeft | Qt.AlignTop)
+        self.selected_label.setAlignment(Qt.AlignLeft | Qt.AlignTop) # type : ignore
         self.layout.addWidget(self.selected_label)
 
         # Save button

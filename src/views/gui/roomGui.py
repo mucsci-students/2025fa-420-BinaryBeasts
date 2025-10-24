@@ -34,7 +34,7 @@ class RoomDialog(QDialog):
         # Title
         title_label = QLabel("Add Room" if room_name is None else "Edit Room")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Room name input
         self.room_input = QLineEdit()
@@ -89,7 +89,7 @@ class RoomsDialog(QDialog):
 
         header = QLabel("Edit Rooms")
         header.setFont(TITLE_FONT)
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Room list
         self.room_list = QListWidget()

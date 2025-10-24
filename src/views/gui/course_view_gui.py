@@ -1,7 +1,7 @@
-from PyQt5.QtCore import Qt # type : ignore
-from PyQt5.QtGui import QFont # type : ignore
-from PyQt5.QtWidgets import ( # type : ignore
-    QDialog, 
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import (
+    QDialog,
     QVBoxLayout,
     QHBoxLayout,
     QPushButton,
@@ -13,8 +13,7 @@ from PyQt5.QtWidgets import ( # type : ignore
     QSpinBox,
     QDialogButtonBox,
     QMessageBox,
-) # type : ignore
-
+)
 
 BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
@@ -42,7 +41,7 @@ class CourseDialog(QDialog):
         # Title
         title_label = QLabel("Course Section")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter) # type : ignore
 
         # form fields
         self.course_id_input = QLineEdit()
@@ -78,7 +77,7 @@ class CourseDialog(QDialog):
             "* Required: Course ID, Credits, at least one Room, at least one Faculty"
         )
         tip.setFont(QFont("Arial", 13))
-        tip.setAlignment(Qt.AlignCenter)
+        tip.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Save / Cancel buttons
         button_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
@@ -159,7 +158,7 @@ class CoursesDialog(QDialog):
 
         header = QLabel("Edit Courses")
         header.setFont(TITLE_FONT)
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignCenter) # type : ignore
 
         # left: course IDs
         self.course_id_list = QListWidget()
@@ -256,7 +255,7 @@ class CoursesDialog(QDialog):
                 f"Conflicts: {', '.join(course.conflicts) or '-'}"
             )
             list_item = QListWidgetItem(text)
-            list_item.setData(Qt.UserRole, (course_id, section_index))
+            list_item.setData(Qt.UserRole, (course_id, section_index)) # type : ignore
             self.section_list.addItem(list_item)
 
     def add_section(self):
@@ -273,7 +272,7 @@ class CoursesDialog(QDialog):
                 self, "No section selected", "Please select a section to edit."
             )
             return
-        course_id, section_index = item.data(Qt.UserRole)
+        course_id, section_index = item.data(Qt.UserRole) # type : ignore
         current_section = self.controller.get_course(course_id)[section_index]
 
         dialog = CourseDialog(self, course=current_section)
@@ -296,7 +295,7 @@ class CoursesDialog(QDialog):
                 self, "No section selected", "Please select a section to continue."
             )
             return
-        course_id, section_index = item.data(Qt.UserRole)
+        course_id, section_index = item.data(Qt.UserRole) # type : ignore
         confirm = QMessageBox.question(
             self, "Confirm", f"Delete {course_id} section {section_index + 1}?"
         )
