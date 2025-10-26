@@ -214,15 +214,18 @@ class SchedulesGUI(QWidget):
         schedule = self.schedules[self.controller.index]
 
         # Parse all courses
-        from src.views.cli.schedules_view import parse_course_string
+        from src.views.cli.schedules_view import parse_course_string, get_earliest_time
         courses = []
         for course_obj in schedule:
             course = parse_course_string(course_obj.as_csv())
             if course:
                 courses.append(course)
 
+        # Sort courses by earliest time slot
+        courses_sorted = sorted(courses, key=get_earliest_time)
+
         title_text = f"Schedule {self.controller.index + 1} of {len(self.schedules)}"
-        self.create_schedule_table(courses, title_text)
+        self.create_schedule_table(courses_sorted, title_text)
 
     def create_schedule_table(self, courses, title_text):
         """Create a table for schedule display"""
@@ -434,13 +437,17 @@ class SchedulesGUI(QWidget):
         room = self.room_list[self.current_room_index]
         courses = self.room_schedule_data[room]
 
+        # Sort courses by earliest time slot
+        from src.views.cli.schedules_view import get_earliest_time
+        courses_sorted = sorted(courses, key=get_earliest_time)
+
         title_text = f"Schedule {self.controller.index + 1} - Room {self.current_room_index + 1} of {len(self.room_list)}: {room}"
 
         # Add faculty info to courses for display
-        for course in courses:
+        for course in courses_sorted:
             course['room'] = course.get('faculty', '')
 
-        self.create_schedule_table(courses, title_text)
+        self.create_schedule_table(courses_sorted, title_text)
 
     def next_room(self):
         """Navigate to next room"""
@@ -500,8 +507,12 @@ class SchedulesGUI(QWidget):
         faculty = self.faculty_list[self.current_faculty_index]
         courses = self.faculty_schedule_data[faculty]
 
+        # Sort courses by earliest time slot
+        from src.views.cli.schedules_view import get_earliest_time
+        courses_sorted = sorted(courses, key=get_earliest_time)
+
         title_text = f"Schedule {self.controller.index + 1} - Faculty {self.current_faculty_index + 1} of {len(self.faculty_list)}: {faculty}"
-        self.create_schedule_table(courses, title_text)
+        self.create_schedule_table(courses_sorted, title_text)
 
     def next_faculty(self):
         """Navigate to next faculty"""

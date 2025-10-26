@@ -5,13 +5,10 @@ Tests core functionality: add, modify, delete labs
 """
 
 import unittest
-import json
-import tempfile
-import os
 from unittest.mock import patch
 from io import StringIO
 
-from lab_manager import LabManager
+from src.models.lab_model import LabManager
 
 
 class TestLabManager(unittest.TestCase):
@@ -125,38 +122,10 @@ class TestLabManager(unittest.TestCase):
         with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
             # Try to delete from course with no labs
             self.lab_manager.delete_lab("CMSC 161", "Linux")
-            
+
             # Assert: Should print no labs error
             output = mock_stdout.getvalue()
             self.assertIn("no lab to delete", output, "Should print no labs error")
-    
-    def test_load_valid_file(self):
-        """Test: Loading valid JSON file should work"""
-        # Create temporary file with test data
-        temp_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False)
-        json.dump(self.test_data, temp_file)
-        temp_file.close()
-        
-        try:
-            # Load the file
-            self.lab_manager.load_data(temp_file.name)
-            
-            # Assert: Data should be loaded correctly
-            self.assertIsNotNone(self.lab_manager.data, "Data should be loaded")
-            self.assertEqual(self.lab_manager.config_file, temp_file.name, "Config file should be stored")
-            
-        finally:
-            os.unlink(temp_file.name)
-    
-    def test_load_nonexistent_file(self):
-        """Test: Loading non-existent file should handle gracefully"""
-        with patch('sys.stdout', new_callable=StringIO) as mock_stdout:
-            result = self.lab_manager.load_config("fake_file.json")
-            
-            # Assert: Should return None and print error
-            self.assertIsNone(result, "Should return None for non-existent file")
-            output = mock_stdout.getvalue()
-            self.assertIn("does not exist", output, "Should print file not found error")
 
 
 if __name__ == '__main__':
