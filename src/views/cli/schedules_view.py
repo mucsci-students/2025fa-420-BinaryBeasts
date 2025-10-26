@@ -113,6 +113,9 @@ def display_schedule_by_room(schedule: list) -> None:
     print("="*80)
 
     for room, courses in sorted(room_schedule.items()):
+        # Sort courses by earliest time slot for better readability
+        courses_sorted = sorted(courses, key=get_earliest_time)
+
         print(f"\n{room}")
         print("-" * 80)
 
@@ -121,7 +124,7 @@ def display_schedule_by_room(schedule: list) -> None:
         print("-" * 80)
 
         # Create rows for each course
-        for course in courses:
+        for course in courses_sorted:
             # Parse time slots by day
             day_times = {'MON': '', 'TUE': '', 'WED': '', 'THU': '', 'FRI': ''}
 
@@ -148,6 +151,9 @@ def display_schedule_by_room(schedule: list) -> None:
         print("="*80)
 
         for lab, courses in sorted(lab_schedule.items()):
+            # Sort courses by earliest time slot for better readability
+            courses_sorted = sorted(courses, key=get_earliest_time)
+
             print(f"\n{lab} Lab")
             print("-" * 80)
 
@@ -156,7 +162,7 @@ def display_schedule_by_room(schedule: list) -> None:
             print("-" * 80)
 
             # Create rows for each course
-            for course in courses:
+            for course in courses_sorted:
                 # Parse time slots by day (only show lab sessions marked with ^)
                 day_times = {'MON': '', 'TUE': '', 'WED': '', 'THU': '', 'FRI': ''}
 
@@ -178,10 +184,35 @@ def display_schedule_by_room(schedule: list) -> None:
                 print(f"{course['course_id']:<15} | {course['faculty']:<10} | {day_times['MON']:<15} | {day_times['TUE']:<15} | {day_times['WED']:<15} | {day_times['THU']:<15} | {day_times['FRI']:<15}")
 
 
+def get_earliest_time(course: dict) -> tuple:
+    """
+    Extract the earliest time from a course's time slots.
+    Returns: (day_order, hour, minute) for sorting purposes
+    """
+    day_order = {'MON': 0, 'TUE': 1, 'WED': 2, 'THU': 3, 'FRI': 4}
+    earliest = (5, 24, 0)  # Default to end of week if no valid time found
+
+    for slot in course['time_slots']:
+        # Remove lab indicator and parse
+        slot_clean = slot.replace('^', '')
+        parts = slot_clean.split(' ', 1)
+        if len(parts) == 2:
+            day = parts[0].strip()
+            time_str = parts[1].strip().split('-')[0]  # Get start time
+            if ':' in time_str:
+                hour, minute = map(int, time_str.split(':'))
+                day_num = day_order.get(day, 5)
+                if (day_num, hour, minute) < earliest:
+                    earliest = (day_num, hour, minute)
+
+    return earliest
+
+
 def display_schedule_by_faculty(schedule: list) -> None:
     """
     Display a schedule organized by faculty member.
     Shows a table for each faculty with their courses and time slots.
+    Courses are sorted by their earliest time slot for better readability.
     """
     if not schedule:
         print("No schedule data to display.")
@@ -206,6 +237,9 @@ def display_schedule_by_faculty(schedule: list) -> None:
     print("="*80)
 
     for faculty, courses in sorted(faculty_schedule.items()):
+        # Sort courses by earliest time slot for better readability
+        courses_sorted = sorted(courses, key=get_earliest_time)
+
         print(f"\n{faculty}")
         print("-" * 80)
 
@@ -214,7 +248,7 @@ def display_schedule_by_faculty(schedule: list) -> None:
         print("-" * 80)
 
         # Create rows for each course
-        for course in courses:
+        for course in courses_sorted:
             # Parse time slots by day
             day_times = {'MON': '', 'TUE': '', 'WED': '', 'THU': '', 'FRI': ''}
 
