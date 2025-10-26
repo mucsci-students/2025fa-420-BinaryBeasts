@@ -3,10 +3,10 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QGridLayout, QLabel, QPushButton,
     QFrame, QTabWidget, QHBoxLayout, QFileDialog,
     QHBoxLayout, QVBoxLayout, QStackedWidget, QLabel, QPushButton,
-    QFrame, QGridLayout, QSizePolicy
+    QFrame, QGridLayout, QSizePolicy, QProgressDialog
 )
 from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 from src.views.gui.schedules_gui import SchedulesGUI
 from PyQt5.QtWidgets import QInputDialog, QMessageBox
 from src.views.gui.course_view_gui import CoursesDialog
@@ -62,6 +62,47 @@ QPushButton:disabled {
   color: palette(Midlight);
 }
 """
+
+class ScheduleGeneratorWorker(QObject):
+    """Worker class to generate schedules in a separate thread."""
+    progress = pyqtSignal(int)  # Signal to emit current progress
+    finished = pyqtSignal(list)  # Signal to emit completed schedules
+    error = pyqtSignal(str)  # Signal to emit errors
+
+    def __init__(self, config, num_schedules):
+        super().__init__()
+        self.config = config
+        self.num_schedules = num_schedules
+        self._is_cancelled = False
+
+    def run(self):
+        """Generate schedules and emit progress updates."""
+        try:
+            scheduler = Scheduler(self.config)
+            schedules = []
+
+            for i, schedule in enumerate(scheduler.get_models()):
+                if self._is_cancelled:
+                    break
+
+                schedules.append(schedule)
+                self.progress.emit(i + 1)  # Emit progress
+
+                if i + 1 >= self.num_schedules:
+                    break
+
+            if schedules and not self._is_cancelled:
+                self.finished.emit(schedules)
+            elif not self._is_cancelled:
+                self.error.emit("No valid schedules could be generated.")
+
+        except Exception as e:
+            self.error.emit(str(e))
+
+    def cancel(self):
+        """Cancel the schedule generation."""
+        self._is_cancelled = True
+
 class MainGUI(QWidget):
     file_uploaded = False
 
@@ -306,32 +347,68 @@ class MainGUI(QWidget):
             self.selected_label.setText('No folder selected.')
 
     def generate_schedule(self):
+        """Generate schedules with a progress dialog."""
         if not self.file_uploaded:
             QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
             return
-        num, ok = QInputDialog.getInt(self, "Input Required", "Pick an amount of schedules to generate:", min=1)
+
+        num, ok = QInputDialog.getInt(
+            self,
+            "Input Required",
+            "Pick an amount of schedules to generate:",
+            min=1
+        )
         if not ok:
             return
 
-        try:
-            # Generate schedules using the Scheduler
-            scheduler = Scheduler(self.config)
-            schedules = []
-            for i, schedule in enumerate(scheduler.get_models()):
-                schedules.append(schedule)
-                if i + 1 >= num:
-                    break
+        # Create progress dialog
+        progress = QProgressDialog(
+            "Generating schedules...",
+            None,  # No cancel button
+            0,
+            num,
+            self
+        )
+        progress.setWindowTitle("Generating Schedules")
+        progress.setWindowModality(Qt.WindowModal)
+        progress.setMinimumDuration(0)  # Show immediately
+        progress.setValue(0)
+        progress.setCancelButton(None)  # Remove cancel button
 
-            if not schedules:
-                QMessageBox.warning(self, "No Schedules", "No valid schedules could be generated.")
-                return
+        # Create worker thread
+        self.thread = QThread()
+        self.worker = ScheduleGeneratorWorker(self.config, num)
+        self.worker.moveToThread(self.thread)
 
-            # Close current window and open schedule viewer with the generated schedules
-            self.close()
-            self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
-            self.generate_schedule_window.show()
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")
+        # Connect signals
+        self.thread.started.connect(self.worker.run)
+        self.worker.progress.connect(progress.setValue)
+        self.worker.finished.connect(lambda schedules: self._on_schedules_generated(schedules, progress))
+        self.worker.error.connect(lambda error: self._on_generation_error(error, progress))
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.error.connect(self.thread.quit)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        # Start the thread
+        self.thread.start()
+
+    def _on_schedules_generated(self, schedules, progress):
+        """Handle successful schedule generation."""
+        progress.close()
+
+        if not schedules:
+            QMessageBox.warning(self, "No Schedules", "No valid schedules could be generated.")
+            return
+
+        # Close current window and open schedule viewer
+        self.close()
+        self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
+        self.generate_schedule_window.show()
+
+    def _on_generation_error(self, error_message, progress):
+        """Handle schedule generation errors."""
+        progress.close()
+        QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{error_message}")
 
     def load_schedule(self):
         """Load a previously saved schedule from JSON or CSV file."""
