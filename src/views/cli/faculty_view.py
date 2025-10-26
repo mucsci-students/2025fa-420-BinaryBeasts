@@ -1,14 +1,15 @@
 # src/views/cli/faculty_view.py
 
+
 class FacultyView:
     """View layer for faculty management - handles all user interaction and display."""
 
     @staticmethod
     def display_faculty(controller) -> None:
         """Display all faculty members in a formatted list."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("FACULTY LIST")
-        print("="*60)
+        print("=" * 60)
 
         faculty_dict = controller.list_faculty()
         if not faculty_dict:
@@ -20,7 +21,9 @@ class FacultyView:
 
         for i, (name, faculty) in enumerate(faculty_dict.items(), 1):
             print(f"\n{i:3}. 👤 {name}")
-            print(f"      📊 Credit range: {faculty.minimum_credits}-{faculty.maximum_credits}")
+            print(
+                f"      📊 Credit range: {faculty.minimum_credits}-{faculty.maximum_credits}"
+            )
             print(f"      📚 Max unique courses: {faculty.unique_course_limit}")
 
             # Show availability
@@ -31,28 +34,40 @@ class FacultyView:
             # Show course preferences
             course_prefs = faculty.course_preferences
             if course_prefs:
-                top_courses = sorted(course_prefs.items(), key=lambda x: x[1], reverse=True)[:3]
-                print(f"      ⭐ Preferred courses: {', '.join([f'{c}({p})' for c, p in top_courses])}")
+                top_courses = sorted(
+                    course_prefs.items(), key=lambda x: x[1], reverse=True
+                )[:3]
+                print(
+                    f"      ⭐ Preferred courses: {', '.join([f'{c}({p})' for c, p in top_courses])}"
+                )
             else:
-                print(f"      ⭐ Preferred courses: None")
+                print("      ⭐ Preferred courses: None")
 
             # Show room preferences
             room_prefs = faculty.room_preferences
             if room_prefs:
-                top_rooms = sorted(room_prefs.items(), key=lambda x: x[1], reverse=True)[:3]
-                print(f"      🏢 Preferred rooms: {', '.join([f'{r}({p})' for r, p in top_rooms])}")
+                top_rooms = sorted(
+                    room_prefs.items(), key=lambda x: x[1], reverse=True
+                )[:3]
+                print(
+                    f"      🏢 Preferred rooms: {', '.join([f'{r}({p})' for r, p in top_rooms])}"
+                )
             else:
-                print(f"      🏢 Preferred rooms: None")
+                print("      🏢 Preferred rooms: None")
 
             # Show lab preferences
             lab_prefs = faculty.lab_preferences
             if lab_prefs:
-                top_labs = sorted(lab_prefs.items(), key=lambda x: x[1], reverse=True)[:3]
-                print(f"      🔬 Preferred labs: {', '.join([f'{l}({p})' for l, p in top_labs])}")
+                top_labs = sorted(lab_prefs.items(), key=lambda x: x[1], reverse=True)[
+                    :3
+                ]
+                print(
+                    f"      🔬 Preferred labs: {', '.join([f'{lab}({pref})' for lab, pref in top_labs])}"
+                )
             else:
-                print(f"      🔬 Preferred labs: None")
+                print("      🔬 Preferred labs: None")
 
-        print("="*60)
+        print("=" * 60)
 
     @staticmethod
     def get_faculty_input(available_courses, available_rooms, available_labs) -> dict:
@@ -79,7 +94,9 @@ class FacultyView:
             try:
                 max_credits = int(input("Maximum credits (0-20): ").strip())
                 if max_credits < min_credits or max_credits > 20:
-                    print(f"Error: Maximum credits must be between {min_credits} and 20")
+                    print(
+                        f"Error: Maximum credits must be between {min_credits} and 20"
+                    )
                     continue
                 break
             except ValueError:
@@ -98,7 +115,7 @@ class FacultyView:
         # Get availability times
         print("\nAvailability times (format: HH:MM-HH:MM, press Enter to skip day):")
         times = {}
-        days = ['MON', 'TUE', 'WED', 'THU', 'FRI']
+        days = ["MON", "TUE", "WED", "THU", "FRI"]
         for day in days:
             time_input = input(f"  {day} (e.g., 09:00-17:00): ").strip()
             if time_input:
@@ -107,15 +124,19 @@ class FacultyView:
                 times[day] = []
 
         # Get course preferences
-        print(f"\nCourse preferences (available courses: {', '.join(sorted(available_courses))})")
+        print(
+            f"\nCourse preferences (available courses: {', '.join(sorted(available_courses))})"
+        )
         print("Format: CourseID:preference (0-10), press Enter to finish:")
         course_preferences = {}
         while True:
-            pref_input = input(f"  Course preference {len(course_preferences)+1} (or Enter to finish): ").strip()
+            pref_input = input(
+                f"  Course preference {len(course_preferences) + 1} (or Enter to finish): "
+            ).strip()
             if not pref_input:
                 break
             try:
-                course_id, pref_str = pref_input.split(':')
+                course_id, pref_str = pref_input.split(":")
                 course_id = course_id.strip()
                 preference = int(pref_str.strip())
                 if preference < 0 or preference > 10:
@@ -124,7 +145,9 @@ class FacultyView:
                 if course_id in available_courses:
                     course_preferences[course_id] = preference
                 else:
-                    print(f"Warning: Course '{course_id}' not found in available courses")
+                    print(
+                        f"Warning: Course '{course_id}' not found in available courses"
+                    )
             except ValueError:
                 print("Error: Format should be CourseID:preference (e.g., CMSC140:8)")
 
@@ -133,11 +156,13 @@ class FacultyView:
         print("Format: RoomName:preference (0-10), press Enter to finish:")
         room_preferences = {}
         while True:
-            pref_input = input(f"  Room preference {len(room_preferences)+1} (or Enter to finish): ").strip()
+            pref_input = input(
+                f"  Room preference {len(room_preferences) + 1} (or Enter to finish): "
+            ).strip()
             if not pref_input:
                 break
             try:
-                room_name, pref_str = pref_input.split(':')
+                room_name, pref_str = pref_input.split(":")
                 room_name = room_name.strip()
                 preference = int(pref_str.strip())
                 if preference < 0 or preference > 10:
@@ -155,11 +180,13 @@ class FacultyView:
         print("Format: LabName:preference (0-10), press Enter to finish:")
         lab_preferences = {}
         while True:
-            pref_input = input(f"  Lab preference {len(lab_preferences)+1} (or Enter to finish): ").strip()
+            pref_input = input(
+                f"  Lab preference {len(lab_preferences) + 1} (or Enter to finish): "
+            ).strip()
             if not pref_input:
                 break
             try:
-                lab_name, pref_str = pref_input.split(':')
+                lab_name, pref_str = pref_input.split(":")
                 lab_name = lab_name.strip()
                 preference = int(pref_str.strip())
                 if preference < 0 or preference > 10:
@@ -173,21 +200,25 @@ class FacultyView:
                 print("Error: Format should be LabName:preference (e.g., Linux:8)")
 
         return {
-            'name': name,
-            'minimum_credits': min_credits,
-            'maximum_credits': max_credits,
-            'unique_course_limit': unique_limit,
-            'times': times,
-            'course_preferences': course_preferences,
-            'room_preferences': room_preferences,
-            'lab_preferences': lab_preferences
+            "name": name,
+            "minimum_credits": min_credits,
+            "maximum_credits": max_credits,
+            "unique_course_limit": unique_limit,
+            "times": times,
+            "course_preferences": course_preferences,
+            "room_preferences": room_preferences,
+            "lab_preferences": lab_preferences,
         }
 
     @staticmethod
-    def add_faculty_interactive(controller, available_courses, available_rooms, available_labs) -> None:
+    def add_faculty_interactive(
+        controller, available_courses, available_rooms, available_labs
+    ) -> None:
         """Interactive faculty addition."""
         try:
-            faculty_data = FacultyView.get_faculty_input(available_courses, available_rooms, available_labs)
+            faculty_data = FacultyView.get_faculty_input(
+                available_courses, available_rooms, available_labs
+            )
             if controller.add_faculty(faculty_data):
                 print(f"✅ Successfully added faculty: {faculty_data['name']}")
             else:
@@ -196,7 +227,9 @@ class FacultyView:
             print(f"❌ Error adding faculty: {e}")
 
     @staticmethod
-    def modify_faculty_interactive(controller, available_courses, available_rooms, available_labs) -> None:
+    def modify_faculty_interactive(
+        controller, available_courses, available_rooms, available_labs
+    ) -> None:
         """Interactive faculty editing."""
         FacultyView.display_faculty(controller)
 
@@ -227,30 +260,54 @@ class FacultyView:
             new_name = name
 
         # Get new credit limits (optional)
-        min_credits_input = input(f"New minimum credits (current: {current_faculty.minimum_credits}): ").strip()
-        min_credits = int(min_credits_input) if min_credits_input else current_faculty.minimum_credits
+        min_credits_input = input(
+            f"New minimum credits (current: {current_faculty.minimum_credits}): "
+        ).strip()
+        min_credits = (
+            int(min_credits_input)
+            if min_credits_input
+            else current_faculty.minimum_credits
+        )
 
-        max_credits_input = input(f"New maximum credits (current: {current_faculty.maximum_credits}): ").strip()
-        max_credits = int(max_credits_input) if max_credits_input else current_faculty.maximum_credits
+        max_credits_input = input(
+            f"New maximum credits (current: {current_faculty.maximum_credits}): "
+        ).strip()
+        max_credits = (
+            int(max_credits_input)
+            if max_credits_input
+            else current_faculty.maximum_credits
+        )
 
-        unique_limit_input = input(f"New unique course limit (current: {current_faculty.unique_course_limit}): ").strip()
-        unique_limit = int(unique_limit_input) if unique_limit_input else current_faculty.unique_course_limit
+        unique_limit_input = input(
+            f"New unique course limit (current: {current_faculty.unique_course_limit}): "
+        ).strip()
+        unique_limit = (
+            int(unique_limit_input)
+            if unique_limit_input
+            else current_faculty.unique_course_limit
+        )
 
         # Ask if they want to update preferences
-        update_prefs = input("Update preferences and times? (y/n, default: n): ").strip().lower()
-        if update_prefs in ['y', 'yes']:
-            print("Note: Complete faculty preference update - enter all preferences you want to keep:")
+        update_prefs = (
+            input("Update preferences and times? (y/n, default: n): ").strip().lower()
+        )
+        if update_prefs in ["y", "yes"]:
+            print(
+                "Note: Complete faculty preference update - enter all preferences you want to keep:"
+            )
             try:
-                faculty_input = FacultyView.get_faculty_input(available_courses, available_rooms, available_labs)
+                faculty_input = FacultyView.get_faculty_input(
+                    available_courses, available_rooms, available_labs
+                )
                 new_data = {
-                    'name': new_name,
-                    'minimum_credits': min_credits,
-                    'maximum_credits': max_credits,
-                    'unique_course_limit': unique_limit,
-                    'times': faculty_input['times'],
-                    'course_preferences': faculty_input['course_preferences'],
-                    'room_preferences': faculty_input['room_preferences'],
-                    'lab_preferences': faculty_input['lab_preferences']
+                    "name": new_name,
+                    "minimum_credits": min_credits,
+                    "maximum_credits": max_credits,
+                    "unique_course_limit": unique_limit,
+                    "times": faculty_input["times"],
+                    "course_preferences": faculty_input["course_preferences"],
+                    "room_preferences": faculty_input["room_preferences"],
+                    "lab_preferences": faculty_input["lab_preferences"],
                 }
             except Exception as e:
                 print(f"❌ Error getting preferences: {e}")
@@ -258,14 +315,14 @@ class FacultyView:
         else:
             # Keep existing preferences
             new_data = {
-                'name': new_name,
-                'minimum_credits': min_credits,
-                'maximum_credits': max_credits,
-                'unique_course_limit': unique_limit,
-                'times': current_faculty.times,
-                'course_preferences': current_faculty.course_preferences,
-                'room_preferences': current_faculty.room_preferences,
-                'lab_preferences': current_faculty.lab_preferences
+                "name": new_name,
+                "minimum_credits": min_credits,
+                "maximum_credits": max_credits,
+                "unique_course_limit": unique_limit,
+                "times": current_faculty.times,
+                "course_preferences": current_faculty.course_preferences,
+                "room_preferences": current_faculty.room_preferences,
+                "lab_preferences": current_faculty.lab_preferences,
             }
 
         try:
@@ -274,7 +331,7 @@ class FacultyView:
                 if new_name != name:
                     print(f"📝 Note: Faculty renamed from '{name}' to '{new_name}'")
             else:
-                print(f"❌ Failed to modify faculty. Name may already exist.")
+                print("❌ Failed to modify faculty. Name may already exist.")
         except Exception as e:
             print(f"❌ Error modifying faculty: {e}")
 
@@ -319,16 +376,24 @@ class FacultyView:
 
         if affected_courses:
             print("\n⚠️  Warning: Deleting this faculty member will:")
-            print(f"   • Remove faculty assignment from {len(affected_courses)} course(s)")
+            print(
+                f"   • Remove faculty assignment from {len(affected_courses)} course(s)"
+            )
 
         # Confirm deletion
-        confirm = input(f"\nAre you sure you want to delete faculty '{name}'? (y/N): ").strip().lower()
-        if confirm in ['y', 'yes']:
+        confirm = (
+            input(f"\nAre you sure you want to delete faculty '{name}'? (y/N): ")
+            .strip()
+            .lower()
+        )
+        if confirm in ["y", "yes"]:
             try:
                 if controller.delete_faculty(name):
                     print(f"✅ Successfully deleted faculty: {name}")
                     if affected_courses:
-                        print("📝 Note: Course references should be manually updated if needed.")
+                        print(
+                            "📝 Note: Course references should be manually updated if needed."
+                        )
                 else:
                     print(f"❌ Failed to delete faculty '{name}'.")
             except Exception as e:
