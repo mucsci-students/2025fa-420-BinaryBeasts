@@ -1,9 +1,8 @@
 import sys
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QLabel, QScrollArea, QComboBox, QTableWidget,
-                             QTableWidgetItem, QHeaderView, QMessageBox, QApplication,
-                             QInputDialog, QFileDialog)
-from PyQt5.QtWidgets import QInputDialog, QMessageBox, QFileDialog
+                             QTableWidgetItem, QHeaderView, QApplication,
+                             QFileDialog, QMessageBox)
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
 import src.views.gui.main_gui as main_gui
@@ -43,7 +42,6 @@ TABLE_STYLE = """
 
 
 class SchedulesGUI(QWidget):
-
     def __init__(self, schedules=None, config=None):
         super().__init__()
         self.schedules = schedules if schedules else []
@@ -215,6 +213,7 @@ class SchedulesGUI(QWidget):
 
         # Parse all courses
         from src.views.cli.schedules_view import parse_course_string
+
         courses = []
         for course_obj in schedule:
             course = parse_course_string(course_obj.as_csv())
@@ -231,7 +230,7 @@ class SchedulesGUI(QWidget):
             self.display_layout.removeWidget(self.schedule_table)
             self.schedule_table.deleteLater()
 
-        # Add simple title label
+        # Add title label
         title_label = QLabel(title_text)
         title_label.setFont(LABEL_FONT)
         title_label.setAlignment(Qt.AlignCenter)
@@ -323,17 +322,23 @@ class SchedulesGUI(QWidget):
             self,
             "Save Schedules",
             "schedules.json",
-            "JSON Files (*.json);;CSV Files (*.csv)"
+            "JSON Files (*.json);;CSV Files (*.csv)",
         )
 
         if file_path:
             try:
                 # Determine format based on file extension or filter
-                format_type = 'csv' if file_path.endswith('.csv') or 'CSV' in selected_filter else 'json'
+                format_type = (
+                    "csv"
+                    if file_path.endswith(".csv") or "CSV" in selected_filter
+                    else "json"
+                )
 
                 # Use controller's save method
                 self.controller.save_schedules(file_path, format_type)
-                QMessageBox.information(self, "Success", f"Schedules saved to {file_path}")
+                QMessageBox.information(
+                    self, "Success", f"Schedules saved to {file_path}"
+                )
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save schedules:\n{e}")
 
@@ -372,6 +377,7 @@ class SchedulesGUI(QWidget):
     def back(self):
         """Return to main menu"""
         from src.views.gui.main_gui import MainGUI as MainMenuGUI
+
         self.main_menu_window = MainMenuGUI()
         self.main_menu_window.show()
         self.close()
@@ -397,15 +403,20 @@ class SchedulesGUI(QWidget):
             QMessageBox.warning(self, "No Schedule", "No schedule available to view.")
             return
 
-        current_schedule_strings = [course.as_csv() for course in self.schedules[self.controller.index] if
-                                    course is not None]
+        # Convert schedule objects to CSV strings
+        current_schedule_strings = [
+            course.as_csv()
+            for course in self.schedules[self.controller.index]
+            if course is not None
+        ]
 
         from src.views.cli.schedules_view import parse_course_string
+
         self.room_schedule_data = {}
         for course_str in current_schedule_strings:
             course = parse_course_string(course_str)
             if course:
-                room = course['room']
+                room = course["room"]
                 if room not in self.room_schedule_data:
                     self.room_schedule_data[room] = []
                 self.room_schedule_data[room].append(course)
@@ -464,14 +475,16 @@ class SchedulesGUI(QWidget):
             QMessageBox.warning(self, "No Schedule", "No schedule available to view.")
             return
 
-        current_schedule_strings = [course.as_csv() for course in self.schedules[self.controller.index] if
-                                    course is not None]
+        current_schedule_strings = [course.as_csv() 
+                                    for course in self.schedules[self.controller.index] 
+                                    if course is not None]
         from src.views.cli.schedules_view import parse_course_string
+
         self.faculty_schedule_data = {}
         for course_str in current_schedule_strings:
             course = parse_course_string(course_str)
             if course:
-                faculty = course['faculty']
+                faculty = course["faculty"]
                 if faculty not in self.faculty_schedule_data:
                     self.faculty_schedule_data[faculty] = []
                 self.faculty_schedule_data[faculty].append(course)
@@ -508,7 +521,9 @@ class SchedulesGUI(QWidget):
         if not self.faculty_list:
             return
 
-        self.current_faculty_index = (self.current_faculty_index + 1) % len(self.faculty_list)
+        self.current_faculty_index = (self.current_faculty_index + 1) % len(
+            self.faculty_list
+        )
         self.display_current_faculty()
 
     def previous_faculty(self):
@@ -516,7 +531,9 @@ class SchedulesGUI(QWidget):
         if not self.faculty_list:
             return
 
-        self.current_faculty_index = (self.current_faculty_index - 1) % len(self.faculty_list)
+        self.current_faculty_index = (self.current_faculty_index - 1) % len(
+            self.faculty_list
+        )
         self.display_current_faculty()
 
     def back_to_schedule_view(self):

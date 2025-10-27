@@ -1,5 +1,3 @@
-import sys
-from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
@@ -18,9 +16,10 @@ BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
 )
-TITLE_FONT = QFont('Arial', 19, QFont.Bold)
-LABEL_FONT = QFont('Arial', 15)
-BUTTON_FONT = QFont('Arial', 15)
+TITLE_FONT = QFont("Arial", 19, QFont.Bold)
+LABEL_FONT = QFont("Arial", 15)
+BUTTON_FONT = QFont("Arial", 15)
+
 
 class CourseDialog(QDialog):
     """
@@ -38,7 +37,7 @@ class CourseDialog(QDialog):
         # Title
         title_label = QLabel("Course Section")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter) # type : ignore
 
         self.course_id_input = QLineEdit()
         self.credits_input = QSpinBox()
@@ -154,19 +153,22 @@ class CourseDialog(QDialog):
             return
 
         if not faculty_list:
-            QMessageBox.warning(self, "Error", "At least one faculty member is required")
+            QMessageBox.warning(
+                self, "Error", "At least one faculty member is required"
+            )
             return
 
         self.result_course = {
-            'course_id': course_id,
-            'credits': credits,
-            'room': room_list,
-            'lab': lab_list,
-            'faculty': faculty_list,
-            'conflicts': conflict_list
+            "course_id": course_id,
+            "credits": credits,
+            "room": room_list,
+            "lab": lab_list,
+            "faculty": faculty_list,
+            "conflicts": conflict_list,
         }
 
         super().accept()
+
 
 class CoursesDialog(QDialog):
     """
@@ -189,7 +191,7 @@ class CoursesDialog(QDialog):
 
         header = QLabel("Edit Courses")
         header.setFont(TITLE_FONT)
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignCenter) # type : ignore
 
         # left: course IDs
         self.course_id_list = QListWidget()
@@ -207,8 +209,13 @@ class CoursesDialog(QDialog):
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
 
-        for b in (self.add_button, self.edit_button, self.delete_button,
-                  self.save_button, self.cancel_button):
+        for b in (
+            self.add_button,
+            self.edit_button,
+            self.delete_button,
+            self.save_button,
+            self.cancel_button,
+        ):
             b.setFont(BUTTON_FONT)
             b.setStyleSheet(BUTTON_STYLE)
 
@@ -281,7 +288,7 @@ class CoursesDialog(QDialog):
                 f"Conflicts: {', '.join(course.conflicts) or '-'}"
             )
             list_item = QListWidgetItem(text)
-            list_item.setData(Qt.UserRole, (course_id, section_index))
+            list_item.setData(Qt.UserRole, (course_id, section_index)) # type : ignore
             self.section_list.addItem(list_item)
 
     def add_section(self):
@@ -295,9 +302,11 @@ class CoursesDialog(QDialog):
     def edit_section(self):
         item = self.section_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No section selected", "Please select a section to edit.")
+            QMessageBox.information(
+                self, "No section selected", "Please select a section to edit."
+            )
             return
-        course_id, section_index = item.data(Qt.UserRole)
+        course_id, section_index = item.data(Qt.UserRole) # type : ignore
         current_section = self.controller.get_course(course_id)[section_index]
 
         # Pass both course and combined_config to CourseDialog
@@ -305,8 +314,10 @@ class CoursesDialog(QDialog):
         if dialog.exec_() == QDialog.Accepted:
             updated_section = dialog.result_course
             if updated_section:
-                if updated_section['course_id'] == course_id:
-                    self.controller.modify_course(course_id, section_index, updated_section)
+                if updated_section["course_id"] == course_id:
+                    self.controller.modify_course(
+                        course_id, section_index, updated_section
+                    )
                 else:
                     self.controller.delete_course(course_id, section_index)
                     self.controller.add_course(updated_section)
@@ -315,10 +326,14 @@ class CoursesDialog(QDialog):
     def delete_section(self):
         item = self.section_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No section selected", "Please select a section to continue.")
+            QMessageBox.information(
+                self, "No section selected", "Please select a section to continue."
+            )
             return
-        course_id, section_index = item.data(Qt.UserRole)
-        confirm = QMessageBox.question(self, "Confirm", f"Delete {course_id} section {section_index+1}?")
+        course_id, section_index = item.data(Qt.UserRole) # type : ignore
+        confirm = QMessageBox.question(
+            self, "Confirm", f"Delete {course_id} section {section_index + 1}?"
+        )
         if confirm == QMessageBox.Yes:
             self.controller.delete_course(course_id, section_index)
             self.refresh_course_ids()

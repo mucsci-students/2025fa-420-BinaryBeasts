@@ -1,14 +1,12 @@
 import sys
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QGridLayout, QLabel, QPushButton,
-    QFrame, QTabWidget, QHBoxLayout, QFileDialog,
-    QHBoxLayout, QVBoxLayout, QStackedWidget, QLabel, QPushButton,
-    QFrame, QGridLayout, QSizePolicy
+    QWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
+    QFrame, QGridLayout
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from src.views.gui.schedules_gui import SchedulesGUI
-from PyQt5.QtWidgets import QInputDialog, QMessageBox
+from PyQt5.QtWidgets import QInputDialog, QMessageBox # type : ignore
 from src.views.gui.course_view_gui import CoursesDialog
 from src.views.gui.roomGui import RoomsDialog
 from src.views.gui.faculty_gui import FacultiesDialog
@@ -21,7 +19,7 @@ from src.models.course_model import CourseManager
 from src.models.room_model import RoomManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
-import json 
+import json
 from scheduler import (
     Scheduler,
     load_config_from_file,
@@ -65,7 +63,6 @@ class MainGUI(QWidget):
     file_uploaded = False
 
     def __init__(self):
-        config = any
 
         super().__init__()
         self.init_ui()
@@ -174,6 +171,7 @@ class MainGUI(QWidget):
         layout.addStretch(1)
 
         self.setLayout(layout)
+
     def open_file_dialog(self):
             file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON file', '', 'JSON Files (*.json)')
             if file_path:
@@ -190,22 +188,33 @@ class MainGUI(QWidget):
 
     def open_course_manager(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
 
         try:
-
             course_manager = CourseManager()
             courses_data = []
             for course in self.config.config.courses:
-                courses_data.append({
-                    'course_id': course.course_id,
-                    'credits': course.credits,
-                    'room': list(course.room) if hasattr(course.room, '__iter__') else [course.room],
-                    'lab': list(course.lab) if hasattr(course.lab, '__iter__') else [course.lab],
-                    'faculty': list(course.faculty) if hasattr(course.faculty, '__iter__') else [course.faculty],
-                    'conflicts': list(course.conflicts) if hasattr(course.conflicts, '__iter__') else [course.conflicts]
-                })
+                courses_data.append(
+                    {
+                        "course_id": course.course_id,
+                        "credits": course.credits,
+                        "room": list(course.room)
+                        if hasattr(course.room, "__iter__")
+                        else [course.room],
+                        "lab": list(course.lab)
+                        if hasattr(course.lab, "__iter__")
+                        else [course.lab],
+                        "faculty": list(course.faculty)
+                        if hasattr(course.faculty, "__iter__")
+                        else [course.faculty],
+                        "conflicts": list(course.conflicts)
+                        if hasattr(course.conflicts, "__iter__")
+                        else [course.conflicts],
+                    }
+                )
 
             course_manager.load_courses(courses_data)
 
@@ -221,7 +230,9 @@ class MainGUI(QWidget):
 
     def open_lab_manager(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
         try:
             # Create LabManager and load labs from config
@@ -239,23 +250,35 @@ class MainGUI(QWidget):
 
     def open_faculty_manager(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
         try:
             # Create FacultyManager and load faculty from config
             faculty_manager = FacultyManager()
             faculty_data = []
             for faculty in self.config.config.faculty:
-                faculty_data.append({
-                    'name': faculty.name,
-                    'minimum_credits': faculty.minimum_credits,
-                    'maximum_credits': faculty.maximum_credits,
-                    'unique_course_limit': faculty.unique_course_limit,
-                    'times': dict(faculty.times) if hasattr(faculty, 'times') else {},
-                    'course_preferences': dict(faculty.course_preferences) if hasattr(faculty, 'course_preferences') else {},
-                    'room_preferences': dict(faculty.room_preferences) if hasattr(faculty, 'room_preferences') else {},
-                    'lab_preferences': dict(faculty.lab_preferences) if hasattr(faculty, 'lab_preferences') else {}
-                })
+                faculty_data.append(
+                    {
+                        "name": faculty.name,
+                        "minimum_credits": faculty.minimum_credits,
+                        "maximum_credits": faculty.maximum_credits,
+                        "unique_course_limit": faculty.unique_course_limit,
+                        "times": dict(faculty.times)
+                        if hasattr(faculty, "times")
+                        else {},
+                        "course_preferences": dict(faculty.course_preferences)
+                        if hasattr(faculty, "course_preferences")
+                        else {},
+                        "room_preferences": dict(faculty.room_preferences)
+                        if hasattr(faculty, "room_preferences")
+                        else {},
+                        "lab_preferences": dict(faculty.lab_preferences)
+                        if hasattr(faculty, "lab_preferences")
+                        else {},
+                    }
+                )
 
             faculty_manager.load_faculty(faculty_data)
 
@@ -270,9 +293,12 @@ class MainGUI(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to open Faculty Manager:\n{e}")
 
         print("Faculty Manager Opened")
+
     def open_room_manager(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
         try:
             # Create RoomManager and load rooms from config
@@ -288,27 +314,38 @@ class MainGUI(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
 
-
     def save_configuration(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
-        folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
+        folder_path = QFileDialog.getSaveFileName(
+            self, "Select Directory", "config.json", "JSON Files (*.json)"
+        )[0]
 
         if folder_path:
             try:
                 save_config(self.config, folder_path)
-                QMessageBox.information(self, "Success", f"Configuration saved to {folder_path}")
+                QMessageBox.information(
+                    self, "Success", f"Configuration saved to {folder_path}"
+                )
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to save configuration:\n{e}")
+                QMessageBox.critical(
+                    self, "Error", f"Failed to save configuration:\n{e}"
+                )
         else:
-            self.selected_label.setText('No folder selected.')
+            self.selected_label.setText("No folder selected.")
 
     def generate_schedule(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
-        num, ok = QInputDialog.getInt(self, "Input Required", "Pick an amount of schedules to generate:", min=1)
+        num, ok = QInputDialog.getInt(
+            self, "Input Required", "Pick an amount of schedules to generate:", min=1
+        )
         if not ok:
             return
         opt_dialog = QDialog(self)
@@ -324,17 +361,17 @@ class MainGUI(QWidget):
         cb_pack_rooms = QCheckBox("Pack rooms")
         cb_pack_labs = QCheckBox("Pack labs")
 
-            # Map checkboxes to flag names
+        # Map checkboxes to flag names
         flag_map = [
-                (cb_fac_course, "faculty_course"),
-                (cb_fac_room, "faculty_room"),
-                (cb_fac_lab, "faculty_lab"),
-                (cb_same_room, "same_room"),
-                (cb_same_lab, "same_lab"),
-                (cb_pack_rooms, "pack_rooms"),
-                (cb_pack_labs, "pack_labs"),
-            ]
-            # Pre-fill from existing config flags if available
+            (cb_fac_course, "faculty_course"),
+            (cb_fac_room, "faculty_room"),
+            (cb_fac_lab, "faculty_lab"),
+            (cb_same_room, "same_room"),
+            (cb_same_lab, "same_lab"),
+            (cb_pack_rooms, "pack_rooms"),
+            (cb_pack_labs, "pack_labs"),
+        ]
+        # Pre-fill from existing config flags if available
         existing_flags = getattr(self.config, "optimizer_flags", None)
         if isinstance(existing_flags, (list, set, tuple)):
             for cb, name in flag_map:
@@ -352,7 +389,7 @@ class MainGUI(QWidget):
         opt_layout.addWidget(buttons)
 
         if opt_dialog.exec_() == QDialog.Accepted:
-                # store as a list of strings for enabled options
+            # store as a list of strings for enabled options
             selected_flags = [name for cb, name in flag_map if cb.isChecked()]
             self.config.optimizer_flags = selected_flags
         try:
@@ -365,17 +402,26 @@ class MainGUI(QWidget):
                     break
 
             if not schedules:
-                QMessageBox.warning(self, "No Schedules", "No valid schedules could be generated.")
+                QMessageBox.warning(
+                    self, "No Schedules", "No valid schedules could be generated."
+                )
                 return
 
             # Close current window and open schedule viewer with the generated schedules
             self.close()
-            self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
+            self.generate_schedule_window = SchedulesGUI(
+                schedules=schedules, config=self.config
+            )
             self.generate_schedule_window.show()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")
 
     def load_schedule(self):
+        if not self.file_uploaded:
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
+            return
         """Load a previously saved schedule from JSON or CSV file."""
     #    if not self.file_uploaded:
     #        QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
@@ -383,9 +429,9 @@ class MainGUI(QWidget):
 
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            'Open Schedule File',
-            '',
-            'Schedule Files (*.json *.csv);;JSON Files (*.json);;CSV Files (*.csv)'
+            "Open Schedule File",
+            "",
+            "Schedule Files (*.json *.csv);;JSON Files (*.json);;CSV Files (*.csv)",
         )
 
         if not file_path:
@@ -393,21 +439,27 @@ class MainGUI(QWidget):
 
         try:
             # Parse the schedule file
-            if file_path.endswith('.json'):
+            if file_path.endswith(".json"):
                 schedules = self._load_schedule_from_json(file_path)
-            elif file_path.endswith('.csv'):
+            elif file_path.endswith(".csv"):
                 schedules = self._load_schedule_from_csv(file_path)
             else:
-                QMessageBox.critical(self, "Error", "Unsupported file format. Please use JSON or CSV.")
+                QMessageBox.critical(
+                    self, "Error", "Unsupported file format. Please use JSON or CSV."
+                )
                 return
 
             if not schedules:
-                QMessageBox.warning(self, "No Schedules", "No schedules found in the file.")
+                QMessageBox.warning(
+                    self, "No Schedules", "No schedules found in the file."
+                )
                 return
 
             # Close current window and open schedule viewer
             self.close()
-            self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
+            self.generate_schedule_window = SchedulesGUI(
+                schedules=schedules, config=self.config
+            )
             self.generate_schedule_window.show()
 
         except Exception as e:
@@ -415,7 +467,7 @@ class MainGUI(QWidget):
 
     def _load_schedule_from_json(self, file_path):
         """Load schedules from JSON file."""
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             data = json.load(f)
 
         schedules = []
@@ -427,8 +479,8 @@ class MainGUI(QWidget):
             schedule = []
 
             # Format 1: Object with 'courses' field
-            if isinstance(schedule_data, dict) and 'courses' in schedule_data:
-                for course_csv in schedule_data['courses']:
+            if isinstance(schedule_data, dict) and "courses" in schedule_data:
+                for course_csv in schedule_data["courses"]:
                     schedule.append(self._create_course_from_csv(course_csv))
             # Format 2: Direct array of course CSV strings
             elif isinstance(schedule_data, list):
@@ -446,25 +498,26 @@ class MainGUI(QWidget):
     def _load_schedule_from_csv(self, file_path):
         """Load schedules from CSV file."""
         import csv
+
         schedules = []
         current_schedule = []
 
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 # Empty row separates schedules
-                if not row or all(cell.strip() == '' for cell in row):
+                if not row or all(cell.strip() == "" for cell in row):
                     if current_schedule:
                         schedules.append(current_schedule)
                         current_schedule = []
                     continue
 
                 # Skip header rows
-                if row[0].startswith('Schedule') or row[0].startswith('Course'):
+                if row[0].startswith("Schedule") or row[0].startswith("Course"):
                     continue
 
                 # Reconstruct CSV format from row
-                course_csv = ','.join(row)
+                course_csv = ",".join(row)
                 current_schedule.append(self._create_course_from_csv(course_csv))
 
         # Add last schedule if exists
@@ -475,6 +528,7 @@ class MainGUI(QWidget):
 
     def _create_course_from_csv(self, course_csv):
         """Create a simple course object from CSV string for display purposes."""
+
         class ScheduleCourse:
             def __init__(self, csv_string):
                 self._csv = csv_string
@@ -485,122 +539,151 @@ class MainGUI(QWidget):
         return ScheduleCourse(course_csv)
 
     def gen_sched(self):
-        scheduler = Scheduler(self.config)
+        Scheduler(self.config)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui = MainGUI()
     gui.show()
     sys.exit(app.exec_())
 
 
-
-
 def save_config(config, path: str):
+    config = config
+    courses = []
+    mon = []
+    tue = []
+    wed = []
+    thu = []
+    fri = []
+    classes = []
+    faculty = []
 
-        config = config
-        courses = []
-        mon = []
-        tue = []
-        wed = []
-        thu = []
-        fri = []
-        classes = []
-        faculty = []
-
-        # Extract time slots per day with spacing where available
-        for monday in config.time_slot_config.times.get("MON", []):
-            mon.append({"start": monday.start, "spacing": getattr(monday, "spacing", None), "end": monday.end})
-        for tuesday in config.time_slot_config.times.get("TUE", []):
-            tue.append({"start": tuesday.start, "spacing": getattr(tuesday, "spacing", None), "end": tuesday.end})
-        for wednesday in config.time_slot_config.times.get("WED", []):
-            wed.append({"start": wednesday.start, "spacing": getattr(wednesday, "spacing", None), "end": wednesday.end})
-        for thursday in config.time_slot_config.times.get("THU", []):
-            thu.append({"start": thursday.start, "spacing": getattr(thursday, "spacing", None), "end": thursday.end})
-        for friday in config.time_slot_config.times.get("FRI", []):
-            fri.append({"start": friday.start, "spacing": getattr(friday, "spacing", None), "end": friday.end})
-
-        # Extract classes info
-        for clas in config.time_slot_config.classes:
-            diction = {"credits": clas.credits, "meetings": get_met(clas)}
-            if hasattr(clas, "disabled"):
-                diction["disabled"] = clas.disabled
-            classes.append(diction)
-
-        #Extract faculty info with serialized times per day
-        for member in config.config.faculty:
-            faculty.append({
-            "name": member.name,
-            "maximum_credits": member.maximum_credits,
-            "minimum_credits": member.minimum_credits,
-            "unique_course_limit": member.unique_course_limit,
-            "times": {
-                "MON": serialize_time_ranges(member.times.get("MON", [])),
-                "TUE": serialize_time_ranges(member.times.get("TUE", [])),
-                "WED": serialize_time_ranges(member.times.get("WED", [])),
-                "THU": serialize_time_ranges(member.times.get("THU", [])),
-                "FRI": serialize_time_ranges(member.times.get("FRI", [])),
+    # Extract time slots per day with spacing where available
+    for monday in config.time_slot_config.times.get("MON", []):
+        mon.append(
+            {
+                "start": monday.start,
+                "spacing": getattr(monday, "spacing", None),
+                "end": monday.end,
             }
-        })
+        )
+    for tuesday in config.time_slot_config.times.get("TUE", []):
+        tue.append(
+            {
+                "start": tuesday.start,
+                "spacing": getattr(tuesday, "spacing", None),
+                "end": tuesday.end,
+            }
+        )
+    for wednesday in config.time_slot_config.times.get("WED", []):
+        wed.append(
+            {
+                "start": wednesday.start,
+                "spacing": getattr(wednesday, "spacing", None),
+                "end": wednesday.end,
+            }
+        )
+    for thursday in config.time_slot_config.times.get("THU", []):
+        thu.append(
+            {
+                "start": thursday.start,
+                "spacing": getattr(thursday, "spacing", None),
+                "end": thursday.end,
+            }
+        )
+    for friday in config.time_slot_config.times.get("FRI", []):
+        fri.append(
+            {
+                "start": friday.start,
+                "spacing": getattr(friday, "spacing", None),
+                "end": friday.end,
+            }
+        )
 
-# Extract courses info
-        for course in config.config.courses:
-            courses.append({
-        "course_id": course.course_id,
-        "credits": course.credits,
-        "room": course.room,
-        "lab": course.lab,
-        "conflicts": course.conflicts,
-        "faculty": course.faculty
-    })
+    # Extract classes info
+    for clas in config.time_slot_config.classes:
+        diction = {"credits": clas.credits, "meetings": get_met(clas)}
+        if hasattr(clas, "disabled"):
+            diction["disabled"] = clas.disabled
+        classes.append(diction)
 
-# Final combined config dictionary
-        final_config = {
-    "config": {
-        "rooms": config.config.rooms,
-        "labs": config.config.labs,
-        "courses": courses,
-        "faculty": faculty
-    },
-    "time_slot_config": {
-        "times": {
-            "MON": mon,
-            "TUE": tue,
-            "WED": wed,
-            "THU": thu,
-            "FRI": fri,
+    # Extract faculty info with serialized times per day
+    for member in config.config.faculty:
+        faculty.append(
+            {
+                "name": member.name,
+                "maximum_credits": member.maximum_credits,
+                "minimum_credits": member.minimum_credits,
+                "unique_course_limit": member.unique_course_limit,
+                "times": {
+                    "MON": serialize_time_ranges(member.times.get("MON", [])),
+                    "TUE": serialize_time_ranges(member.times.get("TUE", [])),
+                    "WED": serialize_time_ranges(member.times.get("WED", [])),
+                    "THU": serialize_time_ranges(member.times.get("THU", [])),
+                    "FRI": serialize_time_ranges(member.times.get("FRI", [])),
+                },
+            }
+        )
+
+    # Extract courses info
+    for course in config.config.courses:
+        courses.append(
+            {
+                "course_id": course.course_id,
+                "credits": course.credits,
+                "room": course.room,
+                "lab": course.lab,
+                "conflicts": course.conflicts,
+                "faculty": course.faculty,
+            }
+        )
+
+    # Final combined config dictionary
+    final_config = {
+        "config": {
+            "rooms": config.config.rooms,
+            "labs": config.config.labs,
+            "courses": courses,
+            "faculty": faculty,
         },
-        "classes": classes
-    },
-    "limit": config.limit,
-    "optimizer_flags": config.optimizer_flags
-}
-        with open(path, "w") as json_file:
-            json.dump(final_config, json_file, indent=1)
+        "time_slot_config": {
+            "times": {
+                "MON": mon,
+                "TUE": tue,
+                "WED": wed,
+                "THU": thu,
+                "FRI": fri,
+            },
+            "classes": classes,
+        },
+        "limit": config.limit,
+        "optimizer_flags": config.optimizer_flags,
+    }
+    with open(path, "w") as json_file:
+        json.dump(final_config, json_file, indent=1)
+
 
 def serialize_time_ranges(day_slots):
-        result = []
-        for slot in day_slots:
-            item = {
-                "start": slot.start,
-                "end": slot.end,
-            }
-            # Only include spacing if the attribute exists
-            if hasattr(slot, "spacing"):
-                item["spacing"] = slot.spacing
-            result.append(item)
-        return result
+    result = []
+    for slot in day_slots:
+        item = {
+            "start": slot.start,
+            "end": slot.end,
+        }
+        # Only include spacing if the attribute exists
+        if hasattr(slot, "spacing"):
+            item["spacing"] = slot.spacing
+        result.append(item)
+    return result
+
 
 def get_met(met):
-        meetings = []
-        for meet in met.meetings:
-            diction = {"day": meet.day, "duration": meet.duration}
-            if hasattr(meet, "lab"):
-                diction["lab"] = meet.lab
-            meetings.append(diction)
-        return meetings
-
-
-
+    meetings = []
+    for meet in met.meetings:
+        diction = {"day": meet.day, "duration": meet.duration}
+        if hasattr(meet, "lab"):
+            diction["lab"] = meet.lab
+        meetings.append(diction)
+    return meetings

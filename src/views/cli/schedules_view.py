@@ -1,15 +1,12 @@
-from src.controllers import schedules_controller
-
-
 def parse_course_string(course_str: str) -> dict:
     """
     Parse a course CSV string into a dictionary.
     Format: CMSC 140.01,Hardy,Roddy 147,Mac,MON 14:00-14:50,TUE 13:10-15:00
     Returns: Dictionary with course_id, faculty, room, lab, and time_slots
     """
-    parts = course_str.split(',')
+    parts = course_str.split(",")
     if len(parts) < 4:
-        return None
+        return {}
 
     course_id = parts[0].strip()
     faculty = parts[1].strip()
@@ -18,11 +15,11 @@ def parse_course_string(course_str: str) -> dict:
     time_slots = [slot.strip() for slot in parts[4:]]
 
     return {
-        'course_id': course_id,
-        'faculty': faculty,
-        'room': room,
-        'lab': lab,
-        'time_slots': time_slots
+        "course_id": course_id,
+        "faculty": faculty,
+        "room": room,
+        "lab": lab,
+        "time_slots": time_slots,
     }
 
 
@@ -46,34 +43,38 @@ def display_schedule_basic(schedule: list) -> None:
         return
 
     # Display all courses in a table
-    print("\n" + "="*95)
+    print("\n" + "=" * 95)
     print("SCHEDULE VIEWER")
-    print("="*95)
+    print("=" * 95)
 
     # Create table header
-    print(f"| {'Course':<12} | {'Faculty':<8} | {'MON':<11} | {'TUE':<11} | {'WED':<11} | {'THU':<11} | {'FRI':<11} |")
-    print("="*95)
+    print(
+        f"| {'Course':<12} | {'Faculty':<8} | {'MON':<11} | {'TUE':<11} | {'WED':<11} | {'THU':<11} | {'FRI':<11} |"
+    )
+    print("=" * 95)
 
     # Create rows for each course
     for course in courses:
         # Parse time slots by day
-        day_times = {'MON': '', 'TUE': '', 'WED': '', 'THU': '', 'FRI': ''}
+        day_times = {"MON": "", "TUE": "", "WED": "", "THU": "", "FRI": ""}
 
-        for slot in course['time_slots']:
+        for slot in course["time_slots"]:
             # Extract day and time (format: "MON 14:00-14:50" or "MON 14:00-14:50^")
-            slot_clean = slot.replace('^', '')  # Remove lab indicator
-            parts = slot_clean.split(' ', 1)
+            slot_clean = slot.replace("^", "")  # Remove lab indicator
+            parts = slot_clean.split(" ", 1)
             if len(parts) == 2:
                 day = parts[0].strip()
                 time = parts[1].strip()
                 if day in day_times:
                     if day_times[day]:
-                        day_times[day] += '\n' + time
+                        day_times[day] += "\n" + time
                     else:
                         day_times[day] = time
 
         # Print course row
-        print(f"| {course['course_id']:<12} | {course['faculty']:<8} | {day_times['MON']:<11} | {day_times['TUE']:<11} | {day_times['WED']:<11} | {day_times['THU']:<11} | {day_times['FRI']:<11} |")
+        print(
+            f"| {course['course_id']:<12} | {course['faculty']:<8} | {day_times['MON']:<11} | {day_times['TUE']:<11} | {day_times['WED']:<11} | {day_times['THU']:<11} | {day_times['FRI']:<11} |"
+        )
 
 
 def display_schedule_by_room(schedule: list) -> None:
@@ -87,7 +88,7 @@ def display_schedule_by_room(schedule: list) -> None:
 
     # Parse all courses and group by room and lab
     room_schedule = {}  # room -> list of course data
-    lab_schedule = {}   # lab -> list of course data
+    lab_schedule = {}  # lab -> list of course data
 
     for course_str in schedule:
         course = parse_course_string(course_str)
@@ -95,22 +96,22 @@ def display_schedule_by_room(schedule: list) -> None:
             continue
 
         # Group by room
-        room = course['room']
+        room = course["room"]
         if room not in room_schedule:
             room_schedule[room] = []
         room_schedule[room].append(course)
 
         # Group by lab (if not None)
-        lab = course['lab']
-        if lab and lab.lower() != 'none':
+        lab = course["lab"]
+        if lab and lab.lower() != "none":
             if lab not in lab_schedule:
                 lab_schedule[lab] = []
             lab_schedule[lab].append(course)
 
     # Display room schedules
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SCHEDULE BY ROOM")
-    print("="*80)
+    print("=" * 80)
 
     for room, courses in sorted(room_schedule.items()):
         # Sort courses by earliest time slot for better readability
@@ -120,35 +121,39 @@ def display_schedule_by_room(schedule: list) -> None:
         print("-" * 80)
 
         # Create table header
-        print(f"{'Course':<15} | {'Faculty':<10} | {'MON':<15} | {'TUE':<15} | {'WED':<15} | {'THU':<15} | {'FRI':<15}")
+        print(
+            f"{'Course':<15} | {'Faculty':<10} | {'MON':<15} | {'TUE':<15} | {'WED':<15} | {'THU':<15} | {'FRI':<15}"
+        )
         print("-" * 80)
 
         # Create rows for each course
         for course in courses_sorted:
             # Parse time slots by day
-            day_times = {'MON': '', 'TUE': '', 'WED': '', 'THU': '', 'FRI': ''}
+            day_times = {"MON": "", "TUE": "", "WED": "", "THU": "", "FRI": ""}
 
-            for slot in course['time_slots']:
+            for slot in course["time_slots"]:
                 # Extract day and time (format: "MON 14:00-14:50" or "MON 14:00-14:50^")
-                slot = slot.replace('^', '')  # Remove lab indicator
-                parts = slot.split(' ', 1)
+                slot = slot.replace("^", "")  # Remove lab indicator
+                parts = slot.split(" ", 1)
                 if len(parts) == 2:
                     day = parts[0].strip()
                     time = parts[1].strip()
                     if day in day_times:
                         if day_times[day]:
-                            day_times[day] += '\n' + time
+                            day_times[day] += "\n" + time
                         else:
                             day_times[day] = time
 
             # Print course row
-            print(f"{course['course_id']:<15} | {course['faculty']:<10} | {day_times['MON']:<15} | {day_times['TUE']:<15} | {day_times['WED']:<15} | {day_times['THU']:<15} | {day_times['FRI']:<15}")
+            print(
+                f"{course['course_id']:<15} | {course['faculty']:<10} | {day_times['MON']:<15} | {day_times['TUE']:<15} | {day_times['WED']:<15} | {day_times['THU']:<15} | {day_times['FRI']:<15}"
+            )
 
     # Display lab schedules
     if lab_schedule:
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("LAB SCHEDULES")
-        print("="*80)
+        print("=" * 80)
 
         for lab, courses in sorted(lab_schedule.items()):
             # Sort courses by earliest time slot for better readability
@@ -158,30 +163,34 @@ def display_schedule_by_room(schedule: list) -> None:
             print("-" * 80)
 
             # Create table header
-            print(f"{'Course':<15} | {'Faculty':<10} | {'MON':<15} | {'TUE':<15} | {'WED':<15} | {'THU':<15} | {'FRI':<15}")
+            print(
+                f"{'Course':<15} | {'Faculty':<10} | {'MON':<15} | {'TUE':<15} | {'WED':<15} | {'THU':<15} | {'FRI':<15}"
+            )
             print("-" * 80)
 
             # Create rows for each course
             for course in courses_sorted:
                 # Parse time slots by day (only show lab sessions marked with ^)
-                day_times = {'MON': '', 'TUE': '', 'WED': '', 'THU': '', 'FRI': ''}
+                day_times = {"MON": "", "TUE": "", "WED": "", "THU": "", "FRI": ""}
 
-                for slot in course['time_slots']:
+                for slot in course["time_slots"]:
                     # Only include lab sessions (marked with ^)
-                    if '^' in slot:
-                        slot = slot.replace('^', '')
-                        parts = slot.split(' ', 1)
+                    if "^" in slot:
+                        slot = slot.replace("^", "")
+                        parts = slot.split(" ", 1)
                         if len(parts) == 2:
                             day = parts[0].strip()
                             time = parts[1].strip()
                             if day in day_times:
                                 if day_times[day]:
-                                    day_times[day] += '\n' + time
+                                    day_times[day] += "\n" + time
                                 else:
                                     day_times[day] = time
 
                 # Print course row
-                print(f"{course['course_id']:<15} | {course['faculty']:<10} | {day_times['MON']:<15} | {day_times['TUE']:<15} | {day_times['WED']:<15} | {day_times['THU']:<15} | {day_times['FRI']:<15}")
+                print(
+                    f"{course['course_id']:<15} | {course['faculty']:<10} | {day_times['MON']:<15} | {day_times['TUE']:<15} | {day_times['WED']:<15} | {day_times['THU']:<15} | {day_times['FRI']:<15}"
+                )
 
 
 def get_earliest_time(course: dict) -> tuple:
@@ -226,15 +235,15 @@ def display_schedule_by_faculty(schedule: list) -> None:
         if not course:
             continue
 
-        faculty = course['faculty']
+        faculty = course["faculty"]
         if faculty not in faculty_schedule:
             faculty_schedule[faculty] = []
         faculty_schedule[faculty].append(course)
 
     # Display faculty schedules
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("SCHEDULE BY FACULTY")
-    print("="*80)
+    print("=" * 80)
 
     for faculty, courses in sorted(faculty_schedule.items()):
         # Sort courses by earliest time slot for better readability
@@ -244,35 +253,40 @@ def display_schedule_by_faculty(schedule: list) -> None:
         print("-" * 80)
 
         # Create table header
-        print(f"{'Course':<15} | {'Room':<12} | {'Lab':<8} | {'MON':<15} | {'TUE':<15} | {'WED':<15} | {'THU':<15} | {'FRI':<15}")
+        print(
+            f"{'Course':<15} | {'Room':<12} | {'Lab':<8} | {'MON':<15} | {'TUE':<15} | {'WED':<15} | {'THU':<15} | {'FRI':<15}"
+        )
         print("-" * 80)
 
         # Create rows for each course
         for course in courses_sorted:
             # Parse time slots by day
-            day_times = {'MON': '', 'TUE': '', 'WED': '', 'THU': '', 'FRI': ''}
+            day_times = {"MON": "", "TUE": "", "WED": "", "THU": "", "FRI": ""}
 
-            for slot in course['time_slots']:
+            for slot in course["time_slots"]:
                 # Extract day and time (format: "MON 14:00-14:50" or "MON 14:00-14:50^")
-                slot_clean = slot.replace('^', '')  # Remove lab indicator for parsing
-                parts = slot_clean.split(' ', 1)
+                slot_clean = slot.replace("^", "")  # Remove lab indicator for parsing
+                parts = slot_clean.split(" ", 1)
                 if len(parts) == 2:
                     day = parts[0].strip()
                     time = parts[1].strip()
                     if day in day_times:
                         if day_times[day]:
-                            day_times[day] += '\n' + time
+                            day_times[day] += "\n" + time
                         else:
                             day_times[day] = time
 
             # Print course row
-            lab_display = course['lab'] if course['lab'].lower() != 'none' else '-'
-            print(f"{course['course_id']:<15} | {course['room']:<12} | {lab_display:<8} | {day_times['MON']:<15} | {day_times['TUE']:<15} | {day_times['WED']:<15} | {day_times['THU']:<15} | {day_times['FRI']:<15}")
+            lab_display = course["lab"] if course["lab"].lower() != "none" else "-"
+            print(
+                f"{course['course_id']:<15} | {course['room']:<12} | {lab_display:<8} | {day_times['MON']:<15} | {day_times['TUE']:<15} | {day_times['WED']:<15} | {day_times['THU']:<15} | {day_times['FRI']:<15}"
+            )
 
 
 def generate_schedules_view():
     input_str = input("Enter the number of schedules to generate: ")
     return input_str
+
 
 def schedule_navigation_view():
     print("\n📋 NAVIGATION OPTIONS:")
@@ -286,6 +300,7 @@ def schedule_navigation_view():
     print("-" * 60)
     return input("Select an option (1-7): ").strip()
 
+
 def save_schedules_view():
     """Get filename and format for saving schedules"""
     filename = input("Enter filename to save schedules (default 'schedules'): ").strip()
@@ -293,13 +308,14 @@ def save_schedules_view():
         filename = "schedules"
 
     format_input = input("Output format (json/csv, default: json): ").strip().lower()
-    format_type = 'csv' if format_input in ['csv', 'c'] else 'json'
+    format_type = "csv" if format_input in ["csv", "c"] else "json"
 
     # Add extension if not provided
-    if not filename.endswith(f'.{format_type}'):
+    if not filename.endswith(f".{format_type}"):
         filename = f"{filename}.{format_type}"
 
     return filename, format_type
+
 
 def display_schedule(schedule):
     """
