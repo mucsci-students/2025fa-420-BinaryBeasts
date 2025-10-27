@@ -1,5 +1,3 @@
-import sys
-from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
@@ -7,7 +5,6 @@ from PyQt5.QtWidgets import (
     QListWidget, QListWidgetItem, QLabel, QFormLayout, QLineEdit,
     QSpinBox, QDialogButtonBox, QMessageBox
 )
-from scheduler.config import CombinedConfig, CourseConfig
 
 
 BUTTON_STYLE = (

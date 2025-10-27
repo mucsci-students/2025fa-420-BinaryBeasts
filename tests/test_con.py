@@ -2,7 +2,6 @@
 Basic tests for conflict management functionality.
 """
 
-import pytest
 
 
 def test_basic_conflict_detection():

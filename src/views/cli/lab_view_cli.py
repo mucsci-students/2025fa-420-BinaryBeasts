@@ -74,7 +74,7 @@ class LabView:
                 if new_name in labs:
                     print(f"❌ Lab '{new_name}' already exists.")
                 else:
-                    print(f"❌ Failed to rename lab.")
+                    print("❌ Failed to rename lab.")
         except Exception as e:
             print(f"❌ Error editing lab: {e}")
 

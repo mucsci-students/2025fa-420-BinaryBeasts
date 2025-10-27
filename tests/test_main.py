@@ -1,5 +1,4 @@
 import json
-import pytest
 
 from src.models.main_model import main_model
 from src.controllers.main_controller import main_controller
@@ -138,7 +137,7 @@ def test_generate_schedules_basic():
         result = controller.generate_schedules(1)  # Generate just 1 schedule
         # Should not raise exception
         assert True
-    except Exception as e:
+    except Exception:
         # If generation fails, that's okay for basic test
         # Just ensure controller exists and method is callable
         assert hasattr(controller, 'generate_schedules')

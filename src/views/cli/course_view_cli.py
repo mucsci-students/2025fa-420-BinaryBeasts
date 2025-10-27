@@ -1,6 +1,5 @@
 # src/views/cli/course_view_cli.py
 from src.controllers.course_controller import CourseController
-from src.models.course_model import Course
 
 class CourseView:
 

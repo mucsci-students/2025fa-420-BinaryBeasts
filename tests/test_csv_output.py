@@ -2,9 +2,6 @@
 Basic tests for CSV output functionality.
 """
 
-import json
-import pytest
-import tempfile
 import csv
 
 

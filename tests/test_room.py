@@ -1,5 +1,3 @@
-import json
-import pytest
 
 from src.models.room_model import RoomManager
 from src.controllers.room_controller import RoomController

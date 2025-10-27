@@ -140,7 +140,7 @@ def print_config_summary(config: dict, time_slots: dict) -> None:
             print(f"      Preferred labs: {', '.join([f'{l}({p})' for l, p in top_labs])}")
 
     # Time slots summary
-    print(f"\n🕒 TIME SLOT CONFIGURATION:")
+    print("\n🕒 TIME SLOT CONFIGURATION:")
     times = time_slots.get('times', {})
     for day, slots in times.items():
         if slots:

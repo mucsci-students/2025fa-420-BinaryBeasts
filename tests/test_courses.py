@@ -1,5 +1,4 @@
 import json
-import pytest
 
 from src.models.course_model import Course, CourseManager
 from src.controllers.course_controller import CourseController

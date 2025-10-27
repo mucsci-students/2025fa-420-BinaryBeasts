@@ -1,5 +1,3 @@
-import json
-import pytest
 
 from src.models.lab_model import LabManager
 from src.controllers.lab_controller import LabController
