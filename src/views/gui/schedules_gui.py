@@ -2,12 +2,9 @@ import sys
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QLabel, QScrollArea, QComboBox, QTableWidget,
                              QTableWidgetItem, QHeaderView, QMessageBox, QApplication,
-                             QInputDialog, QFileDialog)
-from PyQt5.QtWidgets import QInputDialog, QMessageBox, QFileDialog
+                             QFileDialog)
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
-import src.views.gui.main_gui as main_gui
-from scheduler import Scheduler
 from src.controllers.schedules_controller import generate_controller
 
 FONT = QFont("Arial", 13)

@@ -1,17 +1,11 @@
-import sys
-from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
     QListWidget, QListWidgetItem, QLabel, QFormLayout, QLineEdit,
-    QSpinBox, QDialogButtonBox, QMessageBox, QListView
+    QSpinBox, QDialogButtonBox, QMessageBox
 )
-from scheduler.config import CombinedConfig, CourseConfig
 
-from src.controllers.room_controller import RoomController
-from src.controllers.faculty_controller import FacultyController
-from src.controllers.lab_controller import LabController
 
 
 BUTTON_STYLE = (

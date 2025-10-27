@@ -1,9 +1,8 @@
 import sys
 from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QGridLayout, QLabel, QPushButton,
-    QFrame, QTabWidget, QHBoxLayout, QFileDialog,
-    QHBoxLayout, QVBoxLayout, QStackedWidget, QLabel, QPushButton,
-    QFrame, QGridLayout, QSizePolicy, QProgressDialog
+    QWidget, QFileDialog,
+    QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
+    QFrame, QGridLayout, QProgressDialog
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
