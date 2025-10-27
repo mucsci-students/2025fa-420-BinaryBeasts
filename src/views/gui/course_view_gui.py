@@ -6,11 +6,6 @@ from PyQt5.QtWidgets import (
     QSpinBox, QDialogButtonBox, QMessageBox
 )
 
-from src.controllers.room_controller import RoomController
-from src.controllers.faculty_controller import FacultyController
-from src.controllers.lab_controller import LabController
-
-
 BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
@@ -102,9 +97,6 @@ class CourseDialog(QDialog):
                     self.conflicts_list.item(i).setSelected(True)
         else:
             self.credits_input.setValue(4)
-            if combined_config:
-                for existing_course in combined_config.config.courses:
-                    self.conflicts_list.addItem(existing_course.course_id)
 
         form_layout = QFormLayout()
         form_layout.addRow("Course ID", self.course_id_input)

@@ -1,12 +1,12 @@
 import sys
 from PyQt5.QtWidgets import (
     QWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
-    QFrame, QGridLayout
+    QFrame, QGridLayout, QInputDialog, QMessageBox,
+    QDialog, QCheckBox, QDialogButtonBox, QApplication
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from src.views.gui.schedules_gui import SchedulesGUI
-from PyQt5.QtWidgets import QInputDialog, QMessageBox
 from src.views.gui.course_view_gui import CoursesDialog
 from src.views.gui.roomGui import RoomsDialog
 from src.views.gui.faculty_gui import FacultiesDialog
