@@ -9,7 +9,6 @@ from PyQt5.QtCore import Qt, QRect
 
 from src.controllers.schedules_controller import generate_controller
 from src.models.room_day_model import schedule_to_location_blocks, min_max_hours, TimeBlock
-from src.views.cli.schedules_view import parse_course_string
 
 
 DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI"]
@@ -80,14 +79,22 @@ class RoomPanel(QWidget):
             w = DAY_WIDTH - 2 * DAY_PADDING
             h = max(6, b.duration)
             color = _faculty_color(b.faculty)
-            p.fillRect(QRect(x, y, w, h), color)
+            # Slightly different tone for lab blocks
+            fill = QColor(color)
+            if getattr(b, "is_lab", False):
+                fill = QColor(min(color.red() + 30, 255), min(color.green() + 30, 255), min(color.blue() + 30, 255))
+            p.fillRect(QRect(x, y, w, h), fill)
             p.setPen(QPen(Qt.black))
             # Course title
             p.setFont(QFont("Arial", 9, QFont.Bold))
-            p.drawText(x + 8, y + 12, b.course)
+            title = b.course + (" (Lab)" if getattr(b, "is_lab", False) else "")
+            p.drawText(x + 8, y + 12, title)
             # Faculty
             p.setFont(QFont("Arial", 8))
-            p.drawText(x + 8, y + 24, b.faculty)
+            extra = b.faculty
+            if getattr(b, "is_lab", False) and getattr(b, "lab_name", None):
+                extra += f" @ {b.lab_name}"
+            p.drawText(x + 8, y + 24, extra)
 
 
 class RoomLabDayView(QWidget):

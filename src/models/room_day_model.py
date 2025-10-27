@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 from dataclasses import dataclass
 from src.views.cli.schedules_view import parse_course_string
 
@@ -15,7 +15,9 @@ class TimeBlock:
     duration: int      # minutes
     course: str
     faculty: str
-    room: str          # the location label for the panel
+    room: str          # the location label for the panel (lecture room)
+    is_lab: bool = False
+    lab_name: Optional[str] = None  # original lab location if present
 
 
 def _parse_time_str(time_str: str) -> Tuple[int, int]:
@@ -29,9 +31,11 @@ def _parse_time_str(time_str: str) -> Tuple[int, int]:
 
 
 def schedule_to_location_blocks(schedule_csv: List[str]) -> Dict[str, List[TimeBlock]]:
-    """Convert a schedule of CSV course strings into room/lab -> list of TimeBlock.
+    """Convert a schedule of CSV course strings into room -> list of TimeBlock.
 
-    Rooms get non-lab time slots; labs get only lab-marked slots (contain '^').
+    Rooms and labs are combined: all time slots (including lab-marked '^')
+    are shown under the course's lecture room panel. Each block indicates
+    whether it's a lab via `is_lab`, and preserves the original lab name.
     """
     locations: Dict[str, List[TimeBlock]] = {}
 
@@ -45,7 +49,7 @@ def schedule_to_location_blocks(schedule_csv: List[str]) -> Dict[str, List[TimeB
         room = course["room"]
         lab = course.get("lab")
 
-        # Non-lab slots -> room panel
+    # All slots -> room panel, mark lab slots
         for slot in course["time_slots"]:
             is_lab = "^" in slot
             day_time = slot.replace("^", "")
@@ -57,15 +61,19 @@ def schedule_to_location_blocks(schedule_csv: List[str]) -> Dict[str, List[TimeB
             if not day:
                 continue
             start, dur = _parse_time_str(time_str)
-            # room panel for non-lab
-            if not is_lab and room and room.lower() != "none":
+            # Always draw under the lecture room panel; mark labs in the block
+            if room and room.lower() != "none":
                 locations.setdefault(room, []).append(
-                    TimeBlock(day=day, start=start, duration=dur, course=course_id, faculty=faculty, room=room)
-                )
-            # lab panel for lab slots
-            if is_lab and lab and lab.lower() != "none":
-                locations.setdefault(lab, []).append(
-                    TimeBlock(day=day, start=start, duration=dur, course=course_id, faculty=faculty, room=lab)
+                    TimeBlock(
+                        day=day,
+                        start=start,
+                        duration=dur,
+                        course=course_id,
+                        faculty=faculty,
+                        room=room,
+                        is_lab=is_lab,
+                        lab_name=(lab if (is_lab and lab and lab.lower() != "none") else None),
+                    )
                 )
 
     return locations
