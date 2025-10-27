@@ -31,7 +31,7 @@ def test_csv_output_format():
     
     for schedule in schedule_data:
         schedule_id = schedule["schedule_id"]
-        for course in schedule["courses"]:
+        for course in schedule["courses"]:  # type: ignore[not-iterable]
             csv_rows.append([
                 schedule_id,
                 course["course_id"],
@@ -97,7 +97,7 @@ def test_json_to_csv_conversion():
     
     for schedule in json_schedules:
         schedule_id = schedule["schedule_id"]
-        for course in schedule["courses"]:
+        for course in schedule["courses"]:  # type: ignore[not-iterable]
             csv_output.append([
                 schedule_id,
                 course["course_id"],

@@ -161,8 +161,8 @@ def test_save_schedules_to_file(tmp_path):
     }
     
     # Set schedules directly in controller (as expected by save_schedules method)
-    controller.schedules = [mock_schedule]
-    controller.current_schedule_index = 0
+    controller.schedules = [mock_schedule]  # type: ignore[attr-defined]
+    controller.current_schedule_index = 0  # type: ignore[attr-defined]
     
     # Save to file
     output_file = tmp_path / "schedules_output.json"

@@ -111,6 +111,7 @@ def test_faculty_manager_add_modify_delete():
     
     # Verify modification
     updated_carol = mgr.get_faculty('Dr. Carol')
+    assert updated_carol is not None
     assert updated_carol.minimum_credits == 2
     assert updated_carol.maximum_credits == 8
     assert updated_carol.course_preferences.get('CMSC 152') == 9
