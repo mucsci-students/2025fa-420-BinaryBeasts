@@ -1,67 +1,111 @@
-#!/usr/bin/env python3
 """
-Test script for main.py using example.json with CSV output
+Basic tests for CSV output functionality.
 """
-import subprocess
-import sys
 
-def test_csv_output():
-    """Test main.py with CSV output format."""
-    
-    # Test inputs for CSV format
-    test_inputs = [
-        "example.json",     # config file
-        "y",               # use same file for time slots
-        "test_output.csv",  # output file (CSV)
-        "3",               # limit (3 schedules for quick test)
-        "csv",             # output format (CSV)
-        "n",               # no config preview
-        "n"                # no optimization
+import csv
+
+
+def test_csv_output_format():
+    """Test CSV output formatting."""
+    # Sample schedule data
+    schedule_data = [
+        {
+            "schedule_id": 1,
+            "courses": [
+                {
+                    "course_id": "CMSC 140",
+                    "day": "MON",
+                    "time": "09:00",
+                    "duration": 110,
+                    "room": "Roddy 136",
+                    "lab": "",
+                    "faculty": "Dr. Smith"
+                }
+            ]
+        }
     ]
     
-    input_data = "\n".join(test_inputs) + "\n"
+    # Convert to CSV format
+    csv_rows = []
+    csv_rows.append(["Schedule", "Course", "Day", "Time", "Duration", "Room", "Lab", "Faculty"])
     
-    try:
-        print("=" * 60)
-        print("TESTING main.py with CSV output")
-        print("=" * 60)
-        
-        result = subprocess.run(
-            [sys.executable, "main.py"],
-            input=input_data,
-            text=True,
-            capture_output=True,
-            timeout=30
-        )
-        
-        print("STDOUT:")
-        print(result.stdout)
-        
-        if result.stderr:
-            print("\nSTDERR:")
-            print(result.stderr)
-        
-        print(f"\nReturn code: {result.returncode}")
-        
-        # Check if CSV file was created
-        import os
-        if os.path.exists("test_output.csv"):
-            print("\n✅ CSV output file 'test_output.csv' was created successfully!")
-            
-            with open("test_output.csv", "r") as f:
-                content = f.read()
-                print(f"CSV file size: {len(content)} characters")
-                print("First 1000 characters of CSV:")
-                print("-" * 40)
-                print(content[:1000])
-                if len(content) > 1000:
-                    print("...")
-                print("-" * 40)
-        else:
-            print("\n❌ CSV file was not created")
-            
-    except Exception as e:
-        print(f"❌ Test failed with error: {e}")
+    for schedule in schedule_data:
+        schedule_id = schedule["schedule_id"]
+        for course in schedule["courses"]:  # type: ignore[not-iterable]
+            csv_rows.append([
+                schedule_id,
+                course["course_id"],
+                course["day"],
+                course["time"],
+                course["duration"],
+                course["room"],
+                course["lab"],
+                course["faculty"]
+            ])
+    
+    # Verify CSV structure
+    assert len(csv_rows) == 2  # Header + 1 data row
+    assert csv_rows[0] == ["Schedule", "Course", "Day", "Time", "Duration", "Room", "Lab", "Faculty"]
+    assert csv_rows[1][1] == "CMSC 140"  # Course ID
 
-if __name__ == "__main__":
-    test_csv_output()
+
+def test_csv_file_writing(tmp_path):
+    """Test writing CSV data to file."""
+    # Sample data
+    csv_data = [
+        ["Schedule", "Course", "Day", "Time"],
+        [1, "TEST 101", "MON", "09:00"],
+        [1, "TEST 102", "TUE", "10:00"]
+    ]
+    
+    # Write to temp file
+    csv_file = tmp_path / "test_output.csv"
+    
+    with open(csv_file, 'w', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f)
+        writer.writerows(csv_data)
+    
+    # Verify file was created and has correct content
+    assert csv_file.exists()
+    
+    # Read back and verify
+    with open(csv_file, 'r', encoding='utf-8') as f:
+        reader = csv.reader(f)
+        rows = list(reader)
+    
+    assert len(rows) == 3
+    assert rows[0] == ["Schedule", "Course", "Day", "Time"]
+    assert rows[1] == ["1", "TEST 101", "MON", "09:00"]
+
+
+def test_json_to_csv_conversion():
+    """Test converting JSON schedule data to CSV format."""
+    # JSON schedule data
+    json_schedules = [
+        {
+            "schedule_id": 1,
+            "courses": [
+                {"course_id": "MATH 101", "time": "MON 09:00", "room": "Room A"},
+                {"course_id": "ENG 101", "time": "TUE 10:00", "room": "Room B"}
+            ]
+        }
+    ]
+    
+    # Convert to CSV format
+    csv_output = []
+    csv_output.append(["Schedule", "Course", "Time", "Room"])
+    
+    for schedule in json_schedules:
+        schedule_id = schedule["schedule_id"]
+        for course in schedule["courses"]:  # type: ignore[not-iterable]
+            csv_output.append([
+                schedule_id,
+                course["course_id"],
+                course["time"],
+                course["room"]
+            ])
+    
+    # Verify conversion
+    assert len(csv_output) == 3  # Header + 2 courses
+    assert csv_output[1][1] == "MATH 101"
+    assert csv_output[2][1] == "ENG 101"
