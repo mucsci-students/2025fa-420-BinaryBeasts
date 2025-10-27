@@ -1,18 +1,24 @@
-from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-    QListWidget, QLabel, QLineEdit,
-    QDialogButtonBox, QMessageBox
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import ( # type : ignore
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QListWidget,
+    QLabel,
+    QLineEdit,
+    QDialogButtonBox,
+    QMessageBox,
+) # type : ignore
+from PyQt5.QtCore import Qt # type : ignore
+from PyQt5.QtGui import QFont # type : ignore
 
 BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
 )
-TITLE_FONT = QFont('Arial', 19, QFont.Bold)
-LABEL_FONT = QFont('Arial', 15)
-BUTTON_FONT = QFont('Arial', 15)
+TITLE_FONT = QFont("Arial", 19, QFont.Bold)
+LABEL_FONT = QFont("Arial", 15)
+BUTTON_FONT = QFont("Arial", 15)
 
 
 class LabDialog(QDialog):
@@ -28,7 +34,7 @@ class LabDialog(QDialog):
         # Title
         title_label = QLabel("Add Lab" if lab_name is None else "Edit Lab")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Lab name input
         self.lab_input = QLineEdit()
@@ -83,7 +89,7 @@ class LabsDialog(QDialog):
 
         header = QLabel("Edit Labs")
         header.setFont(TITLE_FONT)
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Lab list
         self.lab_list = QListWidget()
@@ -96,8 +102,13 @@ class LabsDialog(QDialog):
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
 
-        for b in (self.add_button, self.edit_button, self.delete_button,
-                  self.save_button, self.cancel_button):
+        for b in (
+            self.add_button,
+            self.edit_button,
+            self.delete_button,
+            self.save_button,
+            self.cancel_button,
+        ):
             b.setFont(BUTTON_FONT)
             b.setStyleSheet(BUTTON_STYLE)
 
@@ -145,10 +156,16 @@ class LabsDialog(QDialog):
                 try:
                     success = self.controller.add_lab(dialog.result_lab)
                     if success:
-                        QMessageBox.information(self, "Success", f"Lab '{dialog.result_lab}' added successfully.")
+                        QMessageBox.information(
+                            self,
+                            "Success",
+                            f"Lab '{dialog.result_lab}' added successfully.",
+                        )
                         self.refresh_labs()
                     else:
-                        QMessageBox.warning(self, "Error", f"Lab '{dialog.result_lab}' already exists.")
+                        QMessageBox.warning(
+                            self, "Error", f"Lab '{dialog.result_lab}' already exists."
+                        )
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"Failed to add lab:\n{e}")
 
@@ -156,7 +173,9 @@ class LabsDialog(QDialog):
         """Edit selected lab."""
         item = self.lab_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No lab selected", "Please select a lab to edit.")
+            QMessageBox.information(
+                self, "No lab selected", "Please select a lab to edit."
+            )
             return
 
         old_name = item.text()
@@ -171,25 +190,47 @@ class LabsDialog(QDialog):
                             with self.combined_config.edit_mode() as editable_config:
                                 # Update course lab assignments
                                 for course in editable_config.config.courses:
-                                    if hasattr(course, 'lab') and isinstance(course.lab, list):
-                                        course.lab = [dialog.result_lab if l == old_name else l for l in course.lab]
+                                    if hasattr(course, "lab") and isinstance(
+                                        course.lab, list
+                                    ):
+                                        course.lab = [
+                                            dialog.result_lab if lab == old_name else lab
+                                            for lab in course.lab
+                                        ]
 
                                 # Update faculty lab preferences
                                 for faculty in editable_config.config.faculty:
-                                    if hasattr(faculty, 'lab_preferences') and isinstance(faculty.lab_preferences, dict):
+                                    if hasattr(
+                                        faculty, "lab_preferences"
+                                    ) and isinstance(faculty.lab_preferences, dict):
                                         if old_name in faculty.lab_preferences:
-                                            preference = faculty.lab_preferences[old_name]
+                                            preference = faculty.lab_preferences[
+                                                old_name
+                                            ]
                                             del faculty.lab_preferences[old_name]
-                                            faculty.lab_preferences[dialog.result_lab] = preference
+                                            faculty.lab_preferences[
+                                                dialog.result_lab
+                                            ] = preference
                         except Exception as e:
-                            QMessageBox.warning(self, "Warning", f"Lab renamed but failed to update references:\n{e}")
+                            QMessageBox.warning(
+                                self,
+                                "Warning",
+                                f"Lab renamed but failed to update references:\n{e}",
+                            )
 
-                        QMessageBox.information(self, "Success",
+                        QMessageBox.information(
+                            self,
+                            "Success",
                             f"Lab '{old_name}' renamed to '{dialog.result_lab}'.\n"
-                            "All course and faculty references have been updated.")
+                            "All course and faculty references have been updated.",
+                        )
                         self.refresh_labs()
                     else:
-                        QMessageBox.warning(self, "Error", f"Failed to rename lab. '{dialog.result_lab}' may already exist.")
+                        QMessageBox.warning(
+                            self,
+                            "Error",
+                            f"Failed to rename lab. '{dialog.result_lab}' may already exist.",
+                        )
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"Failed to edit lab:\n{e}")
 
@@ -197,7 +238,9 @@ class LabsDialog(QDialog):
         """Delete selected lab."""
         item = self.lab_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No lab selected", "Please select a lab to delete.")
+            QMessageBox.information(
+                self, "No lab selected", "Please select a lab to delete."
+            )
             return
 
         lab_name = item.text()
@@ -208,11 +251,17 @@ class LabsDialog(QDialog):
 
         try:
             for course in self.combined_config.config.courses:
-                if hasattr(course, 'lab') and isinstance(course.lab, list) and lab_name in course.lab:
+                if (
+                    hasattr(course, "lab")
+                    and isinstance(course.lab, list)
+                    and lab_name in course.lab
+                ):
                     affected_courses.append(course.course_id)
 
             for faculty in self.combined_config.config.faculty:
-                if hasattr(faculty, 'lab_preferences') and isinstance(faculty.lab_preferences, dict):
+                if hasattr(faculty, "lab_preferences") and isinstance(
+                    faculty.lab_preferences, dict
+                ):
                     if lab_name in faculty.lab_preferences:
                         affected_faculty.append(faculty.name)
         except Exception:
@@ -221,7 +270,9 @@ class LabsDialog(QDialog):
         # Build confirmation message
         impact_msg = f"Delete lab '{lab_name}'?\n\n"
         if affected_courses:
-            impact_msg += f"This will remove the lab from {len(affected_courses)} course(s):\n"
+            impact_msg += (
+                f"This will remove the lab from {len(affected_courses)} course(s):\n"
+            )
             impact_msg += ", ".join(affected_courses[:5])
             if len(affected_courses) > 5:
                 impact_msg += f" and {len(affected_courses) - 5} more"
@@ -243,22 +294,36 @@ class LabsDialog(QDialog):
                         with self.combined_config.edit_mode() as editable_config:
                             # Remove from courses
                             for course in editable_config.config.courses:
-                                if hasattr(course, 'lab') and isinstance(course.lab, list):
+                                if hasattr(course, "lab") and isinstance(
+                                    course.lab, list
+                                ):
                                     if lab_name in course.lab:
-                                        course.lab = [l for l in course.lab if l != lab_name]
+                                        course.lab = [
+                                            lab for lab in course.lab if lab != lab_name
+                                        ]
 
                             # Remove from faculty
                             for faculty in editable_config.config.faculty:
-                                if hasattr(faculty, 'lab_preferences') and isinstance(faculty.lab_preferences, dict):
+                                if hasattr(faculty, "lab_preferences") and isinstance(
+                                    faculty.lab_preferences, dict
+                                ):
                                     if lab_name in faculty.lab_preferences:
                                         del faculty.lab_preferences[lab_name]
                     except Exception as e:
-                        QMessageBox.warning(self, "Warning", f"Lab deleted but failed to update references:\n{e}")
+                        QMessageBox.warning(
+                            self,
+                            "Warning",
+                            f"Lab deleted but failed to update references:\n{e}",
+                        )
 
-                    QMessageBox.information(self, "Success", f"Lab '{lab_name}' deleted successfully.")
+                    QMessageBox.information(
+                        self, "Success", f"Lab '{lab_name}' deleted successfully."
+                    )
                     self.refresh_labs()
                 else:
-                    QMessageBox.warning(self, "Error", f"Failed to delete lab '{lab_name}'.")
+                    QMessageBox.warning(
+                        self, "Error", f"Failed to delete lab '{lab_name}'."
+                    )
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to delete lab:\n{e}")
 
