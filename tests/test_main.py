@@ -134,7 +134,7 @@ def test_generate_schedules_basic():
     
     # Try to generate schedules
     try:
-        result = controller.generate_schedules(1)  # Generate just 1 schedule
+        controller.generate_schedules(1)  # Generate just 1 schedule
         # Should not raise exception
         assert True
     except Exception:

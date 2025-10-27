@@ -1,3 +1,4 @@
+from unittest.mock import Mock
 
 from src.models.room_model import RoomManager
 from src.controllers.room_controller import RoomController
@@ -5,14 +6,22 @@ from src.controllers.room_controller import RoomController
 
 def test_room_manager_creation():
     """Test basic RoomManager creation and initialization."""
-    manager = RoomManager()
+    mock_config = Mock()
+    mock_config.config = Mock()
+    mock_config.config.rooms = []
+
+    manager = RoomManager(mock_config)
     assert manager is not None
     assert manager.rooms == []
 
 
 def test_room_manager_basic_operations():
     """Test basic RoomManager functionality."""
-    mgr = RoomManager()
+    mock_config = Mock()
+    mock_config.config = Mock()
+    mock_config.config.rooms = []
+
+    mgr = RoomManager(mock_config)
 
     # Add rooms (RoomManager works with room names as strings)
     assert mgr.add_room("Room A") is True
@@ -33,7 +42,11 @@ def test_room_manager_basic_operations():
 
 def test_room_manager_edit_delete():
     """Test editing and deleting rooms."""
-    mgr = RoomManager()
+    mock_config = Mock()
+    mock_config.config = Mock()
+    mock_config.config.rooms = []
+
+    mgr = RoomManager(mock_config)
     
     # Add initial room
     mgr.add_room("Room C")
@@ -55,7 +68,11 @@ def test_room_manager_edit_delete():
 
 def test_room_controller_basic_flow(tmp_path):
     """Test RoomController basic operations."""
-    mgr = RoomManager()
+    mock_config = Mock()
+    mock_config.config = Mock()
+    mock_config.config.rooms = []
+
+    mgr = RoomManager(mock_config)
     controller = RoomController(mgr)
 
     # Add room via controller (room names are strings)
@@ -76,7 +93,11 @@ def test_room_controller_basic_flow(tmp_path):
 
 def test_room_controller_edit_delete():
     """Test editing and deleting rooms through controller."""
-    mgr = RoomManager()
+    mock_config = Mock()
+    mock_config.config = Mock()
+    mock_config.config.rooms = []
+
+    mgr = RoomManager(mock_config)
     controller = RoomController(mgr)
 
     # Add initial room
