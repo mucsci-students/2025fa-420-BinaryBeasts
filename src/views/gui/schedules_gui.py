@@ -57,6 +57,13 @@ class SchedulesGUI(QWidget):
         self.layout.addWidget(self.FacultyButton)
         self.FacultyButton.clicked.connect(self.view_by_faculty)
 
+        # Visual Rooms x Days view
+        self.DayViewButton = QPushButton('Visualize (Rooms × Days)')
+        self.DayViewButton.setFont(QFont('Arial', 8))
+        self.DayViewButton.setStyleSheet('padding: 10px; background-color: #607D8B; color: white; border-radius: 5px;')
+        self.layout.addWidget(self.DayViewButton)
+        self.DayViewButton.clicked.connect(self.open_day_view)
+
         # Display label
         self.selected_label = QLabel()
         text = self.generate_schedules()
@@ -131,6 +138,18 @@ class SchedulesGUI(QWidget):
         self.BackButton.clicked.connect(self.back)
 
         self.setLayout(self.layout)
+
+    def open_day_view(self):
+        """Open the sleek Room/Lab × Day visualization window."""
+        if not self.schedules:
+            QMessageBox.warning(self, "No Schedules", "No schedules available.")
+            return
+        try:
+            from src.views.gui.room_day_view import RoomLabDayView
+            self.day_view = RoomLabDayView(self.schedules, initial_index=self.controller.index)
+            self.day_view.show()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open day view:\n{e}")
 
     def generate_schedules(self):
         """Display the current schedule using controller's index in tabular format"""
