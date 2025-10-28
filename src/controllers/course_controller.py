@@ -3,6 +3,7 @@
 from typing import Dict, List
 from src.models.course_model import Course, CourseManager
 
+
 class CourseController:
     def __init__(self, manager: CourseManager) -> None:
         self.mgr = manager
@@ -48,28 +49,29 @@ class CourseController:
     def run(self, config: dict, config_file: str, time_slots: dict) -> dict:
         """Main controller loop."""
         from src.views.cli.course_view_cli import CourseView
-        self.mgr.load_courses(config.get('courses', []))
+
+        self.mgr.load_courses(config.get("courses", []))
 
         while True:
             CourseView.show_menu()
             choice = CourseView.get_menu_choice()
 
-            if choice == '1':
+            if choice == "1":
                 CourseView.display_courses(self)
-            elif choice == '2':
+            elif choice == "2":
                 CourseView.add_course_interactive(self)
-            elif choice == '3':
+            elif choice == "3":
                 CourseView.modify_course_interactive(self)
-            elif choice == '4':
+            elif choice == "4":
                 CourseView.delete_course_interactive(self)
-            elif choice == '5':
+            elif choice == "5":
                 if self.mgr.save_config(config, time_slots, config_file):
                     print(f"✅ Configuration saved successfully to {config_file}")
                     return config
                 else:
                     print("❌ Failed to save configuration.")
                     return config
-            elif choice == '6':
+            elif choice == "6":
                 print("Exiting without saving changes.")
                 return config
             else:

@@ -1,14 +1,15 @@
 # src/views/cli/lab_view_cli.py
 
+
 class LabView:
     """View layer for lab management - handles all user interaction and display."""
 
     @staticmethod
     def display_labs(controller) -> None:
         """Display all labs in a formatted list."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("LAB LIST")
-        print("="*60)
+        print("=" * 60)
 
         labs = controller.get_labs()
         if not labs:
@@ -21,7 +22,7 @@ class LabView:
         for i, lab in enumerate(labs, 1):
             print(f"{i:3}. 🧪 {lab}")
 
-        print("="*60)
+        print("=" * 60)
 
     @staticmethod
     def add_lab_interactive(controller) -> None:
@@ -69,12 +70,14 @@ class LabView:
         try:
             if controller.edit_lab(old_name, new_name):
                 print(f"✅ Successfully renamed '{old_name}' to '{new_name}'")
-                print("📝 Note: All course and faculty references have been updated automatically.")
+                print(
+                    "📝 Note: All course and faculty references have been updated automatically."
+                )
             else:
                 if new_name in labs:
                     print(f"❌ Lab '{new_name}' already exists.")
                 else:
-                    print(f"❌ Failed to rename lab.")
+                    print("❌ Failed to rename lab.")
         except Exception as e:
             print(f"❌ Error editing lab: {e}")
 
@@ -121,7 +124,9 @@ class LabView:
                 print(f"   • {course}")
 
         if affected_faculty:
-            print(f"👥 Faculty with preferences for this lab ({len(affected_faculty)}):")
+            print(
+                f"👥 Faculty with preferences for this lab ({len(affected_faculty)}):"
+            )
             for faculty in affected_faculty:
                 print(f"   • {faculty}")
 
@@ -130,18 +135,28 @@ class LabView:
         else:
             print("\n⚠️  Warning: Deleting this lab will:")
             if affected_courses:
-                print(f"   • Remove lab assignment from {len(affected_courses)} course(s)")
+                print(
+                    f"   • Remove lab assignment from {len(affected_courses)} course(s)"
+                )
             if affected_faculty:
-                print(f"   • Remove lab preferences from {len(affected_faculty)} faculty member(s)")
+                print(
+                    f"   • Remove lab preferences from {len(affected_faculty)} faculty member(s)"
+                )
 
         # Confirm deletion
-        confirm = input(f"\nAre you sure you want to delete '{lab_name}'? (y/N): ").strip().lower()
-        if confirm in ['y', 'yes']:
+        confirm = (
+            input(f"\nAre you sure you want to delete '{lab_name}'? (y/N): ")
+            .strip()
+            .lower()
+        )
+        if confirm in ["y", "yes"]:
             try:
                 if controller.delete_lab(lab_name):
                     print(f"✅ Successfully deleted lab: {lab_name}")
                     if affected_courses or affected_faculty:
-                        print("📝 Note: References should be manually updated if needed.")
+                        print(
+                            "📝 Note: References should be manually updated if needed."
+                        )
                 else:
                     print(f"❌ Failed to delete lab '{lab_name}'.")
             except Exception as e:
