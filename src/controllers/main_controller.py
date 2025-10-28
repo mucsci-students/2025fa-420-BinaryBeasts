@@ -8,6 +8,8 @@ from src.models.room_model import RoomManager
 from src.controllers.lab_controller import LabController
 from src.models.lab_model import LabManager
 from src.controllers import schedules_controller
+from src.controllers.nl_controller import NLController
+from src.views.cli.nl_view import NLView
 from scheduler import (
     Scheduler,
     load_config_from_file,
@@ -22,7 +24,6 @@ class main_controller:
 
     def set_config(self, config):
         self.model.set_config(config)
-
     def set_num_schedules(self, num):
         self.model.set_num_schedules(num)
 
