@@ -31,7 +31,7 @@ class CourseDialog(QDialog):
         # Title
         title_label = QLabel("Course Section")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
 
         self.course_id_input = QLineEdit()
         self.credits_input = QSpinBox()
@@ -108,7 +108,7 @@ class CourseDialog(QDialog):
 
         tip = QLabel("Required: Course ID, Credits, at least one Room")
         tip.setFont(QFont('Arial', 13))
-        tip.setAlignment(Qt.AlignCenter)
+        tip.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
 
         button_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         for btn in button_box.buttons():

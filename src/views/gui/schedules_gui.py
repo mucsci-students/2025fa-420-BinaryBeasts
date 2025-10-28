@@ -70,7 +70,7 @@ class SchedulesGUI(QWidget):
 
         self.title = QLabel('Schedule Viewer')
         self.title.setFont(LABEL_FONT)
-        self.title.setAlignment(Qt.AlignCenter)
+        self.title.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
         header_layout.addWidget(self.title)
 
         header_layout.addStretch(1)
@@ -197,7 +197,7 @@ class SchedulesGUI(QWidget):
         if not self.schedules:
             label = QLabel("No schedules generated yet.")
             label.setStyleSheet("color: #7f8c8d; font-size: 14px; padding: 20px;")
-            label.setAlignment(Qt.AlignCenter)
+            label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
 
             while self.display_layout.count():
                 item = self.display_layout.takeAt(0)
@@ -234,7 +234,7 @@ class SchedulesGUI(QWidget):
         # Add title label
         title_label = QLabel(title_text)
         title_label.setFont(LABEL_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
 
         # Clear layout
         while self.display_layout.count():
@@ -295,7 +295,7 @@ class SchedulesGUI(QWidget):
                 time_item.setFont(FONT)
                 time_item.setBackground(row_color)
                 time_item.setForeground(QColor(0, 0, 0))  # Black text
-                time_item.setTextAlignment(Qt.AlignCenter)
+                time_item.setTextAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
                 self.schedule_table.setItem(row, col, time_item)
 
         # resize columns to content
@@ -433,7 +433,7 @@ class SchedulesGUI(QWidget):
         if not self.room_list:
             label = QLabel("No rooms found in schedule.")
             label.setStyleSheet("color: #7f8c8d; font-size: 14px; padding: 20px;")
-            label.setAlignment(Qt.AlignCenter)
+            label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
 
             while self.display_layout.count():
                 item = self.display_layout.takeAt(0)
@@ -505,7 +505,7 @@ class SchedulesGUI(QWidget):
         if not self.faculty_list:
             label = QLabel("No faculty found in schedule.")
             label.setStyleSheet("color: #7f8c8d; font-size: 14px; padding: 20px;")
-            label.setAlignment(Qt.AlignCenter)
+            label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
 
             while self.display_layout.count():
                 item = self.display_layout.takeAt(0)
