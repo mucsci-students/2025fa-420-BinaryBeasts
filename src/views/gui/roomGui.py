@@ -1,18 +1,24 @@
-from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-    QListWidget, QListWidgetItem, QLabel, QLineEdit,
-    QDialogButtonBox, QMessageBox
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import ( # type : ignore
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QListWidget,
+    QLabel,
+    QLineEdit,
+    QDialogButtonBox,
+    QMessageBox,
+) # type : ignore
+from PyQt5.QtCore import Qt # type : ignore
+from PyQt5.QtGui import QFont # type : ignore
 
 BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
 )
-TITLE_FONT = QFont('Arial', 19, QFont.Bold)
-LABEL_FONT = QFont('Arial', 15)
-BUTTON_FONT = QFont('Arial', 15)
+TITLE_FONT = QFont("Arial", 19, QFont.Bold)
+LABEL_FONT = QFont("Arial", 15)
+BUTTON_FONT = QFont("Arial", 15)
 
 
 class RoomDialog(QDialog):
@@ -28,7 +34,7 @@ class RoomDialog(QDialog):
         # Title
         title_label = QLabel("Add Room" if room_name is None else "Edit Room")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Room name input
         self.room_input = QLineEdit()
@@ -83,7 +89,7 @@ class RoomsDialog(QDialog):
 
         header = QLabel("Edit Rooms")
         header.setFont(TITLE_FONT)
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Room list
         self.room_list = QListWidget()
@@ -96,8 +102,13 @@ class RoomsDialog(QDialog):
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
 
-        for b in (self.add_button, self.edit_button, self.delete_button,
-                  self.save_button, self.cancel_button):
+        for b in (
+            self.add_button,
+            self.edit_button,
+            self.delete_button,
+            self.save_button,
+            self.cancel_button,
+        ):
             b.setFont(BUTTON_FONT)
             b.setStyleSheet(BUTTON_STYLE)
 
@@ -144,16 +155,24 @@ class RoomsDialog(QDialog):
             if dialog.result_room:
                 success = self.controller.add_room(dialog.result_room)
                 if success:
-                    QMessageBox.information(self, "Success", f"Room '{dialog.result_room}' added successfully.")
+                    QMessageBox.information(
+                        self,
+                        "Success",
+                        f"Room '{dialog.result_room}' added successfully.",
+                    )
                     self.refresh_rooms()
                 else:
-                    QMessageBox.warning(self, "Error", f"Room '{dialog.result_room}' already exists.")
+                    QMessageBox.warning(
+                        self, "Error", f"Room '{dialog.result_room}' already exists."
+                    )
 
     def edit_room(self):
         """Edit selected room."""
         item = self.room_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No room selected", "Please select a room to edit.")
+            QMessageBox.information(
+                self, "No room selected", "Please select a room to edit."
+            )
             return
 
         old_name = item.text()
@@ -167,31 +186,53 @@ class RoomsDialog(QDialog):
                         with self.combined_config.edit_mode() as editable_config:
                             # Update course room assignments
                             for course in editable_config.config.courses:
-                                if hasattr(course, 'room') and isinstance(course.room, list):
-                                    course.room = [dialog.result_room if r == old_name else r for r in course.room]
+                                if hasattr(course, "room") and isinstance(
+                                    course.room, list
+                                ):
+                                    course.room = [
+                                        dialog.result_room if r == old_name else r
+                                        for r in course.room
+                                    ]
 
                             # Update faculty room preferences
                             for faculty in editable_config.config.faculty:
-                                if hasattr(faculty, 'room_preferences') and isinstance(faculty.room_preferences, dict):
+                                if hasattr(faculty, "room_preferences") and isinstance(
+                                    faculty.room_preferences, dict
+                                ):
                                     if old_name in faculty.room_preferences:
                                         preference = faculty.room_preferences[old_name]
                                         del faculty.room_preferences[old_name]
-                                        faculty.room_preferences[dialog.result_room] = preference
+                                        faculty.room_preferences[dialog.result_room] = (
+                                            preference
+                                        )
                     except Exception as e:
-                        QMessageBox.warning(self, "Warning", f"Room renamed but failed to update references:\n{e}")
+                        QMessageBox.warning(
+                            self,
+                            "Warning",
+                            f"Room renamed but failed to update references:\n{e}",
+                        )
 
-                    QMessageBox.information(self, "Success",
+                    QMessageBox.information(
+                        self,
+                        "Success",
                         f"Room '{old_name}' renamed to '{dialog.result_room}'.\n"
-                        "All course and faculty references have been updated.")
+                        "All course and faculty references have been updated.",
+                    )
                     self.refresh_rooms()
                 else:
-                    QMessageBox.warning(self, "Error", f"Failed to rename room. '{dialog.result_room}' may already exist.")
+                    QMessageBox.warning(
+                        self,
+                        "Error",
+                        f"Failed to rename room. '{dialog.result_room}' may already exist.",
+                    )
 
     def delete_room(self):
         """Delete selected room."""
         item = self.room_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No room selected", "Please select a room to delete.")
+            QMessageBox.information(
+                self, "No room selected", "Please select a room to delete."
+            )
             return
 
         room_name = item.text()
@@ -202,11 +243,17 @@ class RoomsDialog(QDialog):
 
         try:
             for course in self.combined_config.config.courses:
-                if hasattr(course, 'room') and isinstance(course.room, list) and room_name in course.room:
+                if (
+                    hasattr(course, "room")
+                    and isinstance(course.room, list)
+                    and room_name in course.room
+                ):
                     affected_courses.append(course.course_id)
 
             for faculty in self.combined_config.config.faculty:
-                if hasattr(faculty, 'room_preferences') and isinstance(faculty.room_preferences, dict):
+                if hasattr(faculty, "room_preferences") and isinstance(
+                    faculty.room_preferences, dict
+                ):
                     if room_name in faculty.room_preferences:
                         affected_faculty.append(faculty.name)
         except Exception:
@@ -215,7 +262,9 @@ class RoomsDialog(QDialog):
         # Build confirmation message
         impact_msg = f"Delete room '{room_name}'?\n\n"
         if affected_courses:
-            impact_msg += f"This will remove the room from {len(affected_courses)} course(s):\n"
+            impact_msg += (
+                f"This will remove the room from {len(affected_courses)} course(s):\n"
+            )
             impact_msg += ", ".join(affected_courses[:5])
             if len(affected_courses) > 5:
                 impact_msg += f" and {len(affected_courses) - 5} more"
@@ -236,22 +285,36 @@ class RoomsDialog(QDialog):
                     with self.combined_config.edit_mode() as editable_config:
                         # Remove from courses
                         for course in editable_config.config.courses:
-                            if hasattr(course, 'room') and isinstance(course.room, list):
+                            if hasattr(course, "room") and isinstance(
+                                course.room, list
+                            ):
                                 if room_name in course.room:
-                                    course.room = [r for r in course.room if r != room_name]
+                                    course.room = [
+                                        r for r in course.room if r != room_name
+                                    ]
 
                         # Remove from faculty
                         for faculty in editable_config.config.faculty:
-                            if hasattr(faculty, 'room_preferences') and isinstance(faculty.room_preferences, dict):
+                            if hasattr(faculty, "room_preferences") and isinstance(
+                                faculty.room_preferences, dict
+                            ):
                                 if room_name in faculty.room_preferences:
                                     del faculty.room_preferences[room_name]
                 except Exception as e:
-                    QMessageBox.warning(self, "Warning", f"Room deleted but failed to update references:\n{e}")
+                    QMessageBox.warning(
+                        self,
+                        "Warning",
+                        f"Room deleted but failed to update references:\n{e}",
+                    )
 
-                QMessageBox.information(self, "Success", f"Room '{room_name}' deleted successfully.")
+                QMessageBox.information(
+                    self, "Success", f"Room '{room_name}' deleted successfully."
+                )
                 self.refresh_rooms()
             else:
-                QMessageBox.warning(self, "Error", f"Failed to delete room '{room_name}'.")
+                QMessageBox.warning(
+                    self, "Error", f"Failed to delete room '{room_name}'."
+                )
 
     def save_and_close(self):
         """Save changes and close."""

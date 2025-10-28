@@ -1,4 +1,3 @@
-import src.models.main_model as main_model
 import src.views.cli.main_view as main_view
 from src.controllers.course_controller import CourseController
 from src.models.course_model import CourseManager
@@ -9,9 +8,6 @@ from src.models.room_model import RoomManager
 from src.controllers.lab_controller import LabController
 from src.models.lab_model import LabManager
 from src.controllers import schedules_controller
-from src.views.cli import schedules_view
-from src.controllers.nl_controller import NLController
-from src.views.cli.nl_view import NLView
 from scheduler import (
     Scheduler,
     load_config_from_file,
@@ -20,13 +16,13 @@ from scheduler.config import CombinedConfig
 import json
 
 
-class main_controller():
+class main_controller:
     def __init__(self, model):
         self.model = model
 
     def set_config(self, config):
         self.model.set_config(config)
-    
+
     def set_num_schedules(self, num):
         self.model.set_num_schedules(num)
 
@@ -39,9 +35,7 @@ class main_controller():
             self.model.schedules.append(schedule)
         return lst
 
-
     def save_config(self, path: str):
-
         config = self.model.config
         courses = []
         mon = []
@@ -54,15 +48,45 @@ class main_controller():
 
         # Extract time slots per day with spacing where available
         for monday in config.time_slot_config.times.get("MON", []):
-            mon.append({"start": monday.start, "spacing": getattr(monday, "spacing", None), "end": monday.end})
+            mon.append(
+                {
+                    "start": monday.start,
+                    "spacing": getattr(monday, "spacing", None),
+                    "end": monday.end,
+                }
+            )
         for tuesday in config.time_slot_config.times.get("TUE", []):
-            tue.append({"start": tuesday.start, "spacing": getattr(tuesday, "spacing", None), "end": tuesday.end})
+            tue.append(
+                {
+                    "start": tuesday.start,
+                    "spacing": getattr(tuesday, "spacing", None),
+                    "end": tuesday.end,
+                }
+            )
         for wednesday in config.time_slot_config.times.get("WED", []):
-            wed.append({"start": wednesday.start, "spacing": getattr(wednesday, "spacing", None), "end": wednesday.end})
+            wed.append(
+                {
+                    "start": wednesday.start,
+                    "spacing": getattr(wednesday, "spacing", None),
+                    "end": wednesday.end,
+                }
+            )
         for thursday in config.time_slot_config.times.get("THU", []):
-            thu.append({"start": thursday.start, "spacing": getattr(thursday, "spacing", None), "end": thursday.end})
+            thu.append(
+                {
+                    "start": thursday.start,
+                    "spacing": getattr(thursday, "spacing", None),
+                    "end": thursday.end,
+                }
+            )
         for friday in config.time_slot_config.times.get("FRI", []):
-            fri.append({"start": friday.start, "spacing": getattr(friday, "spacing", None), "end": friday.end})
+            fri.append(
+                {
+                    "start": friday.start,
+                    "spacing": getattr(friday, "spacing", None),
+                    "end": friday.end,
+                }
+            )
 
         # Extract classes info
         for clas in config.time_slot_config.classes:
@@ -71,59 +95,62 @@ class main_controller():
                 diction["disabled"] = clas.disabled
             classes.append(diction)
 
-        #Extract faculty info with serialized times per day
+        # Extract faculty info with serialized times per day
         for member in config.config.faculty:
-            faculty.append({
-            "name": member.name,
-            "maximum_credits": member.maximum_credits,
-            "minimum_credits": member.minimum_credits,
-            "unique_course_limit": member.unique_course_limit,
-            "times": {
-                "MON": self.serialize_time_ranges(member.times.get("MON", [])),
-                "TUE": self.serialize_time_ranges(member.times.get("TUE", [])),
-                "WED": self.serialize_time_ranges(member.times.get("WED", [])),
-                "THU": self.serialize_time_ranges(member.times.get("THU", [])),
-                "FRI": self.serialize_time_ranges(member.times.get("FRI", [])),
-            }
-        })
+            faculty.append(
+                {
+                    "name": member.name,
+                    "maximum_credits": member.maximum_credits,
+                    "minimum_credits": member.minimum_credits,
+                    "unique_course_limit": member.unique_course_limit,
+                    "times": {
+                        "MON": self.serialize_time_ranges(member.times.get("MON", [])),
+                        "TUE": self.serialize_time_ranges(member.times.get("TUE", [])),
+                        "WED": self.serialize_time_ranges(member.times.get("WED", [])),
+                        "THU": self.serialize_time_ranges(member.times.get("THU", [])),
+                        "FRI": self.serialize_time_ranges(member.times.get("FRI", [])),
+                    },
+                }
+            )
 
-# Extract courses info
+        # Extract courses info
         for course in config.config.courses:
-            courses.append({
-        "course_id": course.course_id,
-        "credits": course.credits,
-        "room": course.room,
-        "lab": course.lab,
-        "conflicts": course.conflicts,
-        "faculty": course.faculty
-    })
+            courses.append(
+                {
+                    "course_id": course.course_id,
+                    "credits": course.credits,
+                    "room": course.room,
+                    "lab": course.lab,
+                    "conflicts": course.conflicts,
+                    "faculty": course.faculty,
+                }
+            )
 
-# Final combined config dictionary
+        # Final combined config dictionary
         final_config = {
-    "config": {
-        "rooms": config.config.rooms,
-        "labs": config.config.labs,
-        "courses": courses,
-        "faculty": faculty
-    },
-    "time_slot_config": {
-        "times": {
-            "MON": mon,
-            "TUE": tue,
-            "WED": wed,
-            "THU": thu,
-            "FRI": fri,
-        },
-        "classes": classes
-    },
-    "limit": config.limit,
-    "optimizer_flags": config.optimizer_flags
-}
+            "config": {
+                "rooms": config.config.rooms,
+                "labs": config.config.labs,
+                "courses": courses,
+                "faculty": faculty,
+            },
+            "time_slot_config": {
+                "times": {
+                    "MON": mon,
+                    "TUE": tue,
+                    "WED": wed,
+                    "THU": thu,
+                    "FRI": fri,
+                },
+                "classes": classes,
+            },
+            "limit": config.limit,
+            "optimizer_flags": config.optimizer_flags,
+        }
         with open("config.json", "w") as json_file:
             json.dump(final_config, json_file, indent=1)
-# You can now json.dumps(final_config) safely without serialization errors
 
-
+    # You can now json.dumps(final_config) safely without serialization errors
 
     def serialize_time_ranges(self, day_slots):
         result = []
@@ -147,25 +174,27 @@ class main_controller():
             meetings.append(diction)
         return meetings
 
-
     def load_config(self):
         path = main_view.load_config()
         self.model.config = load_config_from_file(CombinedConfig, path)
 
-
-    
     def load_schedules(self):
         """Load schedules from JSON file and navigate them"""
         path = main_view.import_schedules()
         try:
-            with open(path, 'r') as f:
+            with open(path, "r") as f:
                 data = json.load(f)
 
             # Handle different JSON formats
             if isinstance(data, list):
-                if data and isinstance(data[0], dict) and 'schedule_id' in data[0] and 'courses' in data[0]:
+                if (
+                    data
+                    and isinstance(data[0], dict)
+                    and "schedule_id" in data[0]
+                    and "courses" in data[0]
+                ):
                     # New format: [{"schedule_id": 1, "courses": [...]}, ...]
-                    schedules = [schedule_obj['courses'] for schedule_obj in data]
+                    schedules = [schedule_obj["courses"] for schedule_obj in data]
                 elif data and isinstance(data[0], list):
                     # Multiple schedules (old format): [[schedule1], [schedule2], ...]
                     schedules = data
@@ -188,7 +217,7 @@ class main_controller():
             print(f"Error loading schedules: {e}")
 
     def save_schedules(self, path: str):
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.write(str(self.schedules[self.current_schedule_index]))
 
     def manage_courses(self):
@@ -199,14 +228,16 @@ class main_controller():
         # Extract courses from CombinedConfig
         courses_data = []
         for course in self.model.config.config.courses:
-            courses_data.append({
-                'course_id': course.course_id,
-                'credits': course.credits,
-                'room': course.room,
-                'lab': course.lab,
-                'faculty': course.faculty,
-                'conflicts': course.conflicts
-            })
+            courses_data.append(
+                {
+                    "course_id": course.course_id,
+                    "credits": course.credits,
+                    "room": course.room,
+                    "lab": course.lab,
+                    "faculty": course.faculty,
+                    "conflicts": course.conflicts,
+                }
+            )
 
         manager.load_courses(courses_data)
 
@@ -218,22 +249,22 @@ class main_controller():
             CourseView.show_menu()
             choice = CourseView.get_menu_choice()
 
-            if choice == '1':
+            if choice == "1":
                 CourseView.display_courses(controller)
-            elif choice == '2':
+            elif choice == "2":
                 CourseView.add_course_interactive(controller)
-            elif choice == '3':
+            elif choice == "3":
                 CourseView.modify_course_interactive(controller)
-            elif choice == '4':
+            elif choice == "4":
                 CourseView.delete_course_interactive(controller)
-            elif choice == '5':
+            elif choice == "5":
                 # Save changes back to CombinedConfig
                 if manager.save_with_combined_config(self.model.config):
                     print("✅ Configuration saved successfully")
                 else:
                     print("❌ Failed to save configuration")
                 return
-            elif choice == '6':
+            elif choice == "6":
                 print("Exiting without saving changes.")
                 return
             else:
@@ -247,16 +278,18 @@ class main_controller():
         # Extract faculty from CombinedConfig
         faculty_data = []
         for faculty in self.model.config.config.faculty:
-            faculty_data.append({
-                'name': faculty.name,
-                'minimum_credits': faculty.minimum_credits,
-                'maximum_credits': faculty.maximum_credits,
-                'unique_course_limit': faculty.unique_course_limit,
-                'times': faculty.times,
-                'course_preferences': faculty.course_preferences,
-                'room_preferences': faculty.room_preferences,
-                'lab_preferences': faculty.lab_preferences
-            })
+            faculty_data.append(
+                {
+                    "name": faculty.name,
+                    "minimum_credits": faculty.minimum_credits,
+                    "maximum_credits": faculty.maximum_credits,
+                    "unique_course_limit": faculty.unique_course_limit,
+                    "times": faculty.times,
+                    "course_preferences": faculty.course_preferences,
+                    "room_preferences": faculty.room_preferences,
+                    "lab_preferences": faculty.lab_preferences,
+                }
+            )
 
         manager.load_faculty(faculty_data)
 
@@ -276,14 +309,16 @@ class main_controller():
         course_manager = CourseManager()
         courses_data = []
         for course in self.model.config.config.courses:
-            courses_data.append({
-                'course_id': course.course_id,
-                'credits': course.credits,
-                'room': course.room,
-                'lab': course.lab,
-                'faculty': course.faculty,
-                'conflicts': course.conflicts
-            })
+            courses_data.append(
+                {
+                    "course_id": course.course_id,
+                    "credits": course.credits,
+                    "room": course.room,
+                    "lab": course.lab,
+                    "faculty": course.faculty,
+                    "conflicts": course.conflicts,
+                }
+            )
         course_manager.load_courses(courses_data)
         courses_list = course_manager.get_all_courses()
 
@@ -291,22 +326,26 @@ class main_controller():
             FacultyView.show_menu()
             choice = FacultyView.get_menu_choice()
 
-            if choice == '1':
+            if choice == "1":
                 FacultyView.display_faculty(controller)
-            elif choice == '2':
-                FacultyView.add_faculty_interactive(controller, available_courses, available_rooms, available_labs)
-            elif choice == '3':
-                FacultyView.modify_faculty_interactive(controller, available_courses, available_rooms, available_labs)
-            elif choice == '4':
+            elif choice == "2":
+                FacultyView.add_faculty_interactive(
+                    controller, available_courses, available_rooms, available_labs
+                )
+            elif choice == "3":
+                FacultyView.modify_faculty_interactive(
+                    controller, available_courses, available_rooms, available_labs
+                )
+            elif choice == "4":
                 FacultyView.delete_faculty_interactive(controller, courses_list)
-            elif choice == '5':
+            elif choice == "5":
                 # Save changes back to CombinedConfig
                 if manager.save_with_combined_config(self.model.config):
                     print("✅ Configuration saved successfully")
                 else:
                     print("❌ Failed to save configuration")
                 return
-            elif choice == '6':
+            elif choice == "6":
                 print("Exiting without saving changes.")
                 return
             else:
@@ -325,30 +364,34 @@ class main_controller():
         course_manager = CourseManager()
         courses_data = []
         for course in self.model.config.config.courses:
-            courses_data.append({
-                'course_id': course.course_id,
-                'credits': course.credits,
-                'room': course.room,
-                'lab': course.lab,
-                'faculty': course.faculty,
-                'conflicts': course.conflicts
-            })
+            courses_data.append(
+                {
+                    "course_id": course.course_id,
+                    "credits": course.credits,
+                    "room": course.room,
+                    "lab": course.lab,
+                    "faculty": course.faculty,
+                    "conflicts": course.conflicts,
+                }
+            )
         course_manager.load_courses(courses_data)
         courses_list = course_manager.get_all_courses()
 
         faculty_manager = FacultyManager()
         faculty_data = []
         for faculty in self.model.config.config.faculty:
-            faculty_data.append({
-                'name': faculty.name,
-                'minimum_credits': faculty.minimum_credits,
-                'maximum_credits': faculty.maximum_credits,
-                'unique_course_limit': faculty.unique_course_limit,
-                'times': faculty.times,
-                'course_preferences': faculty.course_preferences,
-                'room_preferences': faculty.room_preferences,
-                'lab_preferences': faculty.lab_preferences
-            })
+            faculty_data.append(
+                {
+                    "name": faculty.name,
+                    "minimum_credits": faculty.minimum_credits,
+                    "maximum_credits": faculty.maximum_credits,
+                    "unique_course_limit": faculty.unique_course_limit,
+                    "times": faculty.times,
+                    "course_preferences": faculty.course_preferences,
+                    "room_preferences": faculty.room_preferences,
+                    "lab_preferences": faculty.lab_preferences,
+                }
+            )
         faculty_manager.load_faculty(faculty_data)
         faculty_list = faculty_manager.get_all_faculty()
 
@@ -356,20 +399,22 @@ class main_controller():
             RoomView.show_menu()
             choice = RoomView.get_menu_choice()
 
-            if choice == '1':
+            if choice == "1":
                 RoomView.display_rooms(controller)
-            elif choice == '2':
+            elif choice == "2":
                 RoomView.add_room_interactive(controller)
-            elif choice == '3':
+            elif choice == "3":
                 RoomView.modify_room_interactive(controller)
-            elif choice == '4':
+            elif choice == "4":
                 RoomView.delete_room_interactive(controller, courses_list, faculty_list)
-            elif choice == '5':
+            elif choice == "5":
                 # Save changes back to CombinedConfig
-                self.model.config.config = manager.save_with_combined_config(self.model.config.config)
+                self.model.config.config = manager.save_with_combined_config(
+                    self.model.config.config
+                )
                 print("✅ Configuration saved successfully")
                 return
-            elif choice == '6':
+            elif choice == "6":
                 print("Exiting without saving changes.")
                 return
             else:
@@ -388,30 +433,34 @@ class main_controller():
         course_manager = CourseManager()
         courses_data = []
         for course in self.model.config.config.courses:
-            courses_data.append({
-                'course_id': course.course_id,
-                'credits': course.credits,
-                'room': course.room,
-                'lab': course.lab,
-                'faculty': course.faculty,
-                'conflicts': course.conflicts
-            })
+            courses_data.append(
+                {
+                    "course_id": course.course_id,
+                    "credits": course.credits,
+                    "room": course.room,
+                    "lab": course.lab,
+                    "faculty": course.faculty,
+                    "conflicts": course.conflicts,
+                }
+            )
         course_manager.load_courses(courses_data)
         courses_list = course_manager.get_all_courses()
 
         faculty_manager = FacultyManager()
         faculty_data = []
         for faculty in self.model.config.config.faculty:
-            faculty_data.append({
-                'name': faculty.name,
-                'minimum_credits': faculty.minimum_credits,
-                'maximum_credits': faculty.maximum_credits,
-                'unique_course_limit': faculty.unique_course_limit,
-                'times': faculty.times,
-                'course_preferences': faculty.course_preferences,
-                'room_preferences': faculty.room_preferences,
-                'lab_preferences': faculty.lab_preferences
-            })
+            faculty_data.append(
+                {
+                    "name": faculty.name,
+                    "minimum_credits": faculty.minimum_credits,
+                    "maximum_credits": faculty.maximum_credits,
+                    "unique_course_limit": faculty.unique_course_limit,
+                    "times": faculty.times,
+                    "course_preferences": faculty.course_preferences,
+                    "room_preferences": faculty.room_preferences,
+                    "lab_preferences": faculty.lab_preferences,
+                }
+            )
         faculty_manager.load_faculty(faculty_data)
         faculty_list = faculty_manager.get_all_faculty()
 
@@ -419,113 +468,41 @@ class main_controller():
             LabView.show_menu()
             choice = LabView.get_menu_choice()
 
-            if choice == '1':
+            if choice == "1":
                 LabView.display_labs(controller)
-            elif choice == '2':
+            elif choice == "2":
                 LabView.add_lab_interactive(controller)
-            elif choice == '3':
+            elif choice == "3":
                 LabView.modify_lab_interactive(controller)
-            elif choice == '4':
+            elif choice == "4":
                 LabView.delete_lab_interactive(controller, courses_list, faculty_list)
-            elif choice == '5':
+            elif choice == "5":
                 # Save changes back to CombinedConfig
                 if controller.save_to_combined_config(self.model.config):
                     print("✅ Configuration saved successfully")
                 else:
                     print("❌ Failed to save configuration")
                 return
-            elif choice == '6':
+            elif choice == "6":
                 print("Exiting without saving changes.")
                 return
             else:
                 print("❌ Invalid choice. Please select 1-6.")
 
-    def manage_ai(self):
-        """Manage configuration using natural language AI assistant"""
-        # Create all managers and load data from CombinedConfig
-        course_manager = CourseManager()
-        courses_data = []
-        for course in self.model.config.config.courses:
-            courses_data.append({
-                'course_id': course.course_id,
-                'credits': course.credits,
-                'room': course.room,
-                'lab': course.lab,
-                'faculty': course.faculty,
-                'conflicts': course.conflicts
-            })
-        course_manager.load_courses(courses_data)
-
-        faculty_manager = FacultyManager()
-        faculty_data = []
-        for faculty in self.model.config.config.faculty:
-            faculty_data.append({
-                'name': faculty.name,
-                'minimum_credits': faculty.minimum_credits,
-                'maximum_credits': faculty.maximum_credits,
-                'unique_course_limit': faculty.unique_course_limit,
-                'times': faculty.times,
-                'course_preferences': faculty.course_preferences,
-                'room_preferences': faculty.room_preferences,
-                'lab_preferences': faculty.lab_preferences
-            })
-        faculty_manager.load_faculty(faculty_data)
-
-        room_manager = RoomManager(self.model.config.config)
-        lab_manager = LabManager(self.model.config)
-
-        # Create domain controllers
-        course_controller = CourseController(course_manager)
-        faculty_controller = FacultyController(faculty_manager)
-        room_controller = RoomController(room_manager)
-        lab_controller = LabController(lab_manager)
-
-        # Create NL controller with all domain controllers
-        nl_controller = NLController(
-            course_controller=course_controller,
-            faculty_controller=faculty_controller,
-            lab_controller=lab_controller,
-            room_controller=room_controller
-        )
-
-        # Run natural language interface
-        NLView.run_nl_mode(nl_controller)
-
-        # After exiting NL mode, save all changes back to CombinedConfig
-        print("\n💾 Saving configuration changes...")
-
-        # Save courses
-        if course_manager.save_with_combined_config(self.model.config):
-            print("✅ Course changes saved")
-
-        # Save faculty
-        if faculty_manager.save_with_combined_config(self.model.config):
-            print("✅ Faculty changes saved")
-
-        # Save rooms
-        self.model.config.config = room_manager.save_with_combined_config(self.model.config.config)
-        print("✅ Room changes saved")
-
-        # Save labs
-        if lab_controller.save_to_combined_config(self.model.config):
-            print("✅ Lab changes saved")
-
-        print("✅ All configuration changes saved successfully")
-
     def process_input(self, input_data):
-        #edit course has been selected
+        # edit course has been selected
         if input_data == "1":
             self.manage_courses()
-        #edit lab has been selected
+        # edit lab has been selected
         elif input_data == "2":
             self.manage_labs()
-        #edit faculty has been selected
+        # edit faculty has been selected
         elif input_data == "3":
             self.manage_faculty()
-        #edit room has been selected
+        # edit room has been selected
         elif input_data == "4":
             self.manage_rooms()
-        #generate schedules has been selected
+        # generate schedules has been selected
         elif input_data == "5":
             config_flags = main_view.generate_schedules()
             num = config_flags[0]
@@ -533,20 +510,13 @@ class main_controller():
             scheds = self.generate_schedules(num)
             controller = schedules_controller.generate_controller(scheds)
             controller.entry()
-        #import schedules has been selected
+        # import schedules has been selected
         elif input_data == "6":
             self.load_schedules()
-        #ai assistant has been selected
+        # exit has been selected
         elif input_data == "7":
-            self.manage_ai()
-        #exit has been selected
-        elif input_data == "8":
             print("Exiting program.")
             exit(0)
-            
+
     def load_config_gui(self, path):
         self.model.config = load_config_from_file(CombinedConfig, path)
-
-
-
-

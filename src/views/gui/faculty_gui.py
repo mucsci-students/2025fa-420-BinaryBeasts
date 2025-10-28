@@ -1,18 +1,27 @@
-from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-    QListWidget, QLabel, QLineEdit, QSpinBox, QPlainTextEdit,
-    QDialogButtonBox, QMessageBox, QFormLayout
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import ( # type : ignore
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QListWidget,
+    QLabel,
+    QLineEdit,
+    QSpinBox,
+    QPlainTextEdit,
+    QDialogButtonBox,
+    QMessageBox,
+    QFormLayout,
+) # type : ignore
+from PyQt5.QtCore import Qt # type : ignore
+from PyQt5.QtGui import QFont # type : ignore
 
 BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
 )
-TITLE_FONT = QFont('Arial', 19, QFont.Bold)
-LABEL_FONT = QFont('Arial', 15)
-BUTTON_FONT = QFont('Arial', 15)
+TITLE_FONT = QFont("Arial", 19, QFont.Bold)
+LABEL_FONT = QFont("Arial", 15)
+BUTTON_FONT = QFont("Arial", 15)
 
 
 class FacultyDialog(QDialog):
@@ -29,7 +38,7 @@ class FacultyDialog(QDialog):
         # Title
         title_label = QLabel("Add Faculty" if faculty_data is None else "Edit Faculty")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Form inputs
         form_layout = QFormLayout()
@@ -54,11 +63,13 @@ class FacultyDialog(QDialog):
         form_layout.addRow("Unique Course Limit:", self.unique_limit_input)
 
         # Times per day
-        times_label = QLabel("Availability (format: HH:MM-HH:MM, leave blank if not available):")
-        times_label.setFont(QFont('Arial', 12, QFont.Bold))
+        times_label = QLabel(
+            "Availability (format: HH:MM-HH:MM, leave blank if not available):"
+        )
+        times_label.setFont(QFont("Arial", 12, QFont.Bold))
 
         self.time_inputs = {}
-        days = ['MON', 'TUE', 'WED', 'THU', 'FRI']
+        days = ["MON", "TUE", "WED", "THU", "FRI"]
         for day in days:
             time_input = QLineEdit()
             time_input.setPlaceholderText("e.g., 09:00-17:00")
@@ -67,7 +78,7 @@ class FacultyDialog(QDialog):
 
         # Preferences
         prefs_label = QLabel("Preferences (format: ItemName:Weight, one per line):")
-        prefs_label.setFont(QFont('Arial', 12, QFont.Bold))
+        prefs_label.setFont(QFont("Arial", 12, QFont.Bold))
 
         self.course_prefs_input = QPlainTextEdit()
         self.course_prefs_input.setPlaceholderText("Example:\nCMSC 140:8\nCMSC 150:6")
@@ -119,20 +130,24 @@ class FacultyDialog(QDialog):
         # Load times
         for day, time_input in self.time_inputs.items():
             if day in faculty.times and faculty.times[day]:
-                time_input.setText(faculty.times[day][0] if isinstance(faculty.times[day], list) else faculty.times[day])
+                time_input.setText(
+                    faculty.times[day][0]
+                    if isinstance(faculty.times[day], list)
+                    else faculty.times[day]
+                )
 
         # Load preferences
         if faculty.course_preferences:
             course_lines = [f"{k}:{v}" for k, v in faculty.course_preferences.items()]
-            self.course_prefs_input.setPlainText('\n'.join(course_lines))
+            self.course_prefs_input.setPlainText("\n".join(course_lines))
 
         if faculty.room_preferences:
             room_lines = [f"{k}:{v}" for k, v in faculty.room_preferences.items()]
-            self.room_prefs_input.setPlainText('\n'.join(room_lines))
+            self.room_prefs_input.setPlainText("\n".join(room_lines))
 
         if faculty.lab_preferences:
             lab_lines = [f"{k}:{v}" for k, v in faculty.lab_preferences.items()]
-            self.lab_prefs_input.setPlainText('\n'.join(lab_lines))
+            self.lab_prefs_input.setPlainText("\n".join(lab_lines))
 
     def _parse_preferences(self, text_widget):
         """Parse preferences from text widget."""
@@ -143,10 +158,10 @@ class FacultyDialog(QDialog):
 
         for line in text.splitlines():
             line = line.strip()
-            if not line or ':' not in line:
+            if not line or ":" not in line:
                 continue
             try:
-                key, value = line.split(':', 1)
+                key, value = line.split(":", 1)
                 prefs[key.strip()] = int(value.strip())
             except ValueError:
                 continue
@@ -163,7 +178,9 @@ class FacultyDialog(QDialog):
         max_credits = self.max_credits_input.value()
 
         if max_credits < min_credits:
-            QMessageBox.warning(self, "Error", "Maximum credits cannot be less than minimum credits")
+            QMessageBox.warning(
+                self, "Error", "Maximum credits cannot be less than minimum credits"
+            )
             return
 
         # Parse times
@@ -181,14 +198,14 @@ class FacultyDialog(QDialog):
         lab_prefs = self._parse_preferences(self.lab_prefs_input)
 
         self.result_faculty = {
-            'name': name,
-            'minimum_credits': min_credits,
-            'maximum_credits': max_credits,
-            'unique_course_limit': self.unique_limit_input.value(),
-            'times': times,
-            'course_preferences': course_prefs,
-            'room_preferences': room_prefs,
-            'lab_preferences': lab_prefs
+            "name": name,
+            "minimum_credits": min_credits,
+            "maximum_credits": max_credits,
+            "unique_course_limit": self.unique_limit_input.value(),
+            "times": times,
+            "course_preferences": course_prefs,
+            "room_preferences": room_prefs,
+            "lab_preferences": lab_prefs,
         }
 
         super().accept()
@@ -210,7 +227,7 @@ class FacultiesDialog(QDialog):
 
         header = QLabel("Edit Faculty")
         header.setFont(TITLE_FONT)
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Faculty list
         self.faculty_list = QListWidget()
@@ -223,8 +240,13 @@ class FacultiesDialog(QDialog):
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
 
-        for b in (self.add_button, self.edit_button, self.delete_button,
-                  self.save_button, self.cancel_button):
+        for b in (
+            self.add_button,
+            self.edit_button,
+            self.delete_button,
+            self.save_button,
+            self.cancel_button,
+        ):
             b.setFont(BUTTON_FONT)
             b.setStyleSheet(BUTTON_STYLE)
 
@@ -273,12 +295,18 @@ class FacultiesDialog(QDialog):
                 try:
                     success = self.controller.add_faculty(dialog.result_faculty)
                     if success:
-                        QMessageBox.information(self, "Success",
-                            f"Faculty '{dialog.result_faculty['name']}' added successfully.")
+                        QMessageBox.information(
+                            self,
+                            "Success",
+                            f"Faculty '{dialog.result_faculty['name']}' added successfully.",
+                        )
                         self.refresh_faculty()
                     else:
-                        QMessageBox.warning(self, "Error",
-                            f"Faculty '{dialog.result_faculty['name']}' already exists.")
+                        QMessageBox.warning(
+                            self,
+                            "Error",
+                            f"Faculty '{dialog.result_faculty['name']}' already exists.",
+                        )
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"Failed to add faculty:\n{e}")
 
@@ -286,7 +314,9 @@ class FacultiesDialog(QDialog):
         """Edit selected faculty member."""
         item = self.faculty_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No faculty selected", "Please select a faculty member to edit.")
+            QMessageBox.information(
+                self, "No faculty selected", "Please select a faculty member to edit."
+            )
             return
 
         name = item.text()
@@ -299,14 +329,20 @@ class FacultiesDialog(QDialog):
         if dialog.exec_() == QDialog.Accepted:
             if dialog.result_faculty:
                 try:
-                    success = self.controller.modify_faculty(name, dialog.result_faculty)
+                    success = self.controller.modify_faculty(
+                        name, dialog.result_faculty
+                    )
                     if success:
-                        QMessageBox.information(self, "Success",
-                            f"Faculty '{name}' updated successfully.")
+                        QMessageBox.information(
+                            self, "Success", f"Faculty '{name}' updated successfully."
+                        )
                         self.refresh_faculty()
                     else:
-                        QMessageBox.warning(self, "Error",
-                            f"Failed to update faculty. New name '{dialog.result_faculty['name']}' may already exist.")
+                        QMessageBox.warning(
+                            self,
+                            "Error",
+                            f"Failed to update faculty. New name '{dialog.result_faculty['name']}' may already exist.",
+                        )
                 except Exception as e:
                     QMessageBox.critical(self, "Error", f"Failed to edit faculty:\n{e}")
 
@@ -314,7 +350,9 @@ class FacultiesDialog(QDialog):
         """Delete selected faculty member."""
         item = self.faculty_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No faculty selected", "Please select a faculty member to delete.")
+            QMessageBox.information(
+                self, "No faculty selected", "Please select a faculty member to delete."
+            )
             return
 
         name = item.text()
@@ -323,7 +361,11 @@ class FacultiesDialog(QDialog):
         affected_courses = []
         try:
             for course in self.combined_config.config.courses:
-                if hasattr(course, 'faculty') and isinstance(course.faculty, list) and name in course.faculty:
+                if (
+                    hasattr(course, "faculty")
+                    and isinstance(course.faculty, list)
+                    and name in course.faculty
+                ):
                     affected_courses.append(course.course_id)
         except Exception:
             pass
@@ -346,16 +388,28 @@ class FacultiesDialog(QDialog):
                     try:
                         with self.combined_config.edit_mode() as editable_config:
                             for course in editable_config.config.courses:
-                                if hasattr(course, 'faculty') and isinstance(course.faculty, list):
+                                if hasattr(course, "faculty") and isinstance(
+                                    course.faculty, list
+                                ):
                                     if name in course.faculty:
-                                        course.faculty = [f for f in course.faculty if f != name]
+                                        course.faculty = [
+                                            f for f in course.faculty if f != name
+                                        ]
                     except Exception as e:
-                        QMessageBox.warning(self, "Warning", f"Faculty deleted but failed to update course references:\n{e}")
+                        QMessageBox.warning(
+                            self,
+                            "Warning",
+                            f"Faculty deleted but failed to update course references:\n{e}",
+                        )
 
-                    QMessageBox.information(self, "Success", f"Faculty '{name}' deleted successfully.")
+                    QMessageBox.information(
+                        self, "Success", f"Faculty '{name}' deleted successfully."
+                    )
                     self.refresh_faculty()
                 else:
-                    QMessageBox.warning(self, "Error", f"Failed to delete faculty '{name}'.")
+                    QMessageBox.warning(
+                        self, "Error", f"Failed to delete faculty '{name}'."
+                    )
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to delete faculty:\n{e}")
 

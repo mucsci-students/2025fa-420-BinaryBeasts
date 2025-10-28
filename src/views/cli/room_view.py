@@ -1,14 +1,15 @@
 # src/views/cli/room_view.py
 
+
 class RoomView:
     """View layer for room management - handles all user interaction and display."""
 
     @staticmethod
     def display_rooms(controller) -> None:
         """Display all rooms in a formatted list."""
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("ROOM LIST")
-        print("="*60)
+        print("=" * 60)
 
         rooms = controller.get_rooms()
         if not rooms:
@@ -21,7 +22,7 @@ class RoomView:
         for i, room in enumerate(rooms, 1):
             print(f"{i:3}. 🏢 {room}")
 
-        print("="*60)
+        print("=" * 60)
 
     @staticmethod
     def add_room_interactive(controller) -> None:
@@ -69,12 +70,14 @@ class RoomView:
         try:
             if controller.edit_room(old_name, new_name):
                 print(f"✅ Successfully renamed '{old_name}' to '{new_name}'")
-                print("📝 Note: All course and faculty references have been updated automatically.")
+                print(
+                    "📝 Note: All course and faculty references have been updated automatically."
+                )
             else:
                 if new_name in rooms:
                     print(f"❌ Room '{new_name}' already exists.")
                 else:
-                    print(f"❌ Failed to rename room.")
+                    print("❌ Failed to rename room.")
         except Exception as e:
             print(f"❌ Error editing room: {e}")
 
@@ -121,7 +124,9 @@ class RoomView:
                 print(f"   • {course}")
 
         if affected_faculty:
-            print(f"👥 Faculty with preferences for this room ({len(affected_faculty)}):")
+            print(
+                f"👥 Faculty with preferences for this room ({len(affected_faculty)}):"
+            )
             for faculty in affected_faculty:
                 print(f"   • {faculty}")
 
@@ -130,18 +135,28 @@ class RoomView:
         else:
             print("\n⚠️  Warning: Deleting this room will:")
             if affected_courses:
-                print(f"   • Remove room assignment from {len(affected_courses)} course(s)")
+                print(
+                    f"   • Remove room assignment from {len(affected_courses)} course(s)"
+                )
             if affected_faculty:
-                print(f"   • Remove room preferences from {len(affected_faculty)} faculty member(s)")
+                print(
+                    f"   • Remove room preferences from {len(affected_faculty)} faculty member(s)"
+                )
 
         # Confirm deletion
-        confirm = input(f"\nAre you sure you want to delete '{room_name}'? (y/N): ").strip().lower()
-        if confirm in ['y', 'yes']:
+        confirm = (
+            input(f"\nAre you sure you want to delete '{room_name}'? (y/N): ")
+            .strip()
+            .lower()
+        )
+        if confirm in ["y", "yes"]:
             try:
                 if controller.delete_room(room_name):
                     print(f"✅ Successfully deleted room: {room_name}")
                     if affected_courses or affected_faculty:
-                        print("📝 Note: References should be manually updated if needed.")
+                        print(
+                            "📝 Note: References should be manually updated if needed."
+                        )
                 else:
                     print(f"❌ Failed to delete room '{room_name}'.")
             except Exception as e:

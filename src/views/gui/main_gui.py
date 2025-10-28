@@ -1,13 +1,12 @@
-
-
 import sys
 from PyQt5.QtWidgets import (
-    QApplication, QWidget, QPushButton, QVBoxLayout, QFileDialog, QLabel, QCheckBox, QDialogButtonBox, QDialog
+    QWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
+    QFrame, QGridLayout, QInputDialog, QMessageBox,
+    QDialog, QCheckBox, QDialogButtonBox, QApplication
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt
 from src.views.gui.schedules_gui import SchedulesGUI
-from PyQt5.QtWidgets import QInputDialog, QMessageBox
 from src.views.gui.course_view_gui import CoursesDialog
 from src.views.gui.roomGui import RoomsDialog
 from src.views.gui.faculty_gui import FacultiesDialog
@@ -20,7 +19,7 @@ from src.models.course_model import CourseManager
 from src.models.room_model import RoomManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
-import json 
+import json
 from scheduler import (
     Scheduler,
     load_config_from_file,
@@ -28,114 +27,194 @@ from scheduler import (
 from scheduler.config import CombinedConfig
 
 num_schedules = 0
+LABEL_FONT = QFont('Arial', 16, QFont.Bold)
+FONT = QFont("Arial", 13)
 
+FRAME_STYLE = """
+QFrame {
+  background-color: palette(Base);
+  border: 1px solid palette(Midlight);
+  border-radius: 10px;
+  padding: 12px;
+}
+"""
+
+BUTTON_STYLE = """
+QPushButton {
+  padding: 6px 12px;
+  background-color: #327f66;   /* your green */
+  color: white;
+  border-radius: 8px;
+  border: none;
+  font-weight: 600;
+}
+QPushButton:hover {
+  background-color: #3da879;   /* lighter green on hover */
+}
+QPushButton:pressed {
+  background-color: #2a6a52;   /* darker green when pressed */
+}
+QPushButton:disabled {
+  background-color: palette(Mid);
+  color: palette(Midlight);
+}
+"""
 class MainGUI(QWidget):
     file_uploaded = False
 
     def __init__(self):
-        config = any
 
         super().__init__()
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle('College Course Scheduler')
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(800)
-        layout = QVBoxLayout()
+        self.setWindowTitle("Scheduler")
+        self.setMinimumWidth(860)
+        self.setMinimumHeight(580)
 
-        title = QLabel('College Course Scheduler')
-        title.setFont(QFont('Arial', 16, QFont.Bold))
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(24, 22, 24, 22)
+        layout.setSpacing(16)
+
+        # Header
+        title = QLabel("College Course Scheduler")
+        title.setFont(LABEL_FONT)
         title.setAlignment(Qt.AlignCenter)
         layout.addWidget(title)
 
+        # config section
+        config_section = QFrame()
+        config_section.setStyleSheet(FRAME_STYLE)
+        cfg = QVBoxLayout(config_section)
+        cfg.setContentsMargins(10, 6, 10, 6)
+        cfg.setSpacing(10)
 
-        CourseButton = QPushButton('Edit Courses')
-        CourseButton.setFont(QFont('Arial', 8))
-        CourseButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(CourseButton)
-        CourseButton.clicked.connect(self.open_course_manager)
-
-        FacultyButton = QPushButton('Edit Faculty')
-        FacultyButton .setFont(QFont('Arial', 8))
-        FacultyButton .setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(FacultyButton)
-        FacultyButton .clicked.connect(self.open_faculty_manager)
-
-
-        LabButton = QPushButton('Edit Labs')
-        LabButton.setFont(QFont('Arial', 8))
-        LabButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(LabButton)
-        LabButton.clicked.connect(self.open_lab_manager)
-
-        RoomButton = QPushButton('Edit Rooms')
-        RoomButton.setFont(QFont('Arial', 8))
-        RoomButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(RoomButton)
-        RoomButton.clicked.connect(self.open_room_manager)
-
-        self.selected_label = QLabel('No file selected')
-        self.selected_label.setFont(QFont('Arial', 10))
+        self.selected_label = QLabel("No file selected")
+        self.selected_label.setFont(FONT)
+        self.selected_label.setStyleSheet("color:#cccccc;")
         self.selected_label.setAlignment(Qt.AlignCenter)
-        layout.addWidget(self.selected_label)
+        cfg.addWidget(self.selected_label)
 
-        SaveButton = QPushButton('Save Configuration File')
-        SaveButton.setFont(QFont('Arial', 8))
-        SaveButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(SaveButton)
-        SaveButton.clicked.connect(self.save_configuration)
+        config_buttons = QHBoxLayout()
+        config_buttons.setSpacing(8)
 
-        self.button = QPushButton('Upload Configuration File')
-        self.button.setFont(QFont('Arial', 8))
-        self.button.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(self.button)
-        self.button.clicked.connect(self.open_file_dialog)
+        upload_config_btn = QPushButton("Upload Configuration File")
+        upload_config_btn.setStyleSheet(BUTTON_STYLE)
+        upload_config_btn.setMinimumHeight(32)
+        upload_config_btn.clicked.connect(self.open_file_dialog)
 
-        self.button = QPushButton('Upload Schedule')
-        self.button.setFont(QFont('Arial', 8))
-        self.button.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(self.button)
-        self.button.clicked.connect(self.load_schedule)
+        upload_schedule_btn = QPushButton("Upload Schedule")
+        upload_schedule_btn.setStyleSheet(BUTTON_STYLE)
+        upload_schedule_btn.setMinimumHeight(32)
+        upload_schedule_btn.clicked.connect(self.load_schedule)
 
-        GenerateButton = QPushButton('Generate Schedule')
-        GenerateButton.setFont(QFont('Arial', 8))
-        GenerateButton.setStyleSheet('padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px; width: 100px;')
-        layout.addWidget(GenerateButton)
-        GenerateButton.clicked.connect(self.generate_schedule)
+        save_btn = QPushButton("Save Configuration File")
+        save_btn.setStyleSheet(BUTTON_STYLE)
+        save_btn.setMinimumHeight(32)
+        save_btn.clicked.connect(self.save_configuration)
 
+        config_buttons.addWidget(upload_config_btn)
+        config_buttons.addWidget(upload_schedule_btn)
+        config_buttons.addStretch(1)
+        config_buttons.addWidget(save_btn)
+
+        cfg.addLayout(config_buttons)
+        layout.addWidget(config_section)
+
+        # edit section
+        edit_section = QFrame()
+        edit_section.setStyleSheet(FRAME_STYLE)
+        edit_layout = QVBoxLayout(edit_section)
+        edit_layout.setContentsMargins(8, 8, 8, 8)
+
+        grid = QGridLayout()
+        grid.setHorizontalSpacing(8)
+        grid.setVerticalSpacing(8)
+
+        def make_edit_btn(label, slot):
+            btn = QPushButton(label)
+            btn.setStyleSheet(BUTTON_STYLE)
+            btn.setMinimumHeight(32)
+            btn.setMinimumWidth(100)
+            btn.clicked.connect(slot)
+            return btn
+
+        courses_btn = make_edit_btn("Edit Courses", self.open_course_manager)
+        faculty_btn = make_edit_btn("Edit Faculty", self.open_faculty_manager)
+        labs_btn = make_edit_btn("Edit Labs", self.open_lab_manager)
+        rooms_btn = make_edit_btn("Edit Rooms", self.open_room_manager)
+
+        grid.addWidget(courses_btn, 0, 0)
+        grid.addWidget(faculty_btn, 0, 1)
+        grid.addWidget(labs_btn, 1, 0)
+        grid.addWidget(rooms_btn, 1, 1)
+
+        edit_layout.addLayout(grid)
+        layout.addWidget(edit_section)
+
+        # generate section
+        generate_section = QFrame()
+        generate_section.setStyleSheet(FRAME_STYLE)
+        gen = QVBoxLayout(generate_section)
+        gen.setContentsMargins(10, 6, 10, 6)
+        gen.setSpacing(10)
+
+        generate_btn = QPushButton("Generate Schedule")
+        generate_btn.setStyleSheet(BUTTON_STYLE)
+        generate_btn.setMinimumHeight(36)
+        generate_btn.clicked.connect(self.generate_schedule)
+        generate_btn.setCursor(Qt.PointingHandCursor)
+        gen.addWidget(generate_btn, alignment=Qt.AlignCenter)
+
+
+        layout.addWidget(generate_section)
+        layout.addStretch(1)
 
         self.setLayout(layout)
+
     def open_file_dialog(self):
             file_path, _ = QFileDialog.getOpenFileName(self, 'Open JSON file', '', 'JSON Files (*.json)')
             if file_path:
                 self.file_uploaded = True
                 config_obj = load_config_from_file(CombinedConfig, file_path)
                 self.config = config_obj
-                self.selected_label.setText(f'Selected: {file_path}')
+                file_name = file_path.split('/')[-1]
+                self.selected_label.setText(f"<span style='font-size: 13px; color: green;'>'"
+                                            f"{file_name}' successfully uploaded</span>")
                 return
             else:
                 self.selected_label.setText('No file selected.')
 
-        
+
     def open_course_manager(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
 
         try:
-
             course_manager = CourseManager()
             courses_data = []
             for course in self.config.config.courses:
-                courses_data.append({
-                    'course_id': course.course_id,
-                    'credits': course.credits,
-                    'room': list(course.room) if hasattr(course.room, '__iter__') else [course.room],
-                    'lab': list(course.lab) if hasattr(course.lab, '__iter__') else [course.lab],
-                    'faculty': list(course.faculty) if hasattr(course.faculty, '__iter__') else [course.faculty],
-                    'conflicts': list(course.conflicts) if hasattr(course.conflicts, '__iter__') else [course.conflicts]
-                })
+                courses_data.append(
+                    {
+                        "course_id": course.course_id,
+                        "credits": course.credits,
+                        "room": list(course.room)
+                        if hasattr(course.room, "__iter__")
+                        else [course.room],
+                        "lab": list(course.lab)
+                        if hasattr(course.lab, "__iter__")
+                        else [course.lab],
+                        "faculty": list(course.faculty)
+                        if hasattr(course.faculty, "__iter__")
+                        else [course.faculty],
+                        "conflicts": list(course.conflicts)
+                        if hasattr(course.conflicts, "__iter__")
+                        else [course.conflicts],
+                    }
+                )
 
             course_manager.load_courses(courses_data)
 
@@ -151,7 +230,9 @@ class MainGUI(QWidget):
 
     def open_lab_manager(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
         try:
             # Create LabManager and load labs from config
@@ -169,23 +250,35 @@ class MainGUI(QWidget):
 
     def open_faculty_manager(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
         try:
             # Create FacultyManager and load faculty from config
             faculty_manager = FacultyManager()
             faculty_data = []
             for faculty in self.config.config.faculty:
-                faculty_data.append({
-                    'name': faculty.name,
-                    'minimum_credits': faculty.minimum_credits,
-                    'maximum_credits': faculty.maximum_credits,
-                    'unique_course_limit': faculty.unique_course_limit,
-                    'times': dict(faculty.times) if hasattr(faculty, 'times') else {},
-                    'course_preferences': dict(faculty.course_preferences) if hasattr(faculty, 'course_preferences') else {},
-                    'room_preferences': dict(faculty.room_preferences) if hasattr(faculty, 'room_preferences') else {},
-                    'lab_preferences': dict(faculty.lab_preferences) if hasattr(faculty, 'lab_preferences') else {}
-                })
+                faculty_data.append(
+                    {
+                        "name": faculty.name,
+                        "minimum_credits": faculty.minimum_credits,
+                        "maximum_credits": faculty.maximum_credits,
+                        "unique_course_limit": faculty.unique_course_limit,
+                        "times": dict(faculty.times)
+                        if hasattr(faculty, "times")
+                        else {},
+                        "course_preferences": dict(faculty.course_preferences)
+                        if hasattr(faculty, "course_preferences")
+                        else {},
+                        "room_preferences": dict(faculty.room_preferences)
+                        if hasattr(faculty, "room_preferences")
+                        else {},
+                        "lab_preferences": dict(faculty.lab_preferences)
+                        if hasattr(faculty, "lab_preferences")
+                        else {},
+                    }
+                )
 
             faculty_manager.load_faculty(faculty_data)
 
@@ -200,9 +293,12 @@ class MainGUI(QWidget):
             QMessageBox.critical(self, "Error", f"Failed to open Faculty Manager:\n{e}")
 
         print("Faculty Manager Opened")
+
     def open_room_manager(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
         try:
             # Create RoomManager and load rooms from config
@@ -217,28 +313,39 @@ class MainGUI(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
-       
 
     def save_configuration(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
-        folder_path = QFileDialog.getSaveFileName(self, "Select Directory", "config.json", "JSON Files (*.json)")[0]
+        folder_path = QFileDialog.getSaveFileName(
+            self, "Select Directory", "config.json", "JSON Files (*.json)"
+        )[0]
 
         if folder_path:
             try:
                 save_config(self.config, folder_path)
-                QMessageBox.information(self, "Success", f"Configuration saved to {folder_path}")
+                QMessageBox.information(
+                    self, "Success", f"Configuration saved to {folder_path}"
+                )
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Failed to save configuration:\n{e}")
+                QMessageBox.critical(
+                    self, "Error", f"Failed to save configuration:\n{e}"
+                )
         else:
-            self.selected_label.setText('No folder selected.')
+            self.selected_label.setText("No folder selected.")
 
     def generate_schedule(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
-        num, ok = QInputDialog.getInt(self, "Input Required", "Pick an amount of schedules to generate:", min=1)
+        num, ok = QInputDialog.getInt(
+            self, "Input Required", "Pick an amount of schedules to generate:", min=1
+        )
         if not ok:
             return
         opt_dialog = QDialog(self)
@@ -254,17 +361,17 @@ class MainGUI(QWidget):
         cb_pack_rooms = QCheckBox("Pack rooms")
         cb_pack_labs = QCheckBox("Pack labs")
 
-            # Map checkboxes to flag names
+        # Map checkboxes to flag names
         flag_map = [
-                (cb_fac_course, "faculty_course"),
-                (cb_fac_room, "faculty_room"),
-                (cb_fac_lab, "faculty_lab"),
-                (cb_same_room, "same_room"),
-                (cb_same_lab, "same_lab"),
-                (cb_pack_rooms, "pack_rooms"),
-                (cb_pack_labs, "pack_labs"),
-            ]
-            # Pre-fill from existing config flags if available
+            (cb_fac_course, "faculty_course"),
+            (cb_fac_room, "faculty_room"),
+            (cb_fac_lab, "faculty_lab"),
+            (cb_same_room, "same_room"),
+            (cb_same_lab, "same_lab"),
+            (cb_pack_rooms, "pack_rooms"),
+            (cb_pack_labs, "pack_labs"),
+        ]
+        # Pre-fill from existing config flags if available
         existing_flags = getattr(self.config, "optimizer_flags", None)
         if isinstance(existing_flags, (list, set, tuple)):
             for cb, name in flag_map:
@@ -282,7 +389,7 @@ class MainGUI(QWidget):
         opt_layout.addWidget(buttons)
 
         if opt_dialog.exec_() == QDialog.Accepted:
-                # store as a list of strings for enabled options
+            # store as a list of strings for enabled options
             selected_flags = [name for cb, name in flag_map if cb.isChecked()]
             self.config.optimizer_flags = selected_flags
         try:
@@ -295,26 +402,36 @@ class MainGUI(QWidget):
                     break
 
             if not schedules:
-                QMessageBox.warning(self, "No Schedules", "No valid schedules could be generated.")
+                QMessageBox.warning(
+                    self, "No Schedules", "No valid schedules could be generated."
+                )
                 return
 
             # Close current window and open schedule viewer with the generated schedules
             self.close()
-            self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
+            self.generate_schedule_window = SchedulesGUI(
+                schedules=schedules, config=self.config
+            )
             self.generate_schedule_window.show()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to generate schedules:\n{e}")
-    
+
     def load_schedule(self):
         if not self.file_uploaded:
-            QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
             return
         """Load a previously saved schedule from JSON or CSV file."""
+    #    if not self.file_uploaded:
+    #        QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
+    #       return
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            'Open Schedule File',
-            '',
-            'Schedule Files (*.json *.csv);;JSON Files (*.json);;CSV Files (*.csv)'
+            "Open Schedule File",
+            "",
+            "Schedule Files (*.json *.csv);;JSON Files (*.json);;CSV Files (*.csv)",
         )
 
         if not file_path:
@@ -322,21 +439,27 @@ class MainGUI(QWidget):
 
         try:
             # Parse the schedule file
-            if file_path.endswith('.json'):
+            if file_path.endswith(".json"):
                 schedules = self._load_schedule_from_json(file_path)
-            elif file_path.endswith('.csv'):
+            elif file_path.endswith(".csv"):
                 schedules = self._load_schedule_from_csv(file_path)
             else:
-                QMessageBox.critical(self, "Error", "Unsupported file format. Please use JSON or CSV.")
+                QMessageBox.critical(
+                    self, "Error", "Unsupported file format. Please use JSON or CSV."
+                )
                 return
 
             if not schedules:
-                QMessageBox.warning(self, "No Schedules", "No schedules found in the file.")
+                QMessageBox.warning(
+                    self, "No Schedules", "No schedules found in the file."
+                )
                 return
 
             # Close current window and open schedule viewer
             self.close()
-            self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
+            self.generate_schedule_window = SchedulesGUI(
+                schedules=schedules, config=self.config
+            )
             self.generate_schedule_window.show()
 
         except Exception as e:
@@ -344,7 +467,7 @@ class MainGUI(QWidget):
 
     def _load_schedule_from_json(self, file_path):
         """Load schedules from JSON file."""
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             data = json.load(f)
 
         schedules = []
@@ -356,8 +479,8 @@ class MainGUI(QWidget):
             schedule = []
 
             # Format 1: Object with 'courses' field
-            if isinstance(schedule_data, dict) and 'courses' in schedule_data:
-                for course_csv in schedule_data['courses']:
+            if isinstance(schedule_data, dict) and "courses" in schedule_data:
+                for course_csv in schedule_data["courses"]:
                     schedule.append(self._create_course_from_csv(course_csv))
             # Format 2: Direct array of course CSV strings
             elif isinstance(schedule_data, list):
@@ -375,25 +498,26 @@ class MainGUI(QWidget):
     def _load_schedule_from_csv(self, file_path):
         """Load schedules from CSV file."""
         import csv
+
         schedules = []
         current_schedule = []
 
-        with open(file_path, 'r') as f:
+        with open(file_path, "r") as f:
             reader = csv.reader(f)
             for row in reader:
                 # Empty row separates schedules
-                if not row or all(cell.strip() == '' for cell in row):
+                if not row or all(cell.strip() == "" for cell in row):
                     if current_schedule:
                         schedules.append(current_schedule)
                         current_schedule = []
                     continue
 
                 # Skip header rows
-                if row[0].startswith('Schedule') or row[0].startswith('Course'):
+                if row[0].startswith("Schedule") or row[0].startswith("Course"):
                     continue
 
                 # Reconstruct CSV format from row
-                course_csv = ','.join(row)
+                course_csv = ",".join(row)
                 current_schedule.append(self._create_course_from_csv(course_csv))
 
         # Add last schedule if exists
@@ -404,6 +528,7 @@ class MainGUI(QWidget):
 
     def _create_course_from_csv(self, course_csv):
         """Create a simple course object from CSV string for display purposes."""
+
         class ScheduleCourse:
             def __init__(self, csv_string):
                 self._csv = csv_string
@@ -414,122 +539,151 @@ class MainGUI(QWidget):
         return ScheduleCourse(course_csv)
 
     def gen_sched(self):
-        scheduler = Scheduler(self.config)
+        Scheduler(self.config)
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app = QApplication(sys.argv)
     gui = MainGUI()
     gui.show()
     sys.exit(app.exec_())
 
 
-
-
 def save_config(config, path: str):
+    config = config
+    courses = []
+    mon = []
+    tue = []
+    wed = []
+    thu = []
+    fri = []
+    classes = []
+    faculty = []
 
-        config = config
-        courses = []
-        mon = []
-        tue = []
-        wed = []
-        thu = []
-        fri = []
-        classes = []
-        faculty = []
-
-        # Extract time slots per day with spacing where available
-        for monday in config.time_slot_config.times.get("MON", []):
-            mon.append({"start": monday.start, "spacing": getattr(monday, "spacing", None), "end": monday.end})
-        for tuesday in config.time_slot_config.times.get("TUE", []):
-            tue.append({"start": tuesday.start, "spacing": getattr(tuesday, "spacing", None), "end": tuesday.end})
-        for wednesday in config.time_slot_config.times.get("WED", []):
-            wed.append({"start": wednesday.start, "spacing": getattr(wednesday, "spacing", None), "end": wednesday.end})
-        for thursday in config.time_slot_config.times.get("THU", []):
-            thu.append({"start": thursday.start, "spacing": getattr(thursday, "spacing", None), "end": thursday.end})
-        for friday in config.time_slot_config.times.get("FRI", []):
-            fri.append({"start": friday.start, "spacing": getattr(friday, "spacing", None), "end": friday.end})
-
-        # Extract classes info
-        for clas in config.time_slot_config.classes:
-            diction = {"credits": clas.credits, "meetings": get_met(clas)}
-            if hasattr(clas, "disabled"):
-                diction["disabled"] = clas.disabled
-            classes.append(diction)
-
-        #Extract faculty info with serialized times per day
-        for member in config.config.faculty:
-            faculty.append({
-            "name": member.name,
-            "maximum_credits": member.maximum_credits,
-            "minimum_credits": member.minimum_credits,
-            "unique_course_limit": member.unique_course_limit,
-            "times": {
-                "MON": serialize_time_ranges(member.times.get("MON", [])),
-                "TUE": serialize_time_ranges(member.times.get("TUE", [])),
-                "WED": serialize_time_ranges(member.times.get("WED", [])),
-                "THU": serialize_time_ranges(member.times.get("THU", [])),
-                "FRI": serialize_time_ranges(member.times.get("FRI", [])),
+    # Extract time slots per day with spacing where available
+    for monday in config.time_slot_config.times.get("MON", []):
+        mon.append(
+            {
+                "start": monday.start,
+                "spacing": getattr(monday, "spacing", None),
+                "end": monday.end,
             }
-        })
+        )
+    for tuesday in config.time_slot_config.times.get("TUE", []):
+        tue.append(
+            {
+                "start": tuesday.start,
+                "spacing": getattr(tuesday, "spacing", None),
+                "end": tuesday.end,
+            }
+        )
+    for wednesday in config.time_slot_config.times.get("WED", []):
+        wed.append(
+            {
+                "start": wednesday.start,
+                "spacing": getattr(wednesday, "spacing", None),
+                "end": wednesday.end,
+            }
+        )
+    for thursday in config.time_slot_config.times.get("THU", []):
+        thu.append(
+            {
+                "start": thursday.start,
+                "spacing": getattr(thursday, "spacing", None),
+                "end": thursday.end,
+            }
+        )
+    for friday in config.time_slot_config.times.get("FRI", []):
+        fri.append(
+            {
+                "start": friday.start,
+                "spacing": getattr(friday, "spacing", None),
+                "end": friday.end,
+            }
+        )
 
-# Extract courses info
-        for course in config.config.courses:
-            courses.append({
-        "course_id": course.course_id,
-        "credits": course.credits,
-        "room": course.room,
-        "lab": course.lab,
-        "conflicts": course.conflicts,
-        "faculty": course.faculty
-    })
+    # Extract classes info
+    for clas in config.time_slot_config.classes:
+        diction = {"credits": clas.credits, "meetings": get_met(clas)}
+        if hasattr(clas, "disabled"):
+            diction["disabled"] = clas.disabled
+        classes.append(diction)
 
-# Final combined config dictionary
-        final_config = {
-    "config": {
-        "rooms": config.config.rooms,
-        "labs": config.config.labs,
-        "courses": courses,
-        "faculty": faculty
-    },
-    "time_slot_config": {
-        "times": {
-            "MON": mon,
-            "TUE": tue,
-            "WED": wed,
-            "THU": thu,
-            "FRI": fri,
+    # Extract faculty info with serialized times per day
+    for member in config.config.faculty:
+        faculty.append(
+            {
+                "name": member.name,
+                "maximum_credits": member.maximum_credits,
+                "minimum_credits": member.minimum_credits,
+                "unique_course_limit": member.unique_course_limit,
+                "times": {
+                    "MON": serialize_time_ranges(member.times.get("MON", [])),
+                    "TUE": serialize_time_ranges(member.times.get("TUE", [])),
+                    "WED": serialize_time_ranges(member.times.get("WED", [])),
+                    "THU": serialize_time_ranges(member.times.get("THU", [])),
+                    "FRI": serialize_time_ranges(member.times.get("FRI", [])),
+                },
+            }
+        )
+
+    # Extract courses info
+    for course in config.config.courses:
+        courses.append(
+            {
+                "course_id": course.course_id,
+                "credits": course.credits,
+                "room": course.room,
+                "lab": course.lab,
+                "conflicts": course.conflicts,
+                "faculty": course.faculty,
+            }
+        )
+
+    # Final combined config dictionary
+    final_config = {
+        "config": {
+            "rooms": config.config.rooms,
+            "labs": config.config.labs,
+            "courses": courses,
+            "faculty": faculty,
         },
-        "classes": classes
-    },
-    "limit": config.limit,
-    "optimizer_flags": config.optimizer_flags
-}
-        with open(path, "w") as json_file:
-            json.dump(final_config, json_file, indent=1)
+        "time_slot_config": {
+            "times": {
+                "MON": mon,
+                "TUE": tue,
+                "WED": wed,
+                "THU": thu,
+                "FRI": fri,
+            },
+            "classes": classes,
+        },
+        "limit": config.limit,
+        "optimizer_flags": config.optimizer_flags,
+    }
+    with open(path, "w") as json_file:
+        json.dump(final_config, json_file, indent=1)
+
 
 def serialize_time_ranges(day_slots):
-        result = []
-        for slot in day_slots:
-            item = {
-                "start": slot.start,
-                "end": slot.end,
-            }
-            # Only include spacing if the attribute exists
-            if hasattr(slot, "spacing"):
-                item["spacing"] = slot.spacing
-            result.append(item)
-        return result
+    result = []
+    for slot in day_slots:
+        item = {
+            "start": slot.start,
+            "end": slot.end,
+        }
+        # Only include spacing if the attribute exists
+        if hasattr(slot, "spacing"):
+            item["spacing"] = slot.spacing
+        result.append(item)
+    return result
+
 
 def get_met(met):
-        meetings = []
-        for meet in met.meetings:
-            diction = {"day": meet.day, "duration": meet.duration}
-            if hasattr(meet, "lab"):
-                diction["lab"] = meet.lab
-            meetings.append(diction)
-        return meetings
-
-
-
+    meetings = []
+    for meet in met.meetings:
+        diction = {"day": meet.day, "duration": meet.duration}
+        if hasattr(meet, "lab"):
+            diction["lab"] = meet.lab
+        meetings.append(diction)
+    return meetings
