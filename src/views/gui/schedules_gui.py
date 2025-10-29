@@ -171,7 +171,7 @@ class SchedulesGUI(QWidget):
             QMessageBox.warning(self, "No Schedules", "No schedules available.")
             return
         try:
-            from src.views.gui.room_day_view import ScheduleVisualizationView
+            from src.views.gui.schedule_visualization_view import ScheduleVisualizationView
             
             # Determine initial filter state based on current view
             initial_filter = "all"
