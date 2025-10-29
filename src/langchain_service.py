@@ -101,7 +101,7 @@ class ListCoursesSchema(BaseModel):
 # Tool Wrapper Functions
 # ============================================================================
 
-def list_courses_wrapper(controller, faculty_filter: str = None) -> str:
+def list_courses_wrapper(controller, faculty_filter: Optional[str] = None) -> str:
     """Wrapper for listing all courses, optionally filtered by faculty."""
     courses_dict = controller.list_courses()
     if not courses_dict:
@@ -149,7 +149,7 @@ def list_labs_wrapper(controller) -> str:
     labs = controller.get_labs()
     if not labs:
         return "No labs found"
-    return "\n".join([f"• {l}" for l in labs])
+    return "\n".join([f"• {lab}" for lab in labs])
 
 
 # Add/Remove/Modify wrappers
