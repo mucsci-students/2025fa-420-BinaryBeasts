@@ -3,16 +3,21 @@
 import json
 from typing import Dict, List, Set, Optional
 
+
 class Course:
     """
     Represents an individual course.
     """
 
-    def __init__(self, course_id: str, credits: int,
-                 room: List[str] = None,
-                 lab: List[str] = None,
-                 conflicts: List[str] = None,
-                 faculty: List[str] = None):
+    def __init__(
+        self,
+        course_id: str,
+        credits: int,
+        room: List[str] = [],
+        lab: List[str] = [],
+        conflicts: List[str] = [],
+        faculty: List[str] = [],
+    ):
         self.course_id = course_id
         self.credits = credits
 
@@ -28,7 +33,6 @@ class Course:
 
 
 class CourseManager:
-
     def __init__(self, schedule: Optional[Dict[str, List[Course]]] = None) -> None:
         self.courses: Dict[str, List[Course]] = schedule or {}
         self.rooms: Set[str] = set()
@@ -88,10 +92,10 @@ class CourseManager:
         if course_id not in self.courses:
             return False
         if 0 <= index < len(self.courses[course_id]):
-            self.courses[course_id].pop(index) # remove the instance
+            self.courses[course_id].pop(index)  # remove the instance
             if not self.courses[course_id]:
                 del self.courses[course_id]
-        self.get_resources() # refresh resources to remove old values
+        self.get_resources()  # refresh resources to remove old values
         return True
 
     def get_resources(self) -> None:
@@ -135,12 +139,13 @@ class CourseManager:
         """
         return self.courses.copy()
 
-
-    def modify_course(self, course_id: str, index: int, new_course:Course) -> bool:
+    def modify_course(self, course_id: str, index: int, new_course: Course) -> bool:
         """
         Modify the specified course in the schedule.
         """
-        if course_id not in self.courses or not (0 <= index < len(self.courses[course_id])):
+        if course_id not in self.courses or not (
+            0 <= index < len(self.courses[course_id])
+        ):
             return False
         if new_course.credits <= 0:
             raise ValueError("Credits must be positive")
@@ -158,7 +163,6 @@ class CourseManager:
         """
         return course_id in self.courses
 
-
     def get_conflicting_courses(self, course_id: str) -> Set[str]:
         """
         Get courses that conflict with the given course.
@@ -175,25 +179,24 @@ class CourseManager:
         courses = []
         for course_instances in self.get_all_courses().values():
             for course in course_instances:
-                courses.append({
-                    'course_id': course.course_id,
-                    'credits': course.credits,
-                    'room': course.room,
-                    'lab': course.lab,
-                    'faculty': course.faculty,
-                    'conflicts': course.conflicts
-                })
+                courses.append(
+                    {
+                        "course_id": course.course_id,
+                        "credits": course.credits,
+                        "room": course.room,
+                        "lab": course.lab,
+                        "faculty": course.faculty,
+                        "conflicts": course.conflicts,
+                    }
+                )
         return courses
 
     def save_config(self, config: dict, time_slots: dict, config_file: str) -> bool:
         """Save configuration to file (for CLI)."""
         try:
-            config['courses'] = self.to_dict()
-            full_config = {
-                "config": config,
-                "time_slot_config": time_slots
-            }
-            with open(config_file, 'w', encoding='utf-8') as f:
+            config["courses"] = self.to_dict()
+            full_config = {"config": config, "time_slot_config": time_slots}
+            with open(config_file, "w", encoding="utf-8") as f:
                 json.dump(full_config, f, indent=2, ensure_ascii=False)
             return True
         except Exception as e:
@@ -219,12 +222,10 @@ class CourseManager:
                             room=course.room,
                             lab=course.lab,
                             faculty=course.faculty,
-                            conflicts=course.conflicts
+                            conflicts=course.conflicts,
                         )
                         editable_config.config.courses.append(new_course)
             return True
         except Exception as e:
             print(f"Error saving: {e}")
             return False
-
-
