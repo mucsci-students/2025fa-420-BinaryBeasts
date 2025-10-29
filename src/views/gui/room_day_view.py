@@ -12,11 +12,12 @@ from src.models.room_day_model import schedule_to_location_blocks, min_max_hours
 
 
 DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI"]
-DAY_WIDTH = 110
-DAY_PADDING = 2
-LEFT_MARGIN = 45
+DAY_WIDTH = 140  # Increased for better readability
+DAY_PADDING = 4  # More padding between blocks
+LEFT_MARGIN = 80  # More space for time labels
 TEXT_OFFSET = 50
-CANVAS_PADDING = 2
+CANVAS_PADDING = 3
+MIN_BLOCK_HEIGHT = 20  # Minimum height for text readability
 
 
 def _key_color(key: str) -> QColor:
@@ -38,116 +39,283 @@ class RoomPanel(QWidget):
         self.title = title
         self.blocks = blocks
         self.min_h, self.max_h = min_max_hours(blocks)
-        self.setMinimumWidth(LEFT_MARGIN + 5 * DAY_WIDTH + 10)
-        # Height based on minute span
-        height = (self.max_h - self.min_h) * 60 + 2 * CANVAS_PADDING + 50
-        self.setMinimumHeight(max(120, height))
+        self.setMinimumWidth(LEFT_MARGIN + 5 * DAY_WIDTH + 20)
+        # Height based on minute span with better scaling
+        height = (self.max_h - self.min_h) * 80 + 2 * CANVAS_PADDING + 80  # More vertical space
+        self.setMinimumHeight(max(150, height))
 
     def paintEvent(self, event):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
 
-        # Title
-        p.setFont(QFont("Arial", 12, QFont.Bold))
-        p.drawText(10, 18, self.title)
+        # Title with background
+        title_rect = QRect(5, 5, self.width() - 10, 25)
+        p.fillRect(title_rect, QColor(240, 240, 240))
+        p.setPen(QPen(Qt.black))
+        p.setFont(QFont("Arial", 14, QFont.Bold))
+        p.drawText(title_rect, Qt.AlignCenter, self.title)
 
-        # Day labels
-        p.setFont(QFont("Arial", 9))
+        # Day labels with better formatting
+        p.setFont(QFont("Arial", 11, QFont.Bold))
         x0 = LEFT_MARGIN
         for i, label in enumerate(DAY_LABELS):
             x = x0 + i * DAY_WIDTH
-            p.drawText(x + 10, 36, label)
+            day_rect = QRect(x, 35, DAY_WIDTH - DAY_PADDING, 20)
+            p.fillRect(day_rect, QColor(250, 250, 250))
+            p.drawText(day_rect, Qt.AlignCenter, label)
 
-        # Time grid lines and labels
-        y0 = 50
-        pen_grid = QPen(QColor(200, 200, 200))
+        # Time grid lines and labels with better spacing
+        y0 = 65  # More space for headers
+        pen_grid = QPen(QColor(220, 220, 220))
         p.setPen(pen_grid)
+        time_font = QFont("Arial", 10)
+        p.setFont(time_font)
+        
         for hour in range(self.min_h, self.max_h + 1):
-            y = y0 + (hour - self.min_h) * 60
-            p.drawLine(0, y, LEFT_MARGIN + 5 * DAY_WIDTH, y)
-            # time text on left
+            y = y0 + (hour - self.min_h) * 80  # More vertical space per hour
+            p.drawLine(LEFT_MARGIN - 5, y, LEFT_MARGIN + 5 * DAY_WIDTH, y)
+            # time text on left with better formatting
             p.setPen(QPen(Qt.black))
-            ap = "PM" if hour >= 12 else "AM"
-            hh = hour - 12 if hour > 12 else hour
-            p.drawText(5, y + 12, f"{hh}:00{ap}")
+            if hour == 0:
+                time_str = "12:00 AM"
+            elif hour < 12:
+                time_str = f"{hour}:00 AM"
+            elif hour == 12:
+                time_str = "12:00 PM"
+            else:
+                time_str = f"{hour - 12}:00 PM"
+            
+            time_rect = QRect(5, y - 10, LEFT_MARGIN - 10, 20)
+            p.drawText(time_rect, Qt.AlignRight | Qt.AlignVCenter, time_str)
             p.setPen(pen_grid)
 
-        # Draw blocks
+        # Draw blocks with improved formatting
         for b in self.blocks:
             x = LEFT_MARGIN + (b.day - 1) * DAY_WIDTH + DAY_PADDING
-            y = y0 + (b.start - self.min_h * 60) + CANVAS_PADDING
+            # Convert minutes to pixels with better scaling
+            y_minutes = b.start - self.min_h * 60
+            y = y0 + (y_minutes * 80) // 60 + CANVAS_PADDING  # Scale to match time grid
             w = DAY_WIDTH - 2 * DAY_PADDING
-            h = max(6, b.duration)
+            h = max(MIN_BLOCK_HEIGHT, (b.duration * 80) // 60)  # Scale duration proportionally
 
             rect = QRect(x, y, w, h)
-            # Color by course id (consistent across schedules)
+            
+            # Color by course id with better contrast
             color = _key_color(b.course)
-            # Slightly different tone for lab blocks
             fill = QColor(color)
             if getattr(b, "is_lab", False):
-                fill = QColor(min(color.red() + 30, 255), min(color.green() + 30, 255), min(color.blue() + 30, 255))
+                # More distinct lab coloring
+                fill = QColor(max(0, color.red() - 20), min(255, color.green() + 40), max(0, color.blue() - 10))
+            
+            # Draw block with border
             p.fillRect(rect, fill)
+            p.setPen(QPen(QColor(60, 60, 60), 1))
+            p.drawRect(rect)
 
-            # Prepare fonts and metrics
-            title_font = QFont("Arial", 9, QFont.Bold)
-            info_font = QFont("Arial", 8)
-            fm_title = p.fontMetrics()
+            # Prepare fonts with better sizing
+            title_font = QFont("Arial", 10, QFont.Bold)
+            info_font = QFont("Arial", 9)
             p.setFont(title_font)
             fm_title = p.fontMetrics()
             p.setFont(info_font)
             fm_info = p.fontMetrics()
 
-            # Determine how many lines fit
-            padding = 2
-            needed_two = padding + fm_title.height() + 2 + fm_info.height() + padding
+            # Determine layout based on block size
+            padding = 4
+            line_spacing = 2
+            needed_two = padding + fm_title.height() + line_spacing + fm_info.height() + padding
             needed_one = padding + fm_title.height() + padding
 
-            # Build strings
-            title_text = b.course + (" (Lab)" if getattr(b, "is_lab", False) else "")
-            extra = b.faculty
+            # Build strings with better formatting
+            title_text = b.course
+            if getattr(b, "is_lab", False):
+                title_text += " (Lab)"
+            
+            faculty_text = b.faculty
             if getattr(b, "is_lab", False) and getattr(b, "lab_name", None):
-                extra += f" @ {b.lab_name}"
+                faculty_text += f" @ {b.lab_name}"
 
-            # Clip drawing to the block rect and elide long text
+            # Draw text with proper clipping and contrast
             p.save()
-            p.setClipRect(rect)
-            p.setPen(QPen(Qt.black))
+            p.setClipRect(rect.adjusted(2, 2, -2, -2))  # Clip with margin
+            
+            # Use white text on dark backgrounds, black on light
+            text_color = Qt.white if color.lightness() < 128 else Qt.black
+            p.setPen(QPen(text_color))
 
-            if h >= needed_two:
-                # Two lines
+            if h >= needed_two and w > 40:
+                # Two lines with better spacing
                 p.setFont(title_font)
-                fm = p.fontMetrics()
-                title_elided = fm.elidedText(title_text, Qt.ElideRight, max(0, w - 8))
-                baseline1 = y + padding + fm.ascent()
-                p.drawText(x + 4, baseline1, title_elided)
+                title_elided = fm_title.elidedText(title_text, Qt.ElideRight, w - 8)
+                p.drawText(x + padding, y + padding + fm_title.ascent(), title_elided)
 
                 p.setFont(info_font)
-                fm2 = p.fontMetrics()
-                extra_elided = fm2.elidedText(extra, Qt.ElideRight, max(0, w - 8))
-                baseline2 = baseline1 + 2 + fm2.ascent() + (fm.title.height() - fm.ascent() if False else 0)
-                # Simpler: next line at title height + small gap
-                baseline2 = y + padding + fm.height() + 2 + fm2.ascent()
-                p.drawText(x + 4, baseline2, extra_elided)
-            elif h >= needed_one:
-                # One line: title only
-                p.setFont(title_font)
+                faculty_elided = fm_info.elidedText(faculty_text, Qt.ElideRight, w - 8)
+                p.drawText(x + padding, y + padding + fm_title.height() + line_spacing + fm_info.ascent(), faculty_elided)
+                
+            elif h >= needed_one and w > 30:
+                # One line: prioritize course name
+                p.setFont(title_font if h > 25 else info_font)
                 fm = p.fontMetrics()
-                title_elided = fm.elidedText(title_text, Qt.ElideRight, max(0, w - 8))
-                baseline1 = y + padding + fm.ascent()
-                p.drawText(x + 4, baseline1, title_elided)
-            else:
-                # Not enough space for text; leave as color bar
-                pass
+                text_elided = fm.elidedText(title_text, Qt.ElideRight, w - 8)
+                text_y = y + (h + fm.height()) // 2 - fm.descent()
+                p.drawText(x + padding, text_y, text_elided)
+            
+            # If block is too small for text, just show the colored block
 
             p.restore()
 
 
-class RoomLabDayView(QWidget):
-    """View schedules by room/lab vs day with navigation between schedules."""
+class FacultyPanel(QWidget):
+    """Canvas panel that draws one faculty member's schedule across days."""
+    def __init__(self, title: str, blocks: List[TimeBlock], parent=None):
+        super().__init__(parent)
+        self.title = title
+        self.blocks = blocks
+        self.min_h, self.max_h = min_max_hours(blocks)
+        
+        # Group blocks by day for this faculty (not by room)
+        self.days = {}
+        for b in blocks:
+            if b.day not in self.days:
+                self.days[b.day] = []
+            self.days[b.day].append(b)
+        
+        # Sort blocks within each day by start time
+        for day_blocks in self.days.values():
+            day_blocks.sort(key=lambda b: b.start)
+        
+        self.setMinimumWidth(LEFT_MARGIN + 5 * DAY_WIDTH + 20)  # 5 days like RoomPanel
+        height = (self.max_h - self.min_h) * 80 + 2 * CANVAS_PADDING + 80  # Match RoomPanel scaling
+        self.setMinimumHeight(max(150, height))
+
+    def paintEvent(self, event):
+        if not self.blocks:
+            return
+            
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+
+        # Title with background (consistent with RoomPanel)
+        title_rect = QRect(5, 5, self.width() - 10, 25)
+        p.fillRect(title_rect, QColor(240, 240, 240))
+        p.setPen(QPen(Qt.black))
+        p.setFont(QFont("Arial", 14, QFont.Bold))
+        p.drawText(title_rect, Qt.AlignCenter, self.title)
+
+        # Day labels (like RoomPanel structure)
+        p.setFont(QFont("Arial", 10, QFont.Bold))
+        x0 = LEFT_MARGIN
+        for i, day_label in enumerate(DAY_LABELS):
+            x = x0 + i * DAY_WIDTH
+            day_rect = QRect(x, 35, DAY_WIDTH - DAY_PADDING, 20)
+            p.fillRect(day_rect, QColor(250, 250, 250))
+            p.drawText(day_rect, Qt.AlignCenter, day_label)
+
+        # Time grid lines and labels (consistent with RoomPanel)
+        y0 = 65
+        pen_grid = QPen(QColor(220, 220, 220))
+        p.setPen(pen_grid)
+        time_font = QFont("Arial", 10)
+        p.setFont(time_font)
+        
+        for hour in range(self.min_h, self.max_h + 1):
+            y = y0 + (hour - self.min_h) * 80  # Match RoomPanel scaling
+            p.drawLine(LEFT_MARGIN - 5, y, LEFT_MARGIN + 5 * DAY_WIDTH, y)
+            # time text on left with better formatting
+            p.setPen(QPen(Qt.black))
+            if hour == 0:
+                time_str = "12:00 AM"
+            elif hour < 12:
+                time_str = f"{hour}:00 AM"
+            elif hour == 12:
+                time_str = "12:00 PM"
+            else:
+                time_str = f"{hour - 12}:00 PM"
+            
+            time_rect = QRect(5, y - 10, LEFT_MARGIN - 10, 20)
+            p.drawText(time_rect, Qt.AlignRight | Qt.AlignVCenter, time_str)
+            p.setPen(pen_grid)
+
+        # Draw blocks organized by day (not by room!)
+        for b in self.blocks:
+            # Calculate position: each day gets its own column
+            x = LEFT_MARGIN + (b.day - 1) * DAY_WIDTH + DAY_PADDING
+            # Scale time positioning to match grid
+            y_minutes = b.start - self.min_h * 60
+            y = y0 + (y_minutes * 80) // 60 + CANVAS_PADDING
+            w = DAY_WIDTH - 2 * DAY_PADDING
+            h = max(MIN_BLOCK_HEIGHT, (b.duration * 80) // 60)
+
+            rect = QRect(x, y, w, h)
+            color = _key_color(b.course)
+            fill = QColor(color)
+            if getattr(b, "is_lab", False):
+                # Consistent lab coloring with RoomPanel
+                fill = QColor(max(0, color.red() - 20), min(255, color.green() + 40), max(0, color.blue() - 10))
+            
+            # Draw block with border
+            p.fillRect(rect, fill)
+            p.setPen(QPen(QColor(60, 60, 60), 1))
+            p.drawRect(rect)
+
+            # Draw course and room text with better contrast and sizing
+            if w > 20 and h > 15:  # Only draw text if there's reasonable space
+                p.save()
+                p.setClipRect(rect.adjusted(2, 2, -2, -2))
+                
+                # Choose text color based on background
+                text_color = Qt.white if color.lightness() < 128 else Qt.black
+                p.setPen(QPen(text_color))
+                
+                # Prepare fonts
+                title_font = QFont("Arial", 10, QFont.Bold)
+                info_font = QFont("Arial", 9)
+                p.setFont(title_font)
+                title_fm = p.fontMetrics()
+                p.setFont(info_font)
+                info_fm = p.fontMetrics()
+                
+                # Check if we have space for two lines (course + room)
+                padding = 4
+                line_spacing = 2
+                needed_two = padding + title_fm.height() + line_spacing + info_fm.height() + padding
+                
+                # Build display strings
+                course_text = b.course
+                if getattr(b, "is_lab", False):
+                    course_text += " (Lab)"
+                
+                room_text = b.room
+                
+                if h >= needed_two and w > 60:
+                    # Two lines: course name and room
+                    p.setFont(title_font)
+                    course_elided = title_fm.elidedText(course_text, Qt.ElideRight, w - 8)
+                    text_y1 = y + padding + title_fm.ascent()
+                    p.drawText(x + padding, text_y1, course_elided)
+                    
+                    p.setFont(info_font)
+                    room_elided = info_fm.elidedText(room_text, Qt.ElideRight, w - 8)
+                    text_y2 = text_y1 + line_spacing + info_fm.height()
+                    p.drawText(x + padding, text_y2, room_elided)
+                else:
+                    # Single line: combine course and room
+                    p.setFont(info_font)
+                    combined_text = f"{course_text} @ {room_text}"
+                    combined_elided = info_fm.elidedText(combined_text, Qt.ElideRight, w - 8)
+                    text_y = y + (h + info_fm.height()) // 2 - info_fm.descent()
+                    p.drawText(x + padding, text_y, combined_elided)
+                
+                p.restore()
+
+
+class ScheduleVisualizationView(QWidget):
+    """View schedules with flexible layout options and filtering."""
     def __init__(self, schedules: List[List[object]], parent=None, initial_index: int | None = None, 
                  initial_filter: str = "all", initial_item_index: int = 0):
         super().__init__(parent)
-        self.setWindowTitle("Schedules by Room/Lab · Day")
+        self.setWindowTitle("Schedule Visualization")
         self.setMinimumSize(900, 700)
 
         self.schedules = schedules
@@ -162,6 +330,7 @@ class RoomLabDayView(QWidget):
 
         # Filter state for room/faculty view
         self.current_filter_type = initial_filter  # "all", "room", "faculty"
+        self.current_layout_type = "room_day"  # "room_day", "faculty_day"
         self.room_list = []
         self.faculty_list = []
         self.current_room_index = initial_item_index if initial_filter == "room" else 0
@@ -170,16 +339,30 @@ class RoomLabDayView(QWidget):
         root = QVBoxLayout(self)
 
         # Title
-        title = QLabel("Room/Lab Day Visualization")
+        title = QLabel("Schedule Visualization")
         title.setFont(QFont("Arial", 16, QFont.Bold))
         title.setAlignment(Qt.AlignCenter)
         root.addWidget(title)
 
-        # Filter and Nav bar
+        # Layout and Filter controls
         control_layout = QHBoxLayout()
         
+        # Layout type dropdown
+        layout_label = QLabel("Layout:")
+        layout_label.setFont(QFont("Arial", 10))
+        control_layout.addWidget(layout_label)
+        
+        self.layout_selector = QComboBox()
+        self.layout_selector.addItems(['Room × Day', 'Faculty × Day'])
+        self.layout_selector.setFont(QFont("Arial", 10))
+        self.layout_selector.setMinimumWidth(120)
+        self.layout_selector.currentTextChanged.connect(self.on_layout_changed)
+        control_layout.addWidget(self.layout_selector)
+        
+        control_layout.addWidget(QLabel(" | "))  # Separator
+        
         # Filter dropdown
-        filter_label = QLabel("Filter by:")
+        filter_label = QLabel("Filter:")
         filter_label.setFont(QFont("Arial", 10))
         control_layout.addWidget(filter_label)
         
@@ -190,13 +373,13 @@ class RoomLabDayView(QWidget):
         self.filter_selector.currentTextChanged.connect(self.on_filter_changed)
         control_layout.addWidget(self.filter_selector)
         
-        # Set initial filter state
+        # Set initial filter state - this will be updated by update_filter_options
         if initial_filter == "room":
-            self.filter_selector.setCurrentText('By Room')
+            self.current_filter_type = "room"
         elif initial_filter == "faculty":
-            self.filter_selector.setCurrentText('By Faculty')
+            self.current_filter_type = "faculty"
         else:
-            self.filter_selector.setCurrentText('All Locations')
+            self.current_filter_type = "all"
         
         # Item selector (for room/faculty navigation)
         self.item_selector = QComboBox()
@@ -219,26 +402,23 @@ class RoomLabDayView(QWidget):
         
         root.addLayout(control_layout)
 
-        # Scrollable panels
+        # Scrollable panels with better spacing
         self.scroll = QScrollArea()
         self.scroll.setWidgetResizable(True)
+        self.scroll.setStyleSheet("QScrollArea { border: none; }")
         root.addWidget(self.scroll, 1)
         self.container = QWidget()
         self.scroll.setWidget(self.container)
         self.container_layout = QVBoxLayout(self.container)
         self.container_layout.setAlignment(Qt.AlignTop)
+        self.container_layout.setSpacing(15)  # Add spacing between panels
+        self.container_layout.setContentsMargins(10, 10, 10, 10)  # Add margins
 
         self.prev_btn.clicked.connect(self.prev_schedule)
         self.next_btn.clicked.connect(self.next_schedule)
 
-        # Initialize filter state and render
-        if self.current_filter_type == "room":
-            self.populate_room_list()
-            self.item_selector.show()
-        elif self.current_filter_type == "faculty":
-            self.populate_faculty_list()
-            self.item_selector.show()
-        
+        # Initialize filter options and render
+        self.update_filter_options()
         self.render_current()
 
     def _schedule_to_csv_list(self, schedule) -> List[str]:
@@ -279,16 +459,48 @@ class RoomLabDayView(QWidget):
             if w is not None:
                 w.deleteLater()
 
+    def on_layout_changed(self, layout_text):
+        """Handle layout selector changes"""
+        if layout_text == 'Room × Day':
+            self.current_layout_type = "room_day"
+        elif layout_text == 'Faculty × Day':
+            self.current_layout_type = "faculty_day"
+        
+        # Reset filter to "all" when switching layouts
+        self.current_filter_type = "all"
+        self.item_selector.hide()
+        
+        # Update filter options based on layout
+        self.update_filter_options()
+        self.render_current()
+
+    def update_filter_options(self):
+        """Update filter dropdown options based on current layout"""
+        self.filter_selector.blockSignals(True)
+        
+        self.filter_selector.clear()
+        if self.current_layout_type == "room_day":
+            self.filter_selector.addItems(['All Rooms', 'By Room', 'By Faculty'])
+            # Always reset to "All" when layout changes
+            self.filter_selector.setCurrentText('All Rooms')
+        else:  # faculty_day
+            self.filter_selector.addItems(['All Faculty', 'By Faculty', 'By Room'])
+            # Always reset to "All" when layout changes
+            self.filter_selector.setCurrentText('All Faculty')
+        
+        self.filter_selector.blockSignals(False)
+        self.on_filter_changed(self.filter_selector.currentText())
+
     def on_filter_changed(self, filter_text):
         """Handle filter selector changes"""
-        if filter_text == 'All Locations':
+        if filter_text in ['All Locations', 'All Rooms', 'All Faculty']:
             self.current_filter_type = "all"
             self.item_selector.hide()
-        elif filter_text == 'By Room':
+        elif 'Room' in filter_text:
             self.current_filter_type = "room"
             self.populate_room_list()
             self.item_selector.show()
-        elif filter_text == 'By Faculty':
+        elif 'Faculty' in filter_text:
             self.current_filter_type = "faculty"
             self.populate_faculty_list()
             self.item_selector.show()
@@ -353,6 +565,15 @@ class RoomLabDayView(QWidget):
             return
         self.page.setText(f"Schedule {idx + 1} of {total}")
 
+        if self.current_layout_type == "room_day":
+            self.render_room_day_layout()
+        else:  # faculty_day
+            self.render_faculty_day_layout()
+        
+        self.container_layout.addStretch()
+
+    def render_room_day_layout(self):
+        """Render panels organized by room/lab vs day"""
         by_loc = self.controller.get_room_day_blocks()
 
         if self.current_filter_type == "all":
@@ -377,5 +598,41 @@ class RoomLabDayView(QWidget):
                     if filtered_blocks:
                         panel = RoomPanel(f"{loc} - {faculty}", filtered_blocks, self)
                         self.container_layout.addWidget(panel)
+
+    def render_faculty_day_layout(self):
+        """Render panels organized by faculty vs rooms+days"""
+        # Get all blocks and group by faculty
+        by_loc = self.controller.get_room_day_blocks()
+        all_blocks = []
+        for room_blocks in by_loc.values():
+            all_blocks.extend(room_blocks)
         
-        self.container_layout.addStretch()
+        # Group blocks by faculty
+        by_faculty = {}
+        for block in all_blocks:
+            if block.faculty not in by_faculty:
+                by_faculty[block.faculty] = []
+            by_faculty[block.faculty].append(block)
+
+        if self.current_filter_type == "all":
+            # Show all faculty
+            for faculty in sorted(by_faculty.keys()):
+                panel = FacultyPanel(faculty, by_faculty[faculty], self)
+                self.container_layout.addWidget(panel)
+        elif self.current_filter_type == "faculty":
+            # Show only selected faculty
+            if self.faculty_list and self.current_faculty_index < len(self.faculty_list):
+                faculty = self.faculty_list[self.current_faculty_index]
+                if faculty in by_faculty:
+                    panel = FacultyPanel(faculty, by_faculty[faculty], self)
+                    self.container_layout.addWidget(panel)
+        elif self.current_filter_type == "room":
+            # Show all faculty but only courses in selected room
+            if self.room_list and self.current_room_index < len(self.room_list):
+                selected_room = self.room_list[self.current_room_index]
+                for faculty in sorted(by_faculty.keys()):
+                    # Filter blocks to only show those in the selected room
+                    filtered_blocks = [b for b in by_faculty[faculty] if b.room == selected_room]
+                    if filtered_blocks:
+                        panel = FacultyPanel(f"{faculty} - {selected_room}", filtered_blocks, self)
+                        self.container_layout.addWidget(panel)

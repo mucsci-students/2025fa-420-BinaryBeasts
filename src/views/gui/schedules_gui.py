@@ -87,12 +87,12 @@ class SchedulesGUI(QWidget):
         self.view_selector.currentTextChanged.connect(self.view_by)
         header_layout.addWidget(self.view_selector)
 
-        # Visual Rooms x Days view (button in header)
-        self.DayViewButton = QPushButton('Visualize (Rooms × Days)')
-        self.DayViewButton.setFont(QFont('Arial', 10))
-        self.DayViewButton.setStyleSheet('padding: 6px 10px; background-color: #607D8B; color: white; border-radius: 5px;')
-        self.DayViewButton.clicked.connect(self.open_day_view)
-        header_layout.addWidget(self.DayViewButton)
+        # Visual schedule view (button in header)
+        self.VisualizeButton = QPushButton('Visualize Schedules')
+        self.VisualizeButton.setFont(QFont('Arial', 10))
+        self.VisualizeButton.setStyleSheet('padding: 6px 10px; background-color: #607D8B; color: white; border-radius: 5px;')
+        self.VisualizeButton.clicked.connect(self.open_visualization)
+        header_layout.addWidget(self.VisualizeButton)
 
         self.layout.addLayout(header_layout)
 
@@ -165,13 +165,13 @@ class SchedulesGUI(QWidget):
 
         self.fill_jump_selector()
 
-    def open_day_view(self):
-        """Open the sleek Room/Lab × Day visualization window with current view state."""
+    def open_visualization(self):
+        """Open the schedule visualization window with current view state."""
         if not self.schedules:
             QMessageBox.warning(self, "No Schedules", "No schedules available.")
             return
         try:
-            from src.views.gui.room_day_view import RoomLabDayView
+            from src.views.gui.room_day_view import ScheduleVisualizationView
             
             # Determine initial filter state based on current view
             initial_filter = "all"
@@ -185,15 +185,15 @@ class SchedulesGUI(QWidget):
                 initial_filter = "faculty"
                 initial_index = self.current_faculty_index
             
-            self.day_view = RoomLabDayView(
+            self.visualization_view = ScheduleVisualizationView(
                 self.schedules, 
                 initial_index=self.controller.index,
                 initial_filter=initial_filter,
                 initial_item_index=initial_index
             )
-            self.day_view.show()
+            self.visualization_view.show()
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open day view:\n{e}")
+            QMessageBox.critical(self, "Error", f"Failed to open visualization:\n{e}")
 
     def view_by(self, view_text):
         """Handle view selector changes"""
