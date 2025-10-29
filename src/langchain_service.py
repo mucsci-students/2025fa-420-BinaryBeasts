@@ -92,12 +92,17 @@ class ListSchema(BaseModel):
     pass
 
 
+class ListCoursesSchema(BaseModel):
+    """Schema for listing courses with optional faculty filter."""
+    faculty_filter: Optional[str] = Field(default=None, description="Optional: Filter courses by faculty member name")
+
+
 # ============================================================================
 # Tool Wrapper Functions
 # ============================================================================
 
-def list_courses_wrapper(controller) -> str:
-    """Wrapper for listing all courses."""
+def list_courses_wrapper(controller, faculty_filter: str = None) -> str:
+    """Wrapper for listing all courses, optionally filtered by faculty."""
     courses_dict = controller.list_courses()
     if not courses_dict:
         return "No courses found"
@@ -110,7 +115,14 @@ def list_courses_wrapper(controller) -> str:
     if not all_courses:
         return "No courses found"
 
-    return "\n".join([f"• {c.course_id} ({c.credits} credits)" for c in all_courses])
+    # Filter by faculty if provided
+    if faculty_filter:
+        faculty_filter = faculty_filter.strip()
+        all_courses = [c for c in all_courses if faculty_filter in c.faculty]
+        if not all_courses:
+            return f"No courses found taught by {faculty_filter}"
+
+    return "\n".join([f"• {c.course_id} ({c.credits} credits) - {', '.join(c.faculty)}" for c in all_courses])
 
 
 def list_faculty_wrapper(controller) -> str:
@@ -138,6 +150,81 @@ def list_labs_wrapper(controller) -> str:
     if not labs:
         return "No labs found"
     return "\n".join([f"• {l}" for l in labs])
+
+
+# Add/Remove/Modify wrappers
+def add_room_wrapper(controller, name: str) -> str:
+    """Wrapper for adding a room."""
+    if controller.room_exists(name):
+        return f"Room {name} already exists"
+    controller.add_room(name)
+    return f"Room {name} added successfully"
+
+
+def add_lab_wrapper(controller, name: str) -> str:
+    """Wrapper for adding a lab."""
+    if controller.lab_exists(name):
+        return f"Lab {name} already exists"
+    controller.add_lab(name)
+    return f"Lab {name} added successfully"
+
+
+def add_faculty_wrapper(controller, name: str) -> str:
+    """Wrapper for adding a faculty member."""
+    # Check if faculty exists
+    faculty_dict = controller.list_faculty()
+    if name in faculty_dict:
+        return f"Faculty {name} already exists"
+
+    # Create faculty data with defaults
+    faculty_data = {
+        "name": name,
+        "minimum_credits": 0,
+        "maximum_credits": 9,
+        "unique_course_limit": 1,
+        "times": {"MON": [], "TUE": [], "WED": [], "THU": [], "FRI": []},
+        "course_preferences": {},
+        "room_preferences": {},
+        "lab_preferences": {},
+    }
+    controller.add_faculty(faculty_data)
+    return f"Faculty {name} added successfully"
+
+
+def remove_room_wrapper(controller, name: str) -> str:
+    """Wrapper for removing a room."""
+    if not controller.room_exists(name):
+        return f"Room {name} does not exist"
+    controller.delete_room(name)
+    return f"Room {name} removed successfully"
+
+
+def remove_lab_wrapper(controller, name: str) -> str:
+    """Wrapper for removing a lab."""
+    if not controller.lab_exists(name):
+        return f"Lab {name} does not exist"
+    controller.delete_lab(name)
+    return f"Lab {name} removed successfully"
+
+
+def rename_room_wrapper(controller, old_name: str, new_name: str) -> str:
+    """Wrapper for renaming a room."""
+    if not controller.room_exists(old_name):
+        return f"Room {old_name} does not exist so it cannot be renamed"
+    if controller.room_exists(new_name):
+        return f"Room {new_name} already exists so it cannot be renamed from {old_name}"
+    controller.edit_room(old_name, new_name)
+    return f"Room {old_name} renamed to {new_name}"
+
+
+def rename_lab_wrapper(controller, old_name: str, new_name: str) -> str:
+    """Wrapper for renaming a lab."""
+    if not controller.lab_exists(old_name):
+        return f"Lab {old_name} does not exist so it cannot be renamed"
+    if controller.lab_exists(new_name):
+        return f"Lab {new_name} already exists so it cannot be renamed from {old_name}"
+    controller.edit_lab(old_name, new_name)
+    return f"Lab {old_name} renamed to {new_name}"
 
 
 # ============================================================================
@@ -200,9 +287,9 @@ class LangChainService:
             StructuredTool.from_function(
                 name="list_courses",
                 func=functools.partial(list_courses_wrapper, course_controller),
-                description="List all courses in the system",
+                description="List all courses in the system. Can optionally filter by faculty member name.",
                 return_direct=True,
-                args_schema=ListSchema,
+                args_schema=ListCoursesSchema,
             ),
             # Faculty tools
             StructuredTool.from_function(
@@ -212,6 +299,13 @@ class LangChainService:
                 return_direct=True,
                 args_schema=ListSchema,
             ),
+            StructuredTool.from_function(
+                name="add_faculty",
+                func=functools.partial(add_faculty_wrapper, faculty_controller),
+                description="Add a new faculty member to the system",
+                return_direct=True,
+                args_schema=FacultyAddSchema,
+            ),
             # Room tools
             StructuredTool.from_function(
                 name="list_rooms",
@@ -220,6 +314,27 @@ class LangChainService:
                 return_direct=True,
                 args_schema=ListSchema,
             ),
+            StructuredTool.from_function(
+                name="add_room",
+                func=functools.partial(add_room_wrapper, room_controller),
+                description="Add a new room to the system",
+                return_direct=True,
+                args_schema=RoomAddSchema,
+            ),
+            StructuredTool.from_function(
+                name="remove_room",
+                func=functools.partial(remove_room_wrapper, room_controller),
+                description="Remove a room from the system",
+                return_direct=True,
+                args_schema=RoomDeleteSchema,
+            ),
+            StructuredTool.from_function(
+                name="rename_room",
+                func=functools.partial(rename_room_wrapper, room_controller),
+                description="Rename a room in the system",
+                return_direct=True,
+                args_schema=RoomModifySchema,
+            ),
             # Lab tools
             StructuredTool.from_function(
                 name="list_labs",
@@ -227,6 +342,27 @@ class LangChainService:
                 description="List all labs in the system",
                 return_direct=True,
                 args_schema=ListSchema,
+            ),
+            StructuredTool.from_function(
+                name="add_lab",
+                func=functools.partial(add_lab_wrapper, lab_controller),
+                description="Add a new lab to the system",
+                return_direct=True,
+                args_schema=LabAddSchema,
+            ),
+            StructuredTool.from_function(
+                name="remove_lab",
+                func=functools.partial(remove_lab_wrapper, lab_controller),
+                description="Remove a lab from the system",
+                return_direct=True,
+                args_schema=LabDeleteSchema,
+            ),
+            StructuredTool.from_function(
+                name="rename_lab",
+                func=functools.partial(rename_lab_wrapper, lab_controller),
+                description="Rename a lab in the system",
+                return_direct=True,
+                args_schema=LabModifySchema,
             ),
         ]
 

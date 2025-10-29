@@ -68,9 +68,6 @@ class NLView:
         """
         if result.get('success'):
             print(f"✅ {result.get('message', 'Command executed successfully')}")
-            if result.get('data'):
-                # TODO: Format and display data based on type
-                print(f"Result: {result['data']}")
         else:
             print(f"❌ {result.get('message', 'Command failed')}")
 

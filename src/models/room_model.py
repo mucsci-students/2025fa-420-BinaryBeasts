@@ -29,7 +29,7 @@ class RoomManager:
         if hasattr(config, "config") and hasattr(config.config, "rooms"):
             self.rooms = list(config.config.rooms) if config.config.rooms else []
         elif hasattr(config, "rooms"):
-            self.rooms = list(config.config.rooms) if config.rooms else []
+            self.rooms = list(config.rooms) if config.rooms else []
         else:
             self.rooms = []
 
