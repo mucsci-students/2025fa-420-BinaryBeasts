@@ -87,6 +87,13 @@ class SchedulesGUI(QWidget):
         self.view_selector.currentTextChanged.connect(self.view_by)
         header_layout.addWidget(self.view_selector)
 
+        # Visual Rooms x Days view (button in header)
+        self.DayViewButton = QPushButton('Visualize (Rooms × Days)')
+        self.DayViewButton.setFont(QFont('Arial', 10))
+        self.DayViewButton.setStyleSheet('padding: 6px 10px; background-color: #607D8B; color: white; border-radius: 5px;')
+        self.DayViewButton.clicked.connect(self.open_day_view)
+        header_layout.addWidget(self.DayViewButton)
+
         self.layout.addLayout(header_layout)
 
         #navigate controls
@@ -157,6 +164,36 @@ class SchedulesGUI(QWidget):
         self.setLayout(self.layout)
 
         self.fill_jump_selector()
+
+    def open_day_view(self):
+        """Open the sleek Room/Lab × Day visualization window with current view state."""
+        if not self.schedules:
+            QMessageBox.warning(self, "No Schedules", "No schedules available.")
+            return
+        try:
+            from src.views.gui.room_day_view import RoomLabDayView
+            
+            # Determine initial filter state based on current view
+            initial_filter = "all"
+            initial_index = 0
+            
+            view_text = self.view_selector.currentText()
+            if view_text == 'By Room' and hasattr(self, 'room_list') and self.room_list:
+                initial_filter = "room"
+                initial_index = self.current_room_index
+            elif view_text == 'By Faculty' and hasattr(self, 'faculty_list') and self.faculty_list:
+                initial_filter = "faculty"
+                initial_index = self.current_faculty_index
+            
+            self.day_view = RoomLabDayView(
+                self.schedules, 
+                initial_index=self.controller.index,
+                initial_filter=initial_filter,
+                initial_item_index=initial_index
+            )
+            self.day_view.show()
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open day view:\n{e}")
 
     def view_by(self, view_text):
         """Handle view selector changes"""
