@@ -19,10 +19,10 @@ TEXT_OFFSET = 50
 CANVAS_PADDING = 2
 
 
-def _faculty_color(name: str) -> QColor:
-    # Deterministic color hashed from name
+def _key_color(key: str) -> QColor:
+    # Deterministic color hashed from an arbitrary key (course id)
     h = 0x10293847
-    for ch in name:
+    for ch in key:
         h = (h ^ ord(ch)) * 2654435761 & 0xFFFFFFFF
     hue = h % 360
     # Convert to RGB approx via HSV
@@ -78,23 +78,68 @@ class RoomPanel(QWidget):
             y = y0 + (b.start - self.min_h * 60) + CANVAS_PADDING
             w = DAY_WIDTH - 2 * DAY_PADDING
             h = max(6, b.duration)
-            color = _faculty_color(b.faculty)
+
+            rect = QRect(x, y, w, h)
+            # Color by course id (consistent across schedules)
+            color = _key_color(b.course)
             # Slightly different tone for lab blocks
             fill = QColor(color)
             if getattr(b, "is_lab", False):
                 fill = QColor(min(color.red() + 30, 255), min(color.green() + 30, 255), min(color.blue() + 30, 255))
-            p.fillRect(QRect(x, y, w, h), fill)
-            p.setPen(QPen(Qt.black))
-            # Course title
-            p.setFont(QFont("Arial", 9, QFont.Bold))
-            title = b.course + (" (Lab)" if getattr(b, "is_lab", False) else "")
-            p.drawText(x + 8, y + 12, title)
-            # Faculty
-            p.setFont(QFont("Arial", 8))
+            p.fillRect(rect, fill)
+
+            # Prepare fonts and metrics
+            title_font = QFont("Arial", 9, QFont.Bold)
+            info_font = QFont("Arial", 8)
+            fm_title = p.fontMetrics()
+            p.setFont(title_font)
+            fm_title = p.fontMetrics()
+            p.setFont(info_font)
+            fm_info = p.fontMetrics()
+
+            # Determine how many lines fit
+            padding = 2
+            needed_two = padding + fm_title.height() + 2 + fm_info.height() + padding
+            needed_one = padding + fm_title.height() + padding
+
+            # Build strings
+            title_text = b.course + (" (Lab)" if getattr(b, "is_lab", False) else "")
             extra = b.faculty
             if getattr(b, "is_lab", False) and getattr(b, "lab_name", None):
                 extra += f" @ {b.lab_name}"
-            p.drawText(x + 8, y + 24, extra)
+
+            # Clip drawing to the block rect and elide long text
+            p.save()
+            p.setClipRect(rect)
+            p.setPen(QPen(Qt.black))
+
+            if h >= needed_two:
+                # Two lines
+                p.setFont(title_font)
+                fm = p.fontMetrics()
+                title_elided = fm.elidedText(title_text, Qt.ElideRight, max(0, w - 8))
+                baseline1 = y + padding + fm.ascent()
+                p.drawText(x + 4, baseline1, title_elided)
+
+                p.setFont(info_font)
+                fm2 = p.fontMetrics()
+                extra_elided = fm2.elidedText(extra, Qt.ElideRight, max(0, w - 8))
+                baseline2 = baseline1 + 2 + fm2.ascent() + (fm.title.height() - fm.ascent() if False else 0)
+                # Simpler: next line at title height + small gap
+                baseline2 = y + padding + fm.height() + 2 + fm2.ascent()
+                p.drawText(x + 4, baseline2, extra_elided)
+            elif h >= needed_one:
+                # One line: title only
+                p.setFont(title_font)
+                fm = p.fontMetrics()
+                title_elided = fm.elidedText(title_text, Qt.ElideRight, max(0, w - 8))
+                baseline1 = y + padding + fm.ascent()
+                p.drawText(x + 4, baseline1, title_elided)
+            else:
+                # Not enough space for text; leave as color bar
+                pass
+
+            p.restore()
 
 
 class RoomLabDayView(QWidget):
@@ -194,11 +239,9 @@ class RoomLabDayView(QWidget):
             return
         self.page.setText(f"Schedule {idx + 1} of {total}")
 
-        schedule = self.schedules[idx]
-        csv_list = self._schedule_to_csv_list(schedule)
-        by_loc = schedule_to_location_blocks(csv_list)
+        by_loc = self.controller.get_room_day_blocks()
 
-        # Sort locations alphabetically, rooms then labs mixed
+        # Sort locations alphabetically
         for loc in sorted(by_loc.keys()):
             panel = RoomPanel(loc, by_loc[loc], self)
             self.container_layout.addWidget(panel)

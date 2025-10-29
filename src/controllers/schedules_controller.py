@@ -6,6 +6,7 @@ from scheduler import (
 )
 from scheduler.config import CombinedConfig
 from src.views.cli import schedules_view
+from src.models.room_day_model import schedule_to_location_blocks
 import json
 
 class generate_controller():
@@ -23,6 +24,29 @@ class generate_controller():
         self.index -= 1
         if self.index < 0:
             self.index = len(self.schedules) - 1
+
+    def get_current_schedule_strings(self):
+        """Return the current schedule as a list of CSV strings."""
+        if not self.schedules or self.index < 0 or self.index >= len(self.schedules):
+            return []
+        schedule = self.schedules[self.index]
+        strings = []
+        for course in schedule:
+            if course is None:
+                continue
+            try:
+                if hasattr(course, 'as_csv'):
+                    strings.append(course.as_csv())
+                elif isinstance(course, str):
+                    strings.append(course)
+            except Exception:
+                continue
+        return strings
+
+    def get_room_day_blocks(self):
+        """Return room->List[TimeBlock] for the current schedule combining labs under rooms."""
+        csv_list = self.get_current_schedule_strings()
+        return schedule_to_location_blocks(csv_list)
 
     def _save_schedules_to_file(self, output_file: str, format_type: str):
         """Save generated schedules to file"""
