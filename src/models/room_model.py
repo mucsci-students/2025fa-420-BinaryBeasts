@@ -1,6 +1,6 @@
 # src/models/room_model.py
 
-from typing import List, Dict
+from typing import List, Dict, Any, cast
 from scheduler.config import CombinedConfig
 
 

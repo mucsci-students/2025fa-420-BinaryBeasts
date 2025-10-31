@@ -12,8 +12,12 @@ from typing import Optional
 from langchain.chat_models import init_chat_model
 from langchain_core.tools import StructuredTool
 from langchain_core.messages import HumanMessage
-from langgraph.prebuilt import create_react_agent
 from pydantic import BaseModel, Field
+
+try:
+    from langchain.agents import create_react_agent
+except ImportError:
+    from langgraph.prebuilt import create_react_agent
 
 
 # ============================================================================
