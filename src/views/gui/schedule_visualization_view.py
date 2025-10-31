@@ -391,14 +391,39 @@ class ScheduleVisualizationView(QWidget):
         
         control_layout.addStretch(1)
 
-        # Schedule navigation
-        self.prev_btn = QPushButton("← Prev")
-        self.next_btn = QPushButton("Next →")
+        # Schedule navigation (styled to match main schedules GUI)
+        self.prev_btn = QPushButton("◀ Previous")
+        self.prev_btn.setFont(QFont("Arial", 14))  # Match FONT2 from main GUI
+        self.prev_btn.setStyleSheet('padding: 8px 12px; background-color: #327f66; color: white; border-radius: 5px;')
+        control_layout.addWidget(self.prev_btn)
+
+        # Schedule selector dropdown (moved to navigation area)
+        self.schedule_selector = QComboBox()
+        self.schedule_selector.setFont(QFont("Arial", 14))  # Match FONT2 from main GUI
+        self.schedule_selector.setMinimumWidth(200)  # Match jump_selector width from main GUI
+        # Populate with schedule numbers
+        for i in range(len(self.schedules)):
+            self.schedule_selector.addItem(f"Schedule {i + 1}")
+        # Set current selection
+        if initial_index is not None and 0 <= initial_index < len(self.schedules):
+            self.schedule_selector.setCurrentIndex(initial_index)
+        else:
+            self.schedule_selector.setCurrentIndex(self.controller.index)
+        self.schedule_selector.currentIndexChanged.connect(self.on_schedule_changed)
+        control_layout.addWidget(self.schedule_selector)
+        
+        self.next_btn = QPushButton("Next ▶")
+        self.next_btn.setFont(QFont("Arial", 14))  # Match FONT2 from main GUI
+        self.next_btn.setStyleSheet('padding: 8px 12px; background-color: #327f66; color: white; border-radius: 5px;')
+        control_layout.addWidget(self.next_btn)
+        
+        # Page label (kept for additional info, positioned after navigation)
         self.page = QLabel("")
         self.page.setAlignment(Qt.AlignCenter)
-        control_layout.addWidget(self.prev_btn)
+        self.page.setFont(QFont("Arial", 10))
         control_layout.addWidget(self.page)
-        control_layout.addWidget(self.next_btn)
+        
+        control_layout.addStretch(1)  # Balance the left stretch for centering
         
         root.addLayout(control_layout)
 
@@ -444,13 +469,30 @@ class ScheduleVisualizationView(QWidget):
         if not self.schedules:
             return
         self.controller.previous_schedule()
+        self.update_schedule_selector()
         self.render_current()
 
     def next_schedule(self):
         if not self.schedules:
             return
         self.controller.next_schedule()
+        self.update_schedule_selector()
         self.render_current()
+
+    def update_schedule_selector(self):
+        """Update the schedule selector to match the current controller index"""
+        self.schedule_selector.blockSignals(True)
+        self.schedule_selector.setCurrentIndex(self.controller.index)
+        self.schedule_selector.blockSignals(False)
+
+    def update_page_label(self):
+        """Update the page label to show current schedule"""
+        total = len(self.schedules)
+        idx = self.controller.index if total else -1
+        if idx < 0 or total == 0:
+            self.page.setText("No schedules")
+        else:
+            self.page.setText(f"Schedule {idx + 1} of {total}")
 
     def clear_panels(self):
         while self.container_layout.count():
@@ -458,6 +500,13 @@ class ScheduleVisualizationView(QWidget):
             w = item.widget()
             if w is not None:
                 w.deleteLater()
+
+    def on_schedule_changed(self, index):
+        """Handle schedule selector changes"""
+        if 0 <= index < len(self.schedules):
+            self.controller.index = index
+            self.update_page_label()
+            self.render_current()
 
     def on_layout_changed(self, layout_text):
         """Handle layout selector changes"""
@@ -558,12 +607,10 @@ class ScheduleVisualizationView(QWidget):
 
     def render_current(self):
         self.clear_panels()
-        total = len(self.schedules)
-        idx = self.controller.index if total else -1
-        if idx < 0 or total == 0:
-            self.page.setText("No schedules")
+        self.update_page_label()
+        
+        if len(self.schedules) == 0 or self.controller.index < 0:
             return
-        self.page.setText(f"Schedule {idx + 1} of {total}")
 
         if self.current_layout_type == "room_day":
             self.render_room_day_layout()
