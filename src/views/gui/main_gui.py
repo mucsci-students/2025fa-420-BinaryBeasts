@@ -120,7 +120,7 @@ class MainGUI(QWidget):
         # Header
         title = QLabel("College Course Scheduler")
         title.setFont(LABEL_FONT)
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
         layout.addWidget(title)
 
         # config section
@@ -133,7 +133,7 @@ class MainGUI(QWidget):
         self.selected_label = QLabel("No file selected")
         self.selected_label.setFont(FONT)
         self.selected_label.setStyleSheet("color:#cccccc;")
-        self.selected_label.setAlignment(Qt.AlignCenter)
+        self.selected_label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
         cfg.addWidget(self.selected_label)
 
         config_buttons = QHBoxLayout()
@@ -204,8 +204,8 @@ class MainGUI(QWidget):
         generate_btn.setStyleSheet(BUTTON_STYLE)
         generate_btn.setMinimumHeight(36)
         generate_btn.clicked.connect(self.generate_schedule)
-        generate_btn.setCursor(Qt.PointingHandCursor)
-        gen.addWidget(generate_btn, alignment=Qt.AlignCenter)
+        generate_btn.setCursor(Qt.PointingHandCursor)  # type: ignore[attr-defined]
+        gen.addWidget(generate_btn, alignment=Qt.AlignCenter)  # type: ignore[attr-defined]
 
 
         layout.addWidget(generate_section)
@@ -446,7 +446,7 @@ class MainGUI(QWidget):
             self
         )
         progress.setWindowTitle("Generating Schedules")
-        progress.setWindowModality(Qt.WindowModal)
+        progress.setWindowModality(Qt.WindowModal)  # type: ignore[attr-defined]
         progress.setMinimumDuration(0)  # Show immediately
         progress.setValue(0)
         progress.setCancelButton(None)  # Remove cancel button
