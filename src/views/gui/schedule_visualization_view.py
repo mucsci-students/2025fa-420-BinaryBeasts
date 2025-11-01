@@ -8,7 +8,7 @@ from PyQt5.QtGui import QFont, QPainter, QColor, QPen
 from PyQt5.QtCore import Qt, QRect
 
 from src.controllers.schedules_controller import generate_controller
-from src.models.room_day_model import schedule_to_location_blocks, min_max_hours, TimeBlock
+from src.models.room_day_model import min_max_hours, TimeBlock
 
 
 DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI"]
