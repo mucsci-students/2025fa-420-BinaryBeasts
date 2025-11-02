@@ -476,9 +476,9 @@ class MainGUI(QWidget):
             QMessageBox.warning(self, "No Schedules", "No valid schedules could be generated.")
             return
 
-        # Close current window and open schedule viewer
-        self.close()
-        self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
+        # hide current window and open schedule viewer
+        self.hide()
+        self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config, parent_gui=self)
         self.generate_schedule_window.show()
 
     def _on_generation_error(self, error_message, progress):
@@ -493,9 +493,6 @@ class MainGUI(QWidget):
             )
             return
         """Load a previously saved schedule from JSON or CSV file."""
-    #    if not self.file_uploaded:
-    #        QMessageBox.critical(self, "Error", "Please upload a configuration file first.")
-    #       return
 
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -526,9 +523,9 @@ class MainGUI(QWidget):
                 return
 
             # Close current window and open schedule viewer
-            self.close()
+            self.hide()
             self.generate_schedule_window = SchedulesGUI(
-                schedules=schedules, config=self.config
+                schedules=schedules, config=self.config, parent_gui=self
             )
             self.generate_schedule_window.show()
 
