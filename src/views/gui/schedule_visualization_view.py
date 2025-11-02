@@ -51,9 +51,9 @@ class RoomPanel(QWidget):
         # Title with background
         title_rect = QRect(5, 5, self.width() - 10, 25)
         p.fillRect(title_rect, QColor(240, 240, 240))
-        p.setPen(QPen(Qt.black))
+        p.setPen(QPen(QColor("black")))
         p.setFont(QFont("Arial", 14, QFont.Bold))
-        p.drawText(title_rect, Qt.AlignCenter, self.title)
+        p.drawText(title_rect, Qt.AlignCenter, self.title) # type: ignore[attr-defined]
 
         # Day labels with better formatting
         p.setFont(QFont("Arial", 11, QFont.Bold))
@@ -62,7 +62,7 @@ class RoomPanel(QWidget):
             x = x0 + i * DAY_WIDTH
             day_rect = QRect(x, 35, DAY_WIDTH - DAY_PADDING, 20)
             p.fillRect(day_rect, QColor(250, 250, 250))
-            p.drawText(day_rect, Qt.AlignCenter, label)
+            p.drawText(day_rect, Qt.AlignCenter, label) # type: ignore[attr-defined]
 
         # Time grid lines and labels with better spacing
         y0 = 65  # More space for headers
@@ -75,7 +75,7 @@ class RoomPanel(QWidget):
             y = y0 + (hour - self.min_h) * 80  # More vertical space per hour
             p.drawLine(LEFT_MARGIN - 5, y, LEFT_MARGIN + 5 * DAY_WIDTH, y)
             # time text on left with better formatting
-            p.setPen(QPen(Qt.black))
+            p.setPen(QPen(QColor("black")))
             if hour == 0:
                 time_str = "12:00 AM"
             elif hour < 12:
@@ -86,7 +86,7 @@ class RoomPanel(QWidget):
                 time_str = f"{hour - 12}:00 PM"
             
             time_rect = QRect(5, y - 10, LEFT_MARGIN - 10, 20)
-            p.drawText(time_rect, Qt.AlignRight | Qt.AlignVCenter, time_str)
+            p.drawText(time_rect, Qt.AlignRight | Qt.AlignVCenter, time_str) # type: ignore[attr-defined]
             p.setPen(pen_grid)
 
         # Draw blocks with improved formatting
@@ -140,24 +140,24 @@ class RoomPanel(QWidget):
             p.setClipRect(rect.adjusted(2, 2, -2, -2))  # Clip with margin
             
             # Use white text on dark backgrounds, black on light
-            text_color = Qt.white if color.lightness() < 128 else Qt.black
+            text_color = QColor("white") if color.lightness() < 128 else QColor("black")
             p.setPen(QPen(text_color))
 
             if h >= needed_two and w > 40:
                 # Two lines with better spacing
                 p.setFont(title_font)
-                title_elided = fm_title.elidedText(title_text, Qt.ElideRight, w - 8)
+                title_elided = fm_title.elidedText(title_text, Qt.TextElideMode.ElideRight, w - 8)
                 p.drawText(x + padding, y + padding + fm_title.ascent(), title_elided)
 
                 p.setFont(info_font)
-                faculty_elided = fm_info.elidedText(faculty_text, Qt.ElideRight, w - 8)
+                faculty_elided = fm_info.elidedText(faculty_text, Qt.TextElideMode.ElideRight, w - 8)
                 p.drawText(x + padding, y + padding + fm_title.height() + line_spacing + fm_info.ascent(), faculty_elided)
                 
             elif h >= needed_one and w > 30:
                 # One line: prioritize course name
                 p.setFont(title_font if h > 25 else info_font)
                 fm = p.fontMetrics()
-                text_elided = fm.elidedText(title_text, Qt.ElideRight, w - 8)
+                text_elided = fm.elidedText(title_text, Qt.TextElideMode.ElideRight, w - 8)
                 text_y = y + (h + fm.height()) // 2 - fm.descent()
                 p.drawText(x + padding, text_y, text_elided)
             
@@ -199,9 +199,9 @@ class FacultyPanel(QWidget):
         # Title with background (consistent with RoomPanel)
         title_rect = QRect(5, 5, self.width() - 10, 25)
         p.fillRect(title_rect, QColor(240, 240, 240))
-        p.setPen(QPen(Qt.black))
+        p.setPen(QPen(QColor("black")))
         p.setFont(QFont("Arial", 14, QFont.Bold))
-        p.drawText(title_rect, Qt.AlignCenter, self.title)
+        p.drawText(title_rect, Qt.AlignCenter, self.title) # type: ignore[attr-defined]
 
         # Day labels (like RoomPanel structure)
         p.setFont(QFont("Arial", 10, QFont.Bold))
@@ -210,7 +210,7 @@ class FacultyPanel(QWidget):
             x = x0 + i * DAY_WIDTH
             day_rect = QRect(x, 35, DAY_WIDTH - DAY_PADDING, 20)
             p.fillRect(day_rect, QColor(250, 250, 250))
-            p.drawText(day_rect, Qt.AlignCenter, day_label)
+            p.drawText(day_rect, Qt.AlignCenter, day_label) # type: ignore[attr-defined]
 
         # Time grid lines and labels (consistent with RoomPanel)
         y0 = 65
@@ -223,7 +223,7 @@ class FacultyPanel(QWidget):
             y = y0 + (hour - self.min_h) * 80  # Match RoomPanel scaling
             p.drawLine(LEFT_MARGIN - 5, y, LEFT_MARGIN + 5 * DAY_WIDTH, y)
             # time text on left with better formatting
-            p.setPen(QPen(Qt.black))
+            p.setPen(QPen(QColor("black")))
             if hour == 0:
                 time_str = "12:00 AM"
             elif hour < 12:
@@ -234,7 +234,7 @@ class FacultyPanel(QWidget):
                 time_str = f"{hour - 12}:00 PM"
             
             time_rect = QRect(5, y - 10, LEFT_MARGIN - 10, 20)
-            p.drawText(time_rect, Qt.AlignRight | Qt.AlignVCenter, time_str)
+            p.drawText(time_rect, Qt.AlignRight | Qt.AlignVCenter, time_str) # type: ignore[attr-defined]
             p.setPen(pen_grid)
 
         # Draw blocks organized by day (not by room!)
@@ -265,7 +265,7 @@ class FacultyPanel(QWidget):
                 p.setClipRect(rect.adjusted(2, 2, -2, -2))
                 
                 # Choose text color based on background
-                text_color = Qt.white if color.lightness() < 128 else Qt.black
+                text_color = QColor("white") if color.lightness() < 128 else QColor("black")
                 p.setPen(QPen(text_color))
                 
                 # Prepare fonts
@@ -291,19 +291,19 @@ class FacultyPanel(QWidget):
                 if h >= needed_two and w > 60:
                     # Two lines: course name and room
                     p.setFont(title_font)
-                    course_elided = title_fm.elidedText(course_text, Qt.ElideRight, w - 8)
+                    course_elided = title_fm.elidedText(course_text, Qt.TextElideMode.ElideRight, w - 8)
                     text_y1 = y + padding + title_fm.ascent()
                     p.drawText(x + padding, text_y1, course_elided)
                     
                     p.setFont(info_font)
-                    room_elided = info_fm.elidedText(room_text, Qt.ElideRight, w - 8)
+                    room_elided = info_fm.elidedText(room_text, Qt.TextElideMode.ElideRight, w - 8)
                     text_y2 = text_y1 + line_spacing + info_fm.height()
                     p.drawText(x + padding, text_y2, room_elided)
                 else:
                     # Single line: combine course and room
                     p.setFont(info_font)
                     combined_text = f"{course_text} @ {room_text}"
-                    combined_elided = info_fm.elidedText(combined_text, Qt.ElideRight, w - 8)
+                    combined_elided = info_fm.elidedText(combined_text, Qt.TextElideMode.ElideRight, w - 8)
                     text_y = y + (h + info_fm.height()) // 2 - info_fm.descent()
                     p.drawText(x + padding, text_y, combined_elided)
                 
@@ -341,7 +341,7 @@ class ScheduleVisualizationView(QWidget):
         # Title
         title = QLabel("Schedule Visualization")
         title.setFont(QFont("Arial", 16, QFont.Bold))
-        title.setAlignment(Qt.AlignCenter)
+        title.setAlignment(Qt.AlignCenter) # type: ignore[attr-defined]
         root.addWidget(title)
 
         # Layout and Filter controls
@@ -419,7 +419,7 @@ class ScheduleVisualizationView(QWidget):
         
         # Page label (kept for additional info, positioned after navigation)
         self.page = QLabel("")
-        self.page.setAlignment(Qt.AlignCenter)
+        self.page.setAlignment(Qt.AlignCenter) # type: ignore[attr-defined]
         self.page.setFont(QFont("Arial", 10))
         control_layout.addWidget(self.page)
         
@@ -435,7 +435,7 @@ class ScheduleVisualizationView(QWidget):
         self.container = QWidget()
         self.scroll.setWidget(self.container)
         self.container_layout = QVBoxLayout(self.container)
-        self.container_layout.setAlignment(Qt.AlignTop)
+        self.container_layout.setAlignment(Qt.AlignTop) # type: ignore[attr-defined]
         self.container_layout.setSpacing(15)  # Add spacing between panels
         self.container_layout.setContentsMargins(10, 10, 10, 10)  # Add margins
 
