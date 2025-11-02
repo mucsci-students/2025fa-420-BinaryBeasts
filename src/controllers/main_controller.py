@@ -581,9 +581,16 @@ class main_controller:
                 course_controller=course_controller,
                 faculty_controller=faculty_controller,
                 lab_controller=lab_controller,
-                room_controller=room_controller
+                room_controller=room_controller,
+                main_controller=self  # Pass self for schedule generation
             )
             NLView.run_nl_mode(nl_controller)
+
+            # Check if schedules were generated during AI session
+            if nl_controller.generated_schedules and len(nl_controller.generated_schedules) > 0:
+                print(f"\n🎉 Opening schedule viewer with {len(nl_controller.generated_schedules)} generated schedule(s)...")
+                controller = schedules_controller.generate_controller(nl_controller.generated_schedules)
+                controller.entry()
         # exit has been selected
         elif input_data == "8":
             print("Exiting program.")

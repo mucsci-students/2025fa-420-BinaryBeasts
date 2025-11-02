@@ -5,8 +5,9 @@ Handles LLM API interaction, prompt engineering, and intent extraction.
 """
 
 import functools
-import getpass
 import os
+import logging
+from pathlib import Path
 from typing import Optional
 
 from langchain.chat_models import init_chat_model
@@ -18,6 +19,24 @@ try:
     from langchain.agents import create_agent
 except ImportError:
     from langgraph.prebuilt import create_react_agent as create_agent # type: ignore[deprecated]
+
+# Suppress httpx INFO logs from OpenAI API requests
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+# Load environment variables from .env file
+def load_env_file():
+    """Load environment variables from .env file if it exists."""
+    env_path = Path(__file__).parent.parent / '.env'
+    if env_path.exists():
+        with open(env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    key, value = line.split('=', 1)
+                    os.environ[key.strip()] = value.strip()
+
+# Load .env on module import
+load_env_file()
 
 # Argument Schemas
 
@@ -283,6 +302,7 @@ def rename_lab_wrapper(controller, old_name: str, new_name: str) -> str:
 def generate_schedules_wrapper(
     config,
     nl_controller,
+    main_controller,
     num_schedules: int = 1,
     optimize_faculty_course: bool = False,
     optimize_faculty_room: bool = False,
@@ -293,12 +313,11 @@ def generate_schedules_wrapper(
     pack_labs: bool = False
 ) -> str:
     """
-    Wrapper for generating schedules.
+    Wrapper for generating schedules using main_controller.generate_schedules().
+    This ensures the progress bar is displayed consistently.
 
     Stores schedules on nl_controller and returns a success message string.
     """
-    from scheduler import Scheduler
-
     # Build optimizer flags list
     optimizer_flags = []
     if optimize_faculty_course:
@@ -319,14 +338,18 @@ def generate_schedules_wrapper(
     # Set optimizer flags on config
     config.optimizer_flags = optimizer_flags
 
-    # Generate schedules
-    scheduler = Scheduler(config)
-    schedules = []
-
-    for i, schedule in enumerate(scheduler.get_models()):
-        schedules.append(schedule)
-        if i + 1 >= num_schedules:
-            break
+    # Use main_controller.generate_schedules() which includes progress bar
+    if main_controller:
+        schedules = main_controller.generate_schedules(num_schedules)
+    else:
+        # Fallback if main_controller is not available
+        from scheduler import Scheduler
+        scheduler = Scheduler(config)
+        schedules = []
+        for i, schedule in enumerate(scheduler.get_models()):
+            schedules.append(schedule)
+            if i + 1 >= num_schedules:
+                break
 
     if not schedules:
         raise Exception("No valid schedules could be generated")
@@ -336,8 +359,7 @@ def generate_schedules_wrapper(
         nl_controller.generated_schedules = schedules
 
     # Return a string message
-    flags_str = f" with optimization flags: {optimizer_flags}" if optimizer_flags else ""
-    return f"Successfully generated {len(schedules)} schedule(s){flags_str}. Opening schedule viewer..."
+    return "Opening schedule viewer..."
 
 
 # LangChain Service
@@ -351,7 +373,7 @@ class LangChainService:
         self.agent_executor = None
 
     def setup_agent(self, config, course_controller, faculty_controller,
-                   lab_controller, room_controller, nl_controller=None) -> None:
+                   lab_controller, room_controller, nl_controller=None, main_controller=None) -> None:
         """
         Set up the agent with tools from controllers.
 
@@ -362,10 +384,15 @@ class LangChainService:
             lab_controller: Controller for lab operations
             room_controller: Controller for room operations
             nl_controller: NL controller instance for storing generated schedules
+            main_controller: Main controller for schedule generation with progress bar
         """
-        # Get or prompt for API key
+        # Check if API key is loaded from .env
         if not os.environ.get("OPENAI_API_KEY"):
-            os.environ["OPENAI_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
+            raise ValueError(
+                "OPENAI_API_KEY not found in environment variables.\n"
+                "Please create a .env file in the project root with:\n"
+                "OPENAI_API_KEY=your-api-key-here"
+            )
 
         # Initialize the chat model
         self.model = init_chat_model("gpt-5-mini", model_provider="openai")
@@ -377,14 +404,15 @@ class LangChainService:
             faculty_controller,
             lab_controller,
             room_controller,
-            nl_controller
+            nl_controller,
+            main_controller
         )
 
         # Create the agent executor
         self.agent_executor = create_agent(self.model, tools)
 
     def _create_tools(self, config, course_controller, faculty_controller,
-                     lab_controller, room_controller, nl_controller=None) -> list[StructuredTool]:
+                     lab_controller, room_controller, nl_controller=None, main_controller=None) -> list[StructuredTool]:
         """
         Create LangChain tools from controller methods.
         Args:
@@ -394,6 +422,7 @@ class LangChainService:
             lab_controller: Lab controller
             room_controller: Room controller
             nl_controller: NL controller for storing generated schedules
+            main_controller: Main controller for schedule generation with progress bar
         Returns:
             list[StructuredTool]: List of tools for the agent
         """
@@ -496,7 +525,7 @@ class LangChainService:
             # Schedule generation tool
             StructuredTool.from_function(
                 name="generate_schedules",
-                func=functools.partial(generate_schedules_wrapper, config, nl_controller),
+                func=functools.partial(generate_schedules_wrapper, config, nl_controller, main_controller),
                 description="Generate course schedules with optional optimization flags. Opens schedule viewer automatically.",
                 return_direct=True,
                 args_schema=ScheduleGenerateSchema,

@@ -166,7 +166,7 @@ class AIChatDialog(QDialog):
                 self.nl_controller.generated_schedules = None
 
                 response = result.get('message', 'Schedules generated successfully!')
-                self.display_message("AI Assistant", f"✅ {response}", is_user=False)
+                self.display_message("AI Assistant", response, is_user=False)
 
                 # Close dialog after brief moment
                 from PyQt5.QtCore import QTimer
@@ -176,7 +176,7 @@ class AIChatDialog(QDialog):
             # Display normal result
             if result.get('success'):
                 response = result.get('message', 'Command executed successfully')
-                self.display_message("AI Assistant", f"✅ {response}", is_user=False)
+                self.display_message("AI Assistant", response, is_user=False)
             else:
                 response = result.get('message', 'Command failed')
                 self.display_message("AI Assistant", f"❌ {response}", is_user=False)

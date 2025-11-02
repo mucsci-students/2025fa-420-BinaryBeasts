@@ -18,7 +18,8 @@ class NLController:
                  course_controller: CourseController,
                  faculty_controller: FacultyController,
                  lab_controller: LabController,
-                 room_controller: RoomController):
+                 room_controller: RoomController,
+                 main_controller=None):
         """
         Initialize NL controller with domain controllers.
 
@@ -28,6 +29,7 @@ class NLController:
             faculty_controller: Controller for faculty operations
             lab_controller: Controller for lab operations
             room_controller: Controller for room operations
+            main_controller: Main controller for schedule generation with progress bar
         """
         self.langchain_service = LangChainService()
         self.config = config
@@ -35,6 +37,7 @@ class NLController:
         self.faculty_controller = faculty_controller
         self.lab_controller = lab_controller
         self.room_controller = room_controller
+        self.main_controller = main_controller
         self.generated_schedules = None  # Store generated schedules
 
         # Set up the agent with all controllers and config
@@ -44,7 +47,8 @@ class NLController:
             faculty_controller=faculty_controller,
             lab_controller=lab_controller,
             room_controller=room_controller,
-            nl_controller=self  # Pass self so wrapper can store schedules
+            nl_controller=self,  # Pass self so wrapper can store schedules
+            main_controller=main_controller  # Pass main_controller for schedule generation
         )
 
     def process_command(self, user_input: str) -> dict:

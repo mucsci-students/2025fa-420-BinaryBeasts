@@ -67,7 +67,7 @@ class NLView:
                 }
         """
         if result.get('success'):
-            print(f"✅ {result.get('message', 'Command executed successfully')}")
+            print(result.get('message', 'Command executed successfully'))
         else:
             print(f"❌ {result.get('message', 'Command failed')}")
 
