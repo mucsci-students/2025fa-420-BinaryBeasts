@@ -42,6 +42,9 @@ def display_schedule_basic(schedule: list) -> None:
         print("No valid course data to display.")
         return
 
+    # Sort courses by earliest time slot for better readability
+    courses_sorted = sorted(courses, key=get_earliest_time)
+
     # Display all courses in a table
     print("\n" + "=" * 95)
     print("SCHEDULE VIEWER")
@@ -54,7 +57,7 @@ def display_schedule_basic(schedule: list) -> None:
     print("=" * 95)
 
     # Create rows for each course
-    for course in courses:
+    for course in courses_sorted:
         # Parse time slots by day
         day_times = {"MON": "", "TUE": "", "WED": "", "THU": "", "FRI": ""}
 

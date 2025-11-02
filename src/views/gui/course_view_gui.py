@@ -1,18 +1,9 @@
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 from PyQt5.QtWidgets import (
-    QDialog,
-    QVBoxLayout,
-    QHBoxLayout,
-    QPushButton,
-    QListWidget,
-    QListWidgetItem,
-    QLabel,
-    QFormLayout,
-    QLineEdit,
-    QSpinBox,
-    QDialogButtonBox,
-    QMessageBox,
+    QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
+    QListWidget, QListWidgetItem, QLabel, QFormLayout, QLineEdit,
+    QSpinBox, QDialogButtonBox, QMessageBox
 )
 
 BUTTON_STYLE = (
@@ -30,10 +21,9 @@ class CourseDialog(QDialog):
     Uses comma-separated text boxes for rooms, labs, etc.
     """
 
-    def __init__(self, parent=None, course=None):
+    def __init__(self, parent=None, course=None, combined_config=None):
         super().__init__(parent)
 
-        # Window
         self.setWindowTitle("Course Section")
         self.setModal(True)
         self.setMinimumWidth(520)
@@ -41,45 +31,85 @@ class CourseDialog(QDialog):
         # Title
         title_label = QLabel("Course Section")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter) # type : ignore
+        title_label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
 
-        # form fields
         self.course_id_input = QLineEdit()
         self.credits_input = QSpinBox()
         self.credits_input.setRange(1, 12)
 
-        self.rooms_input = QLineEdit()
-        self.labs_input = QLineEdit()
-        self.faculty_input = QLineEdit()
+        self.rooms_list = QListWidget()
+        self.rooms_list.setSelectionMode(QListWidget.MultiSelection)
+        self.rooms_list.setMaximumHeight(120)
+
+        self.labs_list = QListWidget()
+        self.labs_list.setSelectionMode(QListWidget.MultiSelection)
+        self.labs_list.setMaximumHeight(120)
+
+        self.faculty_list = QListWidget()
+        self.faculty_list.setSelectionMode(QListWidget.MultiSelection)
+        self.faculty_list.setMaximumHeight(120)
+
+        self.conflicts_list = QListWidget()
+        self.conflicts_list.setSelectionMode(QListWidget.MultiSelection)
+        self.conflicts_list.setMaximumHeight(120)
+
         self.conflicts_input = QLineEdit()
 
-        # pre-fill when editing
+        # Populate lists from combined_config
+        if combined_config:
+            for room in sorted(combined_config.config.rooms):
+                self.rooms_list.addItem(room)
+
+            for lab in sorted(combined_config.config.labs):
+                self.labs_list.addItem(lab)
+
+            faculty_names = []
+            for faculty in combined_config.config.faculty:
+                faculty_names.append(faculty.name)
+            faculty_names.sort()
+            for name in faculty_names:
+                self.faculty_list.addItem(name)
+
+            for existing_course in combined_config.config.courses:
+                self.conflicts_list.addItem(existing_course.course_id)
+
+
+        # Pre-fill when editing
         if course:
             self.course_id_input.setText(course.course_id)
             self.credits_input.setValue(course.credits)
-            self.rooms_input.setText(", ".join(course.room))
-            self.labs_input.setText(", ".join(course.lab))
-            self.faculty_input.setText(", ".join(course.faculty))
-            self.conflicts_input.setText(", ".join(course.conflicts))
+
+            # Select items that match the course data
+            for i in range(self.rooms_list.count()):
+                if self.rooms_list.item(i).text() in course.room:
+                    self.rooms_list.item(i).setSelected(True)
+
+            for i in range(self.labs_list.count()):
+                if self.labs_list.item(i).text() in course.lab:
+                    self.labs_list.item(i).setSelected(True)
+
+            for i in range(self.faculty_list.count()):
+                if self.faculty_list.item(i).text() in course.faculty:
+                    self.faculty_list.item(i).setSelected(True)
+
+            for i in range(self.conflicts_list.count()):
+                if self.conflicts_list.item(i).text() in course.conflicts:
+                    self.conflicts_list.item(i).setSelected(True)
         else:
             self.credits_input.setValue(4)
 
         form_layout = QFormLayout()
         form_layout.addRow("Course ID", self.course_id_input)
         form_layout.addRow("Credits", self.credits_input)
-        form_layout.addRow("Rooms", self.rooms_input)
-        form_layout.addRow("Labs", self.labs_input)
-        form_layout.addRow("Faculty", self.faculty_input)
-        form_layout.addRow("Conflicts", self.conflicts_input)
+        form_layout.addRow("Select rooms", self.rooms_list)
+        form_layout.addRow("Select labs", self.labs_list)
+        form_layout.addRow("Select faculty", self.faculty_list)
+        form_layout.addRow("Select Conflicts", self.conflicts_list)
 
-        tip = QLabel(
-            "Tip: separate multiple values with commas (e.g. Roddy 140, Roddy 141)\n"
-            "* Required: Course ID, Credits, at least one Room, at least one Faculty"
-        )
-        tip.setFont(QFont("Arial", 13))
-        tip.setAlignment(Qt.AlignCenter) # type : ignore
+        tip = QLabel("Required: Course ID, Credits, at least one Room")
+        tip.setFont(QFont('Arial', 13))
+        tip.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
 
-        # Save / Cancel buttons
         button_box = QDialogButtonBox(QDialogButtonBox.Save | QDialogButtonBox.Cancel)
         for btn in button_box.buttons():
             btn.setFont(BUTTON_FONT)
@@ -87,7 +117,6 @@ class CourseDialog(QDialog):
         button_box.accepted.connect(self.accept)
         button_box.rejected.connect(self.reject)
 
-        # Layout
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(title_label)
         main_layout.addLayout(form_layout)
@@ -105,15 +134,10 @@ class CourseDialog(QDialog):
 
         credits = int(self.credits_input.value())
 
-        # turn comma text into lists
-        room_list = [s.strip() for s in self.rooms_input.text().split(",") if s.strip()]
-        lab_list = [s.strip() for s in self.labs_input.text().split(",") if s.strip()]
-        faculty_list = [
-            s.strip() for s in self.faculty_input.text().split(",") if s.strip()
-        ]
-        conflict_list = [
-            s.strip() for s in self.conflicts_input.text().split(",") if s.strip()
-        ]
+        room_list = [item.text() for item in self.rooms_list.selectedItems()]
+        lab_list = [item.text() for item in self.labs_list.selectedItems()]
+        faculty_list = [item.text() for item in self.faculty_list.selectedItems()]
+        conflict_list = [item.text() for item in self.conflicts_list.selectedItems()]
 
         if not room_list:
             QMessageBox.warning(self, "Error", "At least one room is required")
@@ -192,7 +216,7 @@ class CoursesDialog(QDialog):
         self.save_button.clicked.connect(self.save_and_close)
         self.cancel_button.clicked.connect(self.reject)
 
-        # layout: two columns, right side wider (3:1)
+        # layout: two columns, right side wider
         lists_row = QHBoxLayout()
 
         left_box = QVBoxLayout()
@@ -259,7 +283,8 @@ class CoursesDialog(QDialog):
             self.section_list.addItem(list_item)
 
     def add_section(self):
-        dialog = CourseDialog(self)
+        # Pass combined_config to CourseDialog
+        dialog = CourseDialog(self, combined_config=self.combined_config)
         if dialog.exec_() == QDialog.Accepted:
             if dialog.result_course:
                 self.controller.add_course(dialog.result_course)
@@ -275,7 +300,8 @@ class CoursesDialog(QDialog):
         course_id, section_index = item.data(Qt.UserRole) # type : ignore
         current_section = self.controller.get_course(course_id)[section_index]
 
-        dialog = CourseDialog(self, course=current_section)
+        # Pass both course and combined_config to CourseDialog
+        dialog = CourseDialog(self, course=current_section, combined_config=self.combined_config)
         if dialog.exec_() == QDialog.Accepted:
             updated_section = dialog.result_course
             if updated_section:
