@@ -14,7 +14,8 @@ from src.controllers.room_controller import RoomController
 class NLController:
     """Controller for handling natural language commands."""
 
-    def __init__(self, course_controller: CourseController,
+    def __init__(self, config,
+                 course_controller: CourseController,
                  faculty_controller: FacultyController,
                  lab_controller: LabController,
                  room_controller: RoomController):
@@ -22,23 +23,28 @@ class NLController:
         Initialize NL controller with domain controllers.
 
         Args:
+            config: Combined configuration object for schedule generation
             course_controller: Controller for course operations
             faculty_controller: Controller for faculty operations
             lab_controller: Controller for lab operations
             room_controller: Controller for room operations
         """
         self.langchain_service = LangChainService()
+        self.config = config
         self.course_controller = course_controller
         self.faculty_controller = faculty_controller
         self.lab_controller = lab_controller
         self.room_controller = room_controller
+        self.generated_schedules = None  # Store generated schedules
 
-        # Set up the agent with all controllers
+        # Set up the agent with all controllers and config
         self.langchain_service.setup_agent(
+            config=config,
             course_controller=course_controller,
             faculty_controller=faculty_controller,
             lab_controller=lab_controller,
-            room_controller=room_controller
+            room_controller=room_controller,
+            nl_controller=self  # Pass self so wrapper can store schedules
         )
 
     def process_command(self, user_input: str) -> dict:

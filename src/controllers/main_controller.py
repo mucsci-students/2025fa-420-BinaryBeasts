@@ -560,6 +560,7 @@ class main_controller:
 
             # Create NL controller and run
             nl_controller = NLController(
+                config=self.model.config,
                 course_controller=course_controller,
                 faculty_controller=faculty_controller,
                 lab_controller=lab_controller,

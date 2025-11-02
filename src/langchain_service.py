@@ -15,14 +15,11 @@ from langchain_core.messages import HumanMessage
 from pydantic import BaseModel, Field
 
 try:
-    from langchain.agents import create_react_agent
+    from langchain.agents import create_agent
 except ImportError:
-    from langgraph.prebuilt import create_react_agent
+    from langgraph.prebuilt import create_react_agent as create_agent # type: ignore[deprecated]
 
-
-# ============================================================================
-# Pydantic Argument Schemas
-# ============================================================================
+# Argument Schemas
 
 class CourseAddSchema(BaseModel):
     """Schema for adding a course."""
@@ -101,9 +98,19 @@ class ListCoursesSchema(BaseModel):
     faculty_filter: Optional[str] = Field(default=None, description="Optional: Filter courses by faculty member name")
 
 
-# ============================================================================
+class ScheduleGenerateSchema(BaseModel):
+    """Schema for generating schedules."""
+    num_schedules: int = Field(description="Number of schedules to generate", default=1)
+    optimize_faculty_course: bool = Field(default=False, description="Optimize using faculty course preferences")
+    optimize_faculty_room: bool = Field(default=False, description="Optimize using faculty room preferences")
+    optimize_faculty_lab: bool = Field(default=False, description="Optimize using faculty lab preferences")
+    same_room: bool = Field(default=False, description="Keep courses in the same room")
+    same_lab: bool = Field(default=False, description="Keep courses in the same lab")
+    pack_rooms: bool = Field(default=False, description="Pack courses into fewer rooms")
+    pack_labs: bool = Field(default=False, description="Pack courses into fewer labs")
+
+
 # Tool Wrapper Functions
-# ============================================================================
 
 def list_courses_wrapper(controller, faculty_filter: Optional[str] = None) -> str:
     """Wrapper for listing all courses, optionally filtered by faculty."""
@@ -195,6 +202,48 @@ def add_faculty_wrapper(controller, name: str) -> str:
     return f"Faculty {name} added successfully"
 
 
+def add_course_wrapper(controller, course_id: str, credits: int) -> str:
+    """Wrapper for adding a course."""
+    # Check if course exists
+    courses_dict = controller.list_courses()
+    for course_list in courses_dict.values():
+        for course in course_list:
+            if course.course_id == course_id:
+                return f"Course {course_id} already exists"
+
+    # Create course data with defaults
+    course_data = {
+        "course_id": course_id,
+        "credits": credits,
+        "room": [],
+        "lab": [],
+        "faculty": [],
+        "conflicts": [],
+    }
+    controller.add_course(course_data)
+    return f"Course {course_id} with {credits} credits added successfully"
+
+
+def remove_course_wrapper(controller, course_id: str) -> str:
+    """Wrapper for removing a course."""
+    # Check if course exists
+    courses_dict = controller.list_courses()
+    course_exists = False
+    for course_list in courses_dict.values():
+        for course in course_list:
+            if course.course_id == course_id:
+                course_exists = True
+                break
+        if course_exists:
+            break
+
+    if not course_exists:
+        return f"Course {course_id} does not exist"
+
+    controller.delete_course(course_id)
+    return f"Course {course_id} removed successfully"
+
+
 def remove_room_wrapper(controller, name: str) -> str:
     """Wrapper for removing a room."""
     if not controller.room_exists(name):
@@ -231,9 +280,67 @@ def rename_lab_wrapper(controller, old_name: str, new_name: str) -> str:
     return f"Lab {old_name} renamed to {new_name}"
 
 
-# ============================================================================
-# LangChain Service Class
-# ============================================================================
+def generate_schedules_wrapper(
+    config,
+    nl_controller,
+    num_schedules: int = 1,
+    optimize_faculty_course: bool = False,
+    optimize_faculty_room: bool = False,
+    optimize_faculty_lab: bool = False,
+    same_room: bool = False,
+    same_lab: bool = False,
+    pack_rooms: bool = False,
+    pack_labs: bool = False
+) -> str:
+    """
+    Wrapper for generating schedules.
+
+    Stores schedules on nl_controller and returns a success message string.
+    """
+    from scheduler import Scheduler
+
+    # Build optimizer flags list
+    optimizer_flags = []
+    if optimize_faculty_course:
+        optimizer_flags.append("faculty_course")
+    if optimize_faculty_room:
+        optimizer_flags.append("faculty_room")
+    if optimize_faculty_lab:
+        optimizer_flags.append("faculty_lab")
+    if same_room:
+        optimizer_flags.append("same_room")
+    if same_lab:
+        optimizer_flags.append("same_lab")
+    if pack_rooms:
+        optimizer_flags.append("pack_rooms")
+    if pack_labs:
+        optimizer_flags.append("pack_labs")
+
+    # Set optimizer flags on config
+    config.optimizer_flags = optimizer_flags
+
+    # Generate schedules
+    scheduler = Scheduler(config)
+    schedules = []
+
+    for i, schedule in enumerate(scheduler.get_models()):
+        schedules.append(schedule)
+        if i + 1 >= num_schedules:
+            break
+
+    if not schedules:
+        raise Exception("No valid schedules could be generated")
+
+    # Store schedules on the NLController instance
+    if nl_controller:
+        nl_controller.generated_schedules = schedules
+
+    # Return a string message
+    flags_str = f" with optimization flags: {optimizer_flags}" if optimizer_flags else ""
+    return f"Successfully generated {len(schedules)} schedule(s){flags_str}. Opening schedule viewer..."
+
+
+# LangChain Service
 
 class LangChainService:
     """Service for processing natural language commands using LangChain."""
@@ -243,16 +350,18 @@ class LangChainService:
         self.model = None
         self.agent_executor = None
 
-    def setup_agent(self, course_controller, faculty_controller,
-                   lab_controller, room_controller) -> None:
+    def setup_agent(self, config, course_controller, faculty_controller,
+                   lab_controller, room_controller, nl_controller=None) -> None:
         """
         Set up the agent with tools from controllers.
 
         Args:
+            config: Combined configuration object for schedule generation
             course_controller: Controller for course operations
             faculty_controller: Controller for faculty operations
             lab_controller: Controller for lab operations
             room_controller: Controller for room operations
+            nl_controller: NL controller instance for storing generated schedules
         """
         # Get or prompt for API key
         if not os.environ.get("OPENAI_API_KEY"):
@@ -263,26 +372,28 @@ class LangChainService:
 
         # Create tool list
         tools = self._create_tools(
+            config,
             course_controller,
             faculty_controller,
             lab_controller,
-            room_controller
+            room_controller,
+            nl_controller
         )
 
         # Create the agent executor
-        self.agent_executor = create_react_agent(self.model, tools)
+        self.agent_executor = create_agent(self.model, tools)
 
-    def _create_tools(self, course_controller, faculty_controller,
-                     lab_controller, room_controller) -> list[StructuredTool]:
+    def _create_tools(self, config, course_controller, faculty_controller,
+                     lab_controller, room_controller, nl_controller=None) -> list[StructuredTool]:
         """
         Create LangChain tools from controller methods.
-
         Args:
+            config: Combined configuration object
             course_controller: Course controller
             faculty_controller: Faculty controller
             lab_controller: Lab controller
             room_controller: Room controller
-
+            nl_controller: NL controller for storing generated schedules
         Returns:
             list[StructuredTool]: List of tools for the agent
         """
@@ -291,9 +402,23 @@ class LangChainService:
             StructuredTool.from_function(
                 name="list_courses",
                 func=functools.partial(list_courses_wrapper, course_controller),
-                description="List all courses in the system. Can optionally filter by faculty member name.",
+                description="List all courses in the system. Can filter by faculty member name.",
                 return_direct=True,
                 args_schema=ListCoursesSchema,
+            ),
+            StructuredTool.from_function(
+                name="add_course",
+                func=functools.partial(add_course_wrapper, course_controller),
+                description="Add a new course to the system with course ID and credits",
+                return_direct=True,
+                args_schema=CourseAddSchema,
+            ),
+            StructuredTool.from_function(
+                name="remove_course",
+                func=functools.partial(remove_course_wrapper, course_controller),
+                description="Remove a course from the system by course ID",
+                return_direct=True,
+                args_schema=CourseDeleteSchema,
             ),
             # Faculty tools
             StructuredTool.from_function(
@@ -367,6 +492,14 @@ class LangChainService:
                 description="Rename a lab in the system",
                 return_direct=True,
                 args_schema=LabModifySchema,
+            ),
+            # Schedule generation tool
+            StructuredTool.from_function(
+                name="generate_schedules",
+                func=functools.partial(generate_schedules_wrapper, config, nl_controller),
+                description="Generate course schedules with optional optimization flags. Opens schedule viewer automatically.",
+                return_direct=True,
+                args_schema=ScheduleGenerateSchema,
             ),
         ]
 
