@@ -25,11 +25,11 @@ class RoomManager:
         Args:
             config: CombinedConfig object containing room data
         """
-        # (config.config.rooms) and (config.rooms)
+        # Handle both config.config.rooms and config.rooms patterns
         if hasattr(config, "config") and hasattr(config.config, "rooms"):
-            self.rooms = list(config.config.rooms) if config.config.rooms else []
+            self.rooms = list(config.config.rooms or [])  # type: ignore[arg-type]
         elif hasattr(config, "rooms"):
-            self.rooms = list(config.config.rooms) if config.rooms else []
+            self.rooms = list(config.rooms or [])  # type: ignore[arg-type]
         else:
             self.rooms = []
 
