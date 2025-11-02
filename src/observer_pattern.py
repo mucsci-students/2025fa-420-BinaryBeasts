@@ -28,7 +28,6 @@ class EventType(Enum):
     COURSE_ADDED = "course_added"
     COURSE_UPDATED = "course_updated"
     COURSE_REMOVED = "course_removed"
-    COURSES_LOADED = "courses_loaded"
     
     # Faculty-related events
     FACULTY_ADDED = "faculty_added"
@@ -40,22 +39,11 @@ class EventType(Enum):
     ROOM_ADDED = "room_added"
     ROOM_UPDATED = "room_updated"
     ROOM_REMOVED = "room_removed"
-    ROOMS_LOADED = "rooms_loaded"
     
     # Lab-related events
     LAB_ADDED = "lab_added"
     LAB_UPDATED = "lab_updated"
     LAB_REMOVED = "lab_removed"
-    LABS_LOADED = "labs_loaded"
-    
-    # Schedule-related events
-    SCHEDULE_GENERATED = "schedule_generated"
-    SCHEDULE_LOADED = "schedule_loaded"
-    SCHEDULE_SAVED = "schedule_saved"
-    
-    # Configuration events
-    CONFIG_LOADED = "config_loaded"
-    CONFIG_SAVED = "config_saved"
 
 
 class Observer(ABC):
@@ -196,36 +184,6 @@ class EventData:
             Any: The value associated with the key, or default
         """
         return self.extra_data.get(key, default)
-
-
-class ObservableList(Observable, list):
-    """
-    A list that notifies observers when items are added, removed, or modified.
-    
-    This extends the standard list class to provide automatic notifications
-    when the list contents change.
-    """
-    
-    def __init__(self, *args, **kwargs):
-        """Initialize the observable list."""
-        Observable.__init__(self)
-        list.__init__(self, *args, **kwargs)
-    
-    def append(self, item: Any) -> None:
-        """Add item and notify observers."""
-        list.append(self, item)
-        self.notify_observers(EventType.COURSE_ADDED, EventData(new_value=item))
-    
-    def remove(self, item: Any) -> None:
-        """Remove item and notify observers."""
-        list.remove(self, item)
-        self.notify_observers(EventType.COURSE_REMOVED, EventData(old_value=item))
-    
-    def clear(self) -> None:
-        """Clear all items and notify observers."""
-        old_items = list(self)
-        list.clear(self)
-        self.notify_observers(EventType.COURSES_LOADED, EventData(old_value=old_items, new_value=[]))
 
 
 # Convenience function for creating observers

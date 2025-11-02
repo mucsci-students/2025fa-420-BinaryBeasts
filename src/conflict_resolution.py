@@ -22,7 +22,6 @@ class ConflictResolutionObserver(Observer):
         """Initialize the conflict resolution observer."""
         self.managers = {}  # Store references to all managers
         self.combined_configs = []  # Store references to CombinedConfig objects
-        self.conflict_log = []  # Track conflicts resolved
     
     def register_manager(self, manager_type: str, manager) -> None:
         """
@@ -96,32 +95,15 @@ class ConflictResolutionObserver(Observer):
         if not course_manager:
             return
         
-        # Track conflicts resolved
-        conflicts_resolved = []
-        
         # Check all courses for references to the deleted faculty
-        for course_id, course_instances in course_manager.courses.items():
-            for i, course in enumerate(course_instances):
+        for course_instances in course_manager.courses.values():
+            for course in course_instances:
                 if removed_faculty_name in course.faculty:
                     # Remove the faculty reference from the course
                     course.faculty = [f for f in course.faculty if f != removed_faculty_name]
-                    conflicts_resolved.append({
-                        'course_id': course_id,
-                        'instance': i,
-                        'removed_faculty': removed_faculty_name
-                    })
         
         # Update any registered CombinedConfig objects
         self._update_combined_configs_faculty_removal(removed_faculty_name)
-        
-        # Log the conflict resolution
-        if conflicts_resolved:
-            self.conflict_log.append({
-                'type': 'faculty_removal',
-                'faculty_name': removed_faculty_name,
-                'affected_courses': conflicts_resolved,
-                'timestamp': self._get_timestamp()
-            })
     
     def _handle_lab_removal(self, data: EventData) -> None:
         """
@@ -139,27 +121,12 @@ class ConflictResolutionObserver(Observer):
         if not course_manager:
             return
         
-        conflicts_resolved = []
-        
         # Check all courses for references to the deleted lab
-        for course_id, course_instances in course_manager.courses.items():
-            for i, course in enumerate(course_instances):
+        for course_instances in course_manager.courses.values():
+            for course in course_instances:
                 if removed_lab_name in course.lab:
                     # Remove the lab reference from the course
                     course.lab = [l for l in course.lab if l != removed_lab_name]
-                    conflicts_resolved.append({
-                        'course_id': course_id,
-                        'instance': i,
-                        'removed_lab': removed_lab_name
-                    })
-        
-        if conflicts_resolved:
-            self.conflict_log.append({
-                'type': 'lab_removal',
-                'lab_name': removed_lab_name,
-                'affected_courses': conflicts_resolved,
-                'timestamp': self._get_timestamp()
-            })
     
     def _handle_room_removal(self, data: EventData) -> None:
         """
@@ -177,27 +144,12 @@ class ConflictResolutionObserver(Observer):
         if not course_manager:
             return
         
-        conflicts_resolved = []
-        
         # Check all courses for references to the deleted room
-        for course_id, course_instances in course_manager.courses.items():
-            for i, course in enumerate(course_instances):
+        for course_instances in course_manager.courses.values():
+            for course in course_instances:
                 if removed_room_name in course.room:
                     # Remove the room reference from the course
                     course.room = [r for r in course.room if r != removed_room_name]
-                    conflicts_resolved.append({
-                        'course_id': course_id,
-                        'instance': i,
-                        'removed_room': removed_room_name
-                    })
-        
-        if conflicts_resolved:
-            self.conflict_log.append({
-                'type': 'room_removal',
-                'room_name': removed_room_name,
-                'affected_courses': conflicts_resolved,
-                'timestamp': self._get_timestamp()
-            })
     
     def _handle_faculty_update(self, data: EventData) -> None:
         """
@@ -222,17 +174,11 @@ class ConflictResolutionObserver(Observer):
         updates_made = []
         
         # Update all course references from old name to new name
-        for course_id, course_instances in course_manager.courses.items():
-            for i, course in enumerate(course_instances):
+        for course_instances in course_manager.courses.values():
+            for course in course_instances:
                 if old_name in course.faculty:
                     # Replace old faculty name with new name
                     course.faculty = [new_name if f == old_name else f for f in course.faculty]
-                    updates_made.append({
-                        'course_id': course_id,
-                        'instance': i,
-                        'old_name': old_name,
-                        'new_name': new_name
-                    })
         
         # Updates made silently - no logging needed for name changes
     
@@ -248,20 +194,10 @@ class ConflictResolutionObserver(Observer):
         if not course_manager:
             return
         
-        updates_made = []
-        
-        for course_id, course_instances in course_manager.courses.items():
-            for i, course in enumerate(course_instances):
+        for course_instances in course_manager.courses.values():
+            for course in course_instances:
                 if old_name in course.lab:
                     course.lab = [new_name if l == old_name else l for l in course.lab]
-                    updates_made.append({
-                        'course_id': course_id,
-                        'instance': i,
-                        'old_name': old_name,
-                        'new_name': new_name
-                    })
-        
-        # Updates made silently - no logging needed for name changes
     
     def _handle_room_update(self, data: EventData) -> None:
         """Handle room name changes by updating course references."""
@@ -275,20 +211,10 @@ class ConflictResolutionObserver(Observer):
         if not course_manager:
             return
         
-        updates_made = []
-        
-        for course_id, course_instances in course_manager.courses.items():
-            for i, course in enumerate(course_instances):
+        for course_instances in course_manager.courses.values():
+            for course in course_instances:
                 if old_name in course.room:
                     course.room = [new_name if r == old_name else r for r in course.room]
-                    updates_made.append({
-                        'course_id': course_id,
-                        'instance': i,
-                        'old_name': old_name,
-                        'new_name': new_name
-                    })
-        
-        # Updates made silently - no logging needed for name changes
     
     def _update_combined_configs_faculty_removal(self, removed_faculty_name: str) -> None:
         """
@@ -307,21 +233,3 @@ class ConflictResolutionObserver(Observer):
             except Exception as e:
                 # Log error but continue with other configs
                 print(f"Warning: Failed to update CombinedConfig for faculty removal: {e}")
-    
-    def _get_timestamp(self) -> str:
-        """Get current timestamp for logging."""
-        import datetime
-        return datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    def get_conflict_log(self) -> List[Dict[str, Any]]:
-        """
-        Get the log of all conflicts that have been resolved.
-        
-        Returns:
-            List[Dict]: List of conflict resolution entries
-        """
-        return self.conflict_log.copy()
-    
-    def clear_conflict_log(self) -> None:
-        """Clear the conflict resolution log."""
-        self.conflict_log.clear()
