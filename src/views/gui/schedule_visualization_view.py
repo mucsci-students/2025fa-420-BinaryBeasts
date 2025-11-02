@@ -146,18 +146,18 @@ class RoomPanel(QWidget):
             if h >= needed_two and w > 40:
                 # Two lines with better spacing
                 p.setFont(title_font)
-                title_elided = fm_title.elidedText(title_text, Qt.ElideRight, w - 8) # type: ignore[attr-defined]
+                title_elided = fm_title.elidedText(title_text, Qt.TextElideMode.ElideRight, w - 8)
                 p.drawText(x + padding, y + padding + fm_title.ascent(), title_elided)
 
                 p.setFont(info_font)
-                faculty_elided = fm_info.elidedText(faculty_text, Qt.ElideRight, w - 8) # type: ignore[attr-defined]
+                faculty_elided = fm_info.elidedText(faculty_text, Qt.TextElideMode.ElideRight, w - 8)
                 p.drawText(x + padding, y + padding + fm_title.height() + line_spacing + fm_info.ascent(), faculty_elided)
                 
             elif h >= needed_one and w > 30:
                 # One line: prioritize course name
                 p.setFont(title_font if h > 25 else info_font)
                 fm = p.fontMetrics()
-                text_elided = fm.elidedText(title_text, Qt.ElideRight, w - 8) # type: ignore[attr-defined]
+                text_elided = fm.elidedText(title_text, Qt.TextElideMode.ElideRight, w - 8)
                 text_y = y + (h + fm.height()) // 2 - fm.descent()
                 p.drawText(x + padding, text_y, text_elided)
             
@@ -291,19 +291,19 @@ class FacultyPanel(QWidget):
                 if h >= needed_two and w > 60:
                     # Two lines: course name and room
                     p.setFont(title_font)
-                    course_elided = title_fm.elidedText(course_text, Qt.ElideRight, w - 8) # type: ignore[attr-defined]
+                    course_elided = title_fm.elidedText(course_text, Qt.TextElideMode.ElideRight, w - 8)
                     text_y1 = y + padding + title_fm.ascent()
                     p.drawText(x + padding, text_y1, course_elided)
                     
                     p.setFont(info_font)
-                    room_elided = info_fm.elidedText(room_text, Qt.ElideRight, w - 8) # type: ignore[attr-defined]
+                    room_elided = info_fm.elidedText(room_text, Qt.TextElideMode.ElideRight, w - 8)
                     text_y2 = text_y1 + line_spacing + info_fm.height()
                     p.drawText(x + padding, text_y2, room_elided)
                 else:
                     # Single line: combine course and room
                     p.setFont(info_font)
                     combined_text = f"{course_text} @ {room_text}"
-                    combined_elided = info_fm.elidedText(combined_text, Qt.ElideRight, w - 8) # type: ignore[attr-defined]
+                    combined_elided = info_fm.elidedText(combined_text, Qt.TextElideMode.ElideRight, w - 8)
                     text_y = y + (h + info_fm.height()) // 2 - info_fm.descent()
                     p.drawText(x + padding, text_y, combined_elided)
                 
