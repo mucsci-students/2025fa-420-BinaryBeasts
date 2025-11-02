@@ -31,9 +31,26 @@ class main_controller:
         self.model.set_limit(limit)
         scheduler = Scheduler(self.model.config)
         lst = []
-        for schedule in scheduler.get_models():
+
+        print(f"\n🔄 Generating {limit} schedule(s)...")
+        print("─" * 50)
+
+        for i, schedule in enumerate(scheduler.get_models(), 1):
             lst.append(schedule)
             self.model.schedules.append(schedule)
+
+            # Show progress
+            progress = (i / limit) * 100
+            bar_length = 40
+            filled = int(bar_length * i / limit)
+            bar = "█" * filled + "░" * (bar_length - filled)
+            print(f"\r[{bar}] {i}/{limit} ({progress:.1f}%)", end="", flush=True)
+
+            if i >= limit:
+                break
+
+        print("\n" + "─" * 50)
+        print(f"✅ Successfully generated {len(lst)} schedule(s)!\n")
         return lst
 
     def save_config(self, path: str):
