@@ -655,14 +655,6 @@ class SchedulesGUI(QWidget):
         self.current_room_index = (self.current_room_index + 1) % len(self.room_list)
         self.display_current_room()
 
-    def next_room(self):
-        """Navigate to next room"""
-        if not self.room_list:
-            return
-
-        self.current_room_index = (self.current_room_index + 1) % len(self.room_list)
-        self.display_current_room()
-
     def previous_room(self):
         """Navigate to previous room"""
         if not self.room_list:
