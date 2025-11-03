@@ -1,5 +1,6 @@
 import json
 import pytest
+from unittest.mock import MagicMock
 
 from src.models.faculty_model import Faculty, FacultyManager
 from src.controllers.faculty_controller import FacultyController
@@ -244,7 +245,7 @@ def test_faculty_manager_load_with_invalid_data():
 def test_faculty_manager_to_dict_and_save(tmp_path):
     """Test converting faculty to dict format and saving."""
     mgr = FacultyManager()
-    
+
     # Add faculty
     faculty = Faculty(
         name='Dr. Test',
@@ -257,22 +258,22 @@ def test_faculty_manager_to_dict_and_save(tmp_path):
         lab_preferences={'Linux': 4}
     )
     mgr.add_faculty(faculty)
-    
+
     # Convert to dict
     faculty_dict = mgr.to_dict()
     assert isinstance(faculty_dict, list)
     assert len(faculty_dict) == 1
-    
+
     faculty_entry = faculty_dict[0]
     assert faculty_entry['name'] == 'Dr. Test'
     assert faculty_entry['minimum_credits'] == 1
-    
+
     # Save config
     out_file = tmp_path / 'faculty_config.json'
     success = mgr.save_config({}, {}, str(out_file))
     assert success is True
     assert out_file.exists()
-    
+
     # Verify file contains faculty data
     with open(out_file, 'r', encoding='utf-8') as f:
         loaded_data = json.load(f)
@@ -280,3 +281,179 @@ def test_faculty_manager_to_dict_and_save(tmp_path):
     assert 'faculty' in loaded_data['config']
     assert len(loaded_data['config']['faculty']) == 1
     assert loaded_data['config']['faculty'][0]['name'] == 'Dr. Test'
+
+
+def test_faculty_manager_init_with_faculty_list():
+    """Test FacultyManager initialization with a faculty list."""
+    # Create some faculty objects
+    faculty1 = Faculty(name='Dr. Alpha', minimum_credits=0, maximum_credits=6)
+    faculty2 = Faculty(name='Dr. Beta', minimum_credits=1, maximum_credits=8)
+
+    # Initialize manager with faculty list
+    mgr = FacultyManager(faculty_list=[faculty1, faculty2])
+
+    # Verify both faculty were added
+    assert len(mgr.get_faculty_names()) == 2
+    assert 'Dr. Alpha' in mgr.get_faculty_names()
+    assert 'Dr. Beta' in mgr.get_faculty_names()
+
+    # Verify they can be retrieved
+    alpha = mgr.get_faculty('Dr. Alpha')
+    assert alpha is not None
+    assert alpha.name == 'Dr. Alpha'
+
+
+def test_delete_faculty_not_found():
+    """Test deleting a faculty member that doesn't exist."""
+    mgr = FacultyManager()
+
+    # Try to delete non-existent faculty
+    result = mgr.delete_faculty('Dr. NonExistent')
+
+    # Should return False
+    assert result is False
+
+
+def test_modify_faculty_not_found():
+    """Test modifying a faculty member that doesn't exist."""
+    mgr = FacultyManager()
+
+    # Create a new faculty object
+    new_faculty = Faculty(name='Dr. New', minimum_credits=0, maximum_credits=5)
+
+    # Try to modify non-existent faculty
+    result = mgr.modify_faculty('Dr. NonExistent', new_faculty)
+
+    # Should return False
+    assert result is False
+
+
+def test_modify_faculty_rename_conflict():
+    """Test renaming a faculty to a name that already exists."""
+    mgr = FacultyManager()
+
+    # Add two faculty members
+    faculty1 = Faculty(name='Dr. First', minimum_credits=0, maximum_credits=5)
+    faculty2 = Faculty(name='Dr. Second', minimum_credits=1, maximum_credits=6)
+    mgr.add_faculty(faculty1)
+    mgr.add_faculty(faculty2)
+
+    # Try to rename Dr. First to Dr. Second (which already exists)
+    renamed_faculty = Faculty(name='Dr. Second', minimum_credits=2, maximum_credits=7)
+    result = mgr.modify_faculty('Dr. First', renamed_faculty)
+
+    # Should return False due to name conflict
+    assert result is False
+
+    # Verify original faculty still exists with original name
+    assert mgr.faculty_exists('Dr. First')
+    assert mgr.faculty_exists('Dr. Second')
+
+
+def test_save_config_with_error(tmp_path):
+    """Test save_config error handling when file path is invalid."""
+    mgr = FacultyManager()
+
+    # Add a faculty
+    faculty = Faculty(name='Dr. Test', minimum_credits=0, maximum_credits=5)
+    mgr.add_faculty(faculty)
+
+    # Try to save to an invalid path (directory that doesn't exist)
+    invalid_path = tmp_path / "nonexistent_dir" / "subdir" / "file.json"
+
+    # Should return False due to error
+    result = mgr.save_config({}, {}, str(invalid_path))
+    assert result is False
+
+
+def test_save_with_combined_config():
+    """Test save_with_combined_config method (GUI-specific)."""
+    from unittest.mock import patch
+
+    mgr = FacultyManager()
+
+    # Add some faculty
+    faculty1 = Faculty(
+        name='Dr. GUI1',
+        minimum_credits=2,
+        maximum_credits=8,
+        unique_course_limit=2,
+        times={'MON': ['09:00-10:00']},
+        course_preferences={'CMSC140': 5},
+        room_preferences={'R1': 3},
+        lab_preferences={'Linux': 4}
+    )
+    faculty2 = Faculty(
+        name='Dr. GUI2',
+        minimum_credits=1,
+        maximum_credits=6,
+        unique_course_limit=1,
+        times={'TUE': ['10:00-11:00']},
+        course_preferences={},
+        room_preferences={},
+        lab_preferences={}
+    )
+    mgr.add_faculty(faculty1)
+    mgr.add_faculty(faculty2)
+
+    # Create mock combined_config
+    mock_combined_config = MagicMock()
+    mock_editable_config = MagicMock()
+    mock_config = MagicMock()
+    mock_faculty_list = MagicMock()
+
+    # Set up the mock hierarchy
+    mock_config.faculty = mock_faculty_list
+    mock_editable_config.config = mock_config
+    mock_combined_config.edit_mode.return_value.__enter__.return_value = mock_editable_config
+    mock_combined_config.edit_mode.return_value.__exit__.return_value = None
+
+    # Mock the FacultyConfig import from scheduler.config
+    with patch('scheduler.config.FacultyConfig') as mock_faculty_config_class:
+        mock_faculty_instances = []
+
+        def create_faculty_config(*args, **kwargs):
+            instance = MagicMock()
+            mock_faculty_instances.append(instance)
+            return instance
+
+        mock_faculty_config_class.side_effect = create_faculty_config
+
+        # Call the method
+        result = mgr.save_with_combined_config(mock_combined_config)
+
+        # Verify success
+        assert result is True
+
+        # Verify edit_mode was called
+        mock_combined_config.edit_mode.assert_called_once()
+
+        # Verify faculty list was cleared
+        mock_faculty_list.clear.assert_called_once()
+
+        # Verify FacultyConfig was called for each faculty (2 times)
+        assert mock_faculty_config_class.call_count == 2
+
+        # Verify faculty were appended to the list
+        assert mock_faculty_list.append.call_count == 2
+
+
+def test_save_with_combined_config_error():
+    """Test save_with_combined_config error handling."""
+    from unittest.mock import MagicMock
+
+    mgr = FacultyManager()
+
+    # Add a faculty
+    faculty = Faculty(name='Dr. Error', minimum_credits=0, maximum_credits=5)
+    mgr.add_faculty(faculty)
+
+    # Create mock that raises an exception
+    mock_combined_config = MagicMock()
+    mock_combined_config.edit_mode.side_effect = Exception("Mock error")
+
+    # Call should return False due to exception
+    result = mgr.save_with_combined_config(mock_combined_config)
+
+    # Should return False
+    assert result is False

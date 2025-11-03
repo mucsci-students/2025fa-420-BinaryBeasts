@@ -11,10 +11,12 @@ from src.views.gui.course_view_gui import CoursesDialog
 from src.views.gui.roomGui import RoomsDialog
 from src.views.gui.faculty_gui import FacultiesDialog
 from src.views.gui.lab_gui import LabsDialog
+from src.views.gui.ai_chat_gui import AIChatDialog
 from src.controllers.course_controller import CourseController
 from src.controllers.room_controller import RoomController
 from src.controllers.faculty_controller import FacultyController
 from src.controllers.lab_controller import LabController
+from src.controllers.nl_controller import NLController
 from src.models.course_model import CourseManager
 from src.models.room_model import RoomManager
 from src.models.faculty_model import FacultyManager
@@ -154,9 +156,15 @@ class MainGUI(QWidget):
         save_btn.setMinimumHeight(32)
         save_btn.clicked.connect(self.save_configuration)
 
+        ai_chat_btn = QPushButton("💬 AI Assistant")
+        ai_chat_btn.setStyleSheet(BUTTON_STYLE)
+        ai_chat_btn.setMinimumHeight(32)
+        ai_chat_btn.clicked.connect(self.open_ai_chat)
+
         config_buttons.addWidget(upload_config_btn)
         config_buttons.addWidget(upload_schedule_btn)
         config_buttons.addStretch(1)
+        config_buttons.addWidget(ai_chat_btn)
         config_buttons.addWidget(save_btn)
 
         cfg.addLayout(config_buttons)
@@ -377,6 +385,98 @@ class MainGUI(QWidget):
                 )
         else:
             self.selected_label.setText("No folder selected.")
+
+    def open_ai_chat(self):
+        """Open AI Assistant chat dialog."""
+        if not self.file_uploaded:
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
+            return
+
+        try:
+            # Create managers and controllers
+            course_manager = CourseManager()
+            courses_data = []
+            for course in self.config.config.courses:
+                courses_data.append(
+                    {
+                        "course_id": course.course_id,
+                        "credits": course.credits,
+                        "room": list(course.room)
+                        if hasattr(course.room, "__iter__")
+                        else [course.room],
+                        "lab": list(course.lab)
+                        if hasattr(course.lab, "__iter__")
+                        else [course.lab],
+                        "faculty": list(course.faculty)
+                        if hasattr(course.faculty, "__iter__")
+                        else [course.faculty],
+                        "conflicts": list(course.conflicts)
+                        if hasattr(course.conflicts, "__iter__")
+                        else [course.conflicts],
+                    }
+                )
+            course_manager.load_courses(courses_data)
+            course_controller = CourseController(course_manager)
+
+            # Create faculty controller
+            faculty_manager = FacultyManager()
+            faculty_data = []
+            for faculty in self.config.config.faculty:
+                faculty_data.append(
+                    {
+                        "name": faculty.name,
+                        "minimum_credits": faculty.minimum_credits,
+                        "maximum_credits": faculty.maximum_credits,
+                        "unique_course_limit": faculty.unique_course_limit,
+                        "times": dict(faculty.times)
+                        if hasattr(faculty, "times")
+                        else {},
+                        "course_preferences": dict(faculty.course_preferences)
+                        if hasattr(faculty, "course_preferences")
+                        else {},
+                        "room_preferences": dict(faculty.room_preferences)
+                        if hasattr(faculty, "room_preferences")
+                        else {},
+                        "lab_preferences": dict(faculty.lab_preferences)
+                        if hasattr(faculty, "lab_preferences")
+                        else {},
+                    }
+                )
+            faculty_manager.load_faculty(faculty_data)
+            faculty_controller = FacultyController(faculty_manager)
+
+            # Create lab and room controllers
+            lab_manager = LabManager(self.config)
+            lab_controller = LabController(lab_manager)
+
+            room_manager = RoomManager(self.config)
+            room_controller = RoomController(room_manager)
+
+            # Create NL controller with all controllers and config
+            nl_controller = NLController(
+                config=self.config,
+                course_controller=course_controller,
+                faculty_controller=faculty_controller,
+                lab_controller=lab_controller,
+                room_controller=room_controller
+            )
+
+            # Open chat dialog
+            self.chat_window = AIChatDialog(nl_controller, self)
+            self.chat_window.exec_()
+
+            # Check if schedules were generated
+            if hasattr(self.chat_window, 'generated_schedules') and self.chat_window.generated_schedules:
+                schedules = self.chat_window.generated_schedules
+                # Close main window and open schedule viewer
+                self.close()
+                self.generate_schedule_window = SchedulesGUI(schedules=schedules, config=self.config)
+                self.generate_schedule_window.show()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open AI Assistant:\n{e}")
 
     def generate_schedule(self):
         if not self.file_uploaded:
