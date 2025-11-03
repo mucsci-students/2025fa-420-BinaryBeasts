@@ -113,14 +113,16 @@ class TestLabManager(unittest.TestCase):
 
     def test_load_labs_with_scheduler_config(self):
         """Test: Should load labs from SchedulerConfig (not CombinedConfig)"""
-        # Note: Line 32 has a bug - it references self.config.labs instead of config.labs
-        # This test documents the bug by expecting AttributeError
+        # Test that LabManager can handle SchedulerConfig objects correctly
         mock_config = Mock(spec=['labs'])  # Only has 'labs' attribute
         mock_config.labs = ["Lab1", "Lab2", "Lab3"]
 
-        # The bug on line 32 causes AttributeError when trying to access self.config
-        with self.assertRaises(AttributeError):
-            LabManager(mock_config)
+        # Should successfully create LabManager and load labs from SchedulerConfig
+        lab_manager = LabManager(mock_config)
+        
+        # Assert: Labs should be loaded correctly
+        self.assertEqual(lab_manager.labs, ["Lab1", "Lab2", "Lab3"])
+        self.assertEqual(len(lab_manager.labs), 3)
 
     def test_load_labs_with_no_labs_attribute(self):
         """Test: Should handle config with no labs attribute"""
