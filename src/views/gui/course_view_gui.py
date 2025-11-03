@@ -57,21 +57,26 @@ class CourseDialog(QDialog):
 
         # Populate lists from combined_config
         if combined_config:
-            for room in sorted(combined_config.config.rooms):
-                self.rooms_list.addItem(room)
+            # clear old data
+            for lst in (self.rooms_list,
+                        self.labs_list,
+                        self.faculty_list,
+                        self.conflicts_list):
+                lst.clear()
+            cfg = combined_config.config
+            # rooms and labs
+            self.rooms_list.addItems(sorted(set(cfg.rooms)))
+            self.labs_list.addItems(sorted(set(cfg.labs)))
 
-            for lab in sorted(combined_config.config.labs):
-                self.labs_list.addItem(lab)
+            # faculty names
+            faculty_names = sorted({f.name for f in cfg.faculty})
+            self.faculty_list.addItems(faculty_names)
 
-            faculty_names = []
-            for faculty in combined_config.config.faculty:
-                faculty_names.append(faculty.name)
-            faculty_names.sort()
-            for name in faculty_names:
-                self.faculty_list.addItem(name)
-
-            for existing_course in combined_config.config.courses:
-                self.conflicts_list.addItem(existing_course.course_id)
+            # conflict courses (unique IDs, exclude itself if editing)
+            all_ids = {c.course_id for c in cfg.courses}
+            if course:
+                all_ids.discard(course.course_id)
+            self.conflicts_list.addItems(sorted(all_ids))
 
 
         # Pre-fill when editing
@@ -134,10 +139,13 @@ class CourseDialog(QDialog):
 
         credits = int(self.credits_input.value())
 
-        room_list = [item.text() for item in self.rooms_list.selectedItems()]
-        lab_list = [item.text() for item in self.labs_list.selectedItems()]
-        faculty_list = [item.text() for item in self.faculty_list.selectedItems()]
-        conflict_list = [item.text() for item in self.conflicts_list.selectedItems()]
+        def uniq(texts):
+            return list(dict.fromkeys(t.strip() for t in texts if t and t.strip()))
+
+        room_list = uniq(item.text() for item in self.rooms_list.selectedItems())
+        lab_list = uniq(item.text() for item in self.labs_list.selectedItems())
+        faculty_list = uniq(item.text() for item in self.faculty_list.selectedItems())
+        conflict_list = uniq(item.text() for item in self.conflicts_list.selectedItems())
 
         if not room_list:
             QMessageBox.warning(self, "Error", "At least one room is required")
