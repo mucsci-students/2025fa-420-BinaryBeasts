@@ -7,12 +7,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 from src.views.gui.schedules_gui import SchedulesGUI
-from src.views.gui.course_view_gui import CoursesDialog
-from src.views.gui.roomGui import RoomsDialog
-from src.views.gui.faculty_gui import FacultiesDialog
-from src.views.gui.lab_gui import LabsDialog
 from src.views.gui.ai_chat_gui import AIChatDialog
-from src.observer_pattern import EventType
 from src.conflict_resolution import ConflictResolutionObserver
 from src.controllers.course_controller import CourseController
 from src.controllers.room_controller import RoomController

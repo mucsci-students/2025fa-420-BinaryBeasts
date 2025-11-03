@@ -3,7 +3,6 @@
 from typing import List, Dict
 from scheduler.config import CombinedConfig
 from src.observer_pattern import Observable, EventType, EventData
-from src.observer_pattern import Observable, EventType, EventData
 
 
 class RoomManager(Observable):

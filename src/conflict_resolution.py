@@ -7,7 +7,6 @@ it ensures that all courses referencing that faculty are updated accordingly.
 """
 
 from src.observer_pattern import Observer, EventType, EventData
-from typing import Dict, Any, List
 
 
 class ConflictResolutionObserver(Observer):
@@ -126,7 +125,7 @@ class ConflictResolutionObserver(Observer):
             for course in course_instances:
                 if removed_lab_name in course.lab:
                     # Remove the lab reference from the course
-                    course.lab = [l for l in course.lab if l != removed_lab_name]
+                    course.lab = [lab for lab in course.lab if lab != removed_lab_name]
     
     def _handle_room_removal(self, data: EventData) -> None:
         """
@@ -171,8 +170,6 @@ class ConflictResolutionObserver(Observer):
         if not course_manager:
             return
         
-        updates_made = []
-        
         # Update all course references from old name to new name
         for course_instances in course_manager.courses.values():
             for course in course_instances:
@@ -197,7 +194,7 @@ class ConflictResolutionObserver(Observer):
         for course_instances in course_manager.courses.values():
             for course in course_instances:
                 if old_name in course.lab:
-                    course.lab = [new_name if l == old_name else l for l in course.lab]
+                    course.lab = [new_name if lab == old_name else lab for lab in course.lab]
     
     def _handle_room_update(self, data: EventData) -> None:
         """Handle room name changes by updating course references."""
