@@ -35,6 +35,11 @@ A comprehensive course scheduling system with both **Command-Line Interface (CLI
 - **CLI**: Full-featured command-line interface with menu-driven navigation
 - **GUI**: Modern PyQt5-based graphical interface with modal dialogs
 
+### Design Patterns Implementation
+- **Observer Pattern**: Automatic cross-manager dependency resolution - when entities are deleted or renamed, all references are automatically updated across the system
+- **Factory Pattern**: Centralized dialog creation with consistent initialization and configuration for all management interfaces
+- **Singleton Pattern**: Centralized state management for application-wide schedule data and configuration
+
 ## Prerequisites
 
 - Python 3.13.1 (or Python 3.7+)
