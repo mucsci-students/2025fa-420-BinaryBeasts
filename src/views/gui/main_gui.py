@@ -24,6 +24,8 @@ from src.models.room_model import RoomManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
 # Controllers and models are now handled by the factory pattern
+from src.views.gui.dialog_factory import DialogFactory, DialogType
+# Controllers and models are now handled by the factory pattern
 import json
 from scheduler import (
     Scheduler,
@@ -271,7 +273,7 @@ class MainGUI(QWidget):
             self.conflict_observer.register_manager(manager_type, manager)
 
     def open_course_manager(self):
-        """Open the course management dialog with Observer pattern support."""
+        """Open the course management dialog using the factory pattern."""
         if not self.file_uploaded:
             QMessageBox.critical(
                 self, "Error", "Please upload a configuration file first."
@@ -279,39 +281,20 @@ class MainGUI(QWidget):
             return
 
         try:
-            # Create course manager (now inherits from Observable)
-            course_manager = CourseManager()
-            
-            # Extract and format courses data from config
-            courses_data = []
-            for course in self.config.config.courses:
-                courses_data.append({
-                    "course_id": course.course_id,
-                    "credits": course.credits,
-                    "room": list(course.room) if hasattr(course.room, "__iter__") else [course.room],
-                    "lab": list(course.lab) if hasattr(course.lab, "__iter__") else [course.lab],
-                    "faculty": list(course.faculty) if hasattr(course.faculty, "__iter__") else [course.faculty],
-                    "conflicts": list(course.conflicts) if hasattr(course.conflicts, "__iter__") else [course.conflicts],
-                })
-
-            # Attach conflict resolution observer to handle cross-manager dependencies
-            self._attach_conflict_observer_to_manager(course_manager, 'course')
-            
-            # Load courses (this will trigger COURSES_LOADED event)
-            course_manager.load_courses(courses_data)
-
-            # Create controller
-            controller = CourseController(course_manager)
-
-            # Open the courses dialog
-            self.course_window = CoursesDialog(controller, self.config, self)
+            # Use factory to create the courses dialog with observer support
+            self.course_window = DialogFactory.create_dialog(
+                DialogType.COURSES, 
+                self.config, 
+                self,
+                self.conflict_observer
+            )
             self.course_window.exec_()
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open Course Manager:\n{e}")
 
     def open_lab_manager(self):
-        """Open the lab management dialog with Observer pattern support."""
+        """Open the lab management dialog using the factory pattern."""
         if not self.file_uploaded:
             QMessageBox.critical(
                 self, "Error", "Please upload a configuration file first."
@@ -319,24 +302,20 @@ class MainGUI(QWidget):
             return
 
         try:
-            # Create LabManager and load labs from config
-            lab_manager = LabManager(self.config)
-
-            # Attach conflict resolution observer to handle cross-manager dependencies
-            self._attach_conflict_observer_to_manager(lab_manager, 'lab')
-
-            # Create controller
-            controller = LabController(lab_manager)
-
-            # Open the labs dialog
-            self.lab_window = LabsDialog(controller, self.config, self)
+            # Use factory to create the labs dialog with observer support
+            self.lab_window = DialogFactory.create_dialog(
+                DialogType.LABS, 
+                self.config, 
+                self,
+                self.conflict_observer
+            )
             self.lab_window.exec_()
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open Lab Manager:\n{e}")
 
     def open_faculty_manager(self):
-        """Open the faculty management dialog with Observer pattern support."""
+        """Open the faculty management dialog using the factory pattern."""
         if not self.file_uploaded:
             QMessageBox.critical(
                 self, "Error", "Please upload a configuration file first."
@@ -344,34 +323,13 @@ class MainGUI(QWidget):
             return
 
         try:
-            # Create FacultyManager and load faculty from config
-            faculty_manager = FacultyManager()
-            
-            # Extract and format faculty data from config
-            faculty_data = []
-            for faculty in self.config.config.faculty:
-                faculty_data.append({
-                    "name": faculty.name,
-                    "minimum_credits": faculty.minimum_credits,
-                    "maximum_credits": faculty.maximum_credits,
-                    "unique_course_limit": faculty.unique_course_limit,
-                    "times": dict(faculty.times) if hasattr(faculty, "times") else {},
-                    "course_preferences": dict(faculty.course_preferences) if hasattr(faculty, "course_preferences") else {},
-                    "room_preferences": dict(faculty.room_preferences) if hasattr(faculty, "room_preferences") else {},
-                    "lab_preferences": dict(faculty.lab_preferences) if hasattr(faculty, "lab_preferences") else {},
-                })
-
-            # Attach conflict resolution observer to handle cross-manager dependencies
-            self._attach_conflict_observer_to_manager(faculty_manager, 'faculty')
-            
-            # Load faculty data (this will trigger events if FacultyManager is made Observable)
-            faculty_manager.load_faculty(faculty_data)
-
-            # Create controller
-            controller = FacultyController(faculty_manager)
-
-            # Open the faculty dialog
-            self.faculty_window = FacultiesDialog(controller, self.config, self)
+            # Use factory to create the faculty dialog with observer support
+            self.faculty_window = DialogFactory.create_dialog(
+                DialogType.FACULTY, 
+                self.config, 
+                self,
+                self.conflict_observer
+            )
             self.faculty_window.exec_()
 
         except Exception as e:
@@ -380,7 +338,7 @@ class MainGUI(QWidget):
         print("Faculty Manager Opened")
 
     def open_room_manager(self):
-        """Open the room management dialog with Observer pattern support."""
+        """Open the room management dialog using the factory pattern."""
         if not self.file_uploaded:
             QMessageBox.critical(
                 self, "Error", "Please upload a configuration file first."
@@ -388,17 +346,13 @@ class MainGUI(QWidget):
             return
 
         try:
-            # Create RoomManager and load rooms from config
-            room_manager = RoomManager(self.config)
-
-            # Attach conflict resolution observer to handle cross-manager dependencies
-            self._attach_conflict_observer_to_manager(room_manager, 'room')
-
-            # Create controller
-            controller = RoomController(room_manager)
-
-            # Open the rooms dialog
-            self.room_window = RoomsDialog(controller, self.config, self)
+            # Use factory to create the rooms dialog with observer support
+            self.room_window = DialogFactory.create_dialog(
+                DialogType.ROOMS, 
+                self.config, 
+                self,
+                self.conflict_observer
+            )
             self.room_window.exec_()
 
         except Exception as e:
