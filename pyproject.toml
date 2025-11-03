@@ -30,6 +30,17 @@ classifiers = [
 ]
 dependencies = [
     "course-constraint-scheduler",
+    "pyqt5>=5.15.11",
+    "pytest>=8.4.2",
+    "pytest-codecov>=0.7.0",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.14.1",
+    "ty>=0.0.1a23",
+    "langchain>=0.3.0",
+    "langchain-core>=0.3.0",
+    "langchain-openai>=0.2.0",
+    "langgraph>=0.2.0",
+    "pydantic>=2.0.0",
 ]
 
 [project.optional-dependencies]
@@ -46,4 +57,5 @@ testpaths = ["tests"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src"]
+
 

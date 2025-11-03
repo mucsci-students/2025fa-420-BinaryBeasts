@@ -2,40 +2,56 @@
 
 from typing import List, Dict
 from scheduler.config import CombinedConfig
+from src.observer_pattern import Observable, EventType, EventData
 
 
-class RoomManager:
-    """Manages room data with support for both dict-based and CombinedConfig-based workflows."""
+class RoomManager(Observable):
+    """
+    Room Manager with Observer pattern support.
+    
+    Manages room data and notifies observers when rooms are added, updated, or removed.
+    """
 
-    def __init__(self, config: CombinedConfig = None):
+    def __init__(self, config):
         """
-        Initialize RoomManager.
+        Initialize RoomManager with Observer pattern support.
 
         Args:
             config: Optional CombinedConfig object. If provided, loads rooms from it.
         """
+        Observable.__init__(self)  # Initialize observer pattern
         self.rooms: List[str] = []
         if config:
             self.load_rooms(config)
 
     def load_rooms(self, config: CombinedConfig) -> None:
         """
-        Load rooms from a CombinedConfig object.
+        Load rooms from a CombinedConfig object and notify observers.
 
         Args:
             config: CombinedConfig object containing room data
         """
-        # (config.config.rooms) and (config.rooms)
-        if hasattr(config, 'config') and hasattr(config.config, 'rooms'):
-            self.rooms = list(config.config.rooms) if config.config.rooms else []
-        elif hasattr(config, 'rooms'):
-            self.rooms = list(config.rooms) if config.rooms else []
+        # Handle both config.config.rooms and config.rooms patterns
+        if hasattr(config, "config") and hasattr(config.config, "rooms"):
+            self.rooms = list(config.config.rooms or [])  # type: ignore[arg-type]
+        elif hasattr(config, "rooms"):
+            self.rooms = list(config.rooms or [])  # type: ignore[arg-type]
         else:
             self.rooms = []
+        
+        # Notify observers that rooms have been loaded
+        self.notify_observers(
+            EventType.ROOMS_LOADED,
+            EventData(
+                source=self,
+                new_value=self.rooms.copy(),
+                count=len(self.rooms)
+            )
+        )
 
     def add_room(self, room_name: str) -> bool:
         """
-        Add a new room.
+        Add a new room and notify observers.
 
         Args:
             room_name: Name of the room to add
@@ -50,11 +66,22 @@ class RoomManager:
             return False
 
         self.rooms.append(room_name)
+        
+        # Notify observers of the new room
+        self.notify_observers(
+            EventType.ROOM_ADDED,
+            EventData(
+                source=self,
+                new_value=room_name,
+                total_rooms=len(self.rooms)
+            )
+        )
+        
         return True
 
     def delete_room(self, room_name: str) -> bool:
         """
-        Delete a room.
+        Delete a room and notify observers.
 
         Args:
             room_name: Name of the room to delete
@@ -66,6 +93,17 @@ class RoomManager:
             return False
 
         self.rooms.remove(room_name)
+        
+        # Notify observers of the deletion
+        self.notify_observers(
+            EventType.ROOM_REMOVED,
+            EventData(
+                source=self,
+                old_value=room_name,
+                total_rooms=len(self.rooms)
+            )
+        )
+        
         return True
 
     def edit_room(self, old_name: str, new_name: str) -> bool:
@@ -90,6 +128,16 @@ class RoomManager:
 
         index = self.rooms.index(old_name)
         self.rooms[index] = new_name
+        
+        # Notify observers of the update
+        self.notify_observers(
+            EventType.ROOM_UPDATED,
+            EventData(
+                source=self,
+                old_value=old_name,
+                new_value=new_name
+            )
+        )
         return True
 
     def get_rooms(self) -> List[str]:
@@ -129,9 +177,7 @@ class RoomManager:
         Returns:
             Dictionary with 'rooms' key containing list of room names
         """
-        return {
-            'rooms': self.rooms
-        }
+        return {"rooms": self.rooms}
 
     def save_config(self, config: Dict) -> Dict:
         """
@@ -143,7 +189,7 @@ class RoomManager:
         Returns:
             Updated configuration dictionary
         """
-        config['rooms'] = self.rooms
+        config["rooms"] = self.rooms
         return config
 
     def save_with_combined_config(self, config: CombinedConfig) -> CombinedConfig:
@@ -157,11 +203,12 @@ class RoomManager:
             Updated CombinedConfig object
         """
         # Update rooms in the config
-        config.rooms = self.rooms.copy()
+        config.config.rooms = self.rooms.copy()
         return config
 
-    def update_room_references(self, old_name: str, new_name: str,
-                               courses_dict: Dict, faculty_dict: Dict) -> None:
+    def update_room_references(
+        self, old_name: str, new_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Update room references in courses and faculty when a room is renamed.
 
@@ -174,18 +221,24 @@ class RoomManager:
         # Update course room assignments
         for course_id, instances in courses_dict.items():
             for course in instances:
-                if hasattr(course, 'room') and old_name in course.room:
-                    course.room = [new_name if r == old_name else r for r in course.room]
+                if hasattr(course, "room") and old_name in course.room:
+                    course.room = [
+                        new_name if r == old_name else r for r in course.room
+                    ]
 
         # Update faculty room preferences
         for name, faculty in faculty_dict.items():
-            if hasattr(faculty, 'room_preferences') and old_name in faculty.room_preferences:
+            if (
+                hasattr(faculty, "room_preferences")
+                and old_name in faculty.room_preferences
+            ):
                 preference = faculty.room_preferences[old_name]
                 del faculty.room_preferences[old_name]
                 faculty.room_preferences[new_name] = preference
 
-    def remove_room_references(self, room_name: str,
-                               courses_dict: Dict, faculty_dict: Dict) -> None:
+    def remove_room_references(
+        self, room_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Remove room references from courses and faculty when a room is deleted.
 
@@ -197,10 +250,13 @@ class RoomManager:
         # Remove from course room assignments
         for course_id, instances in courses_dict.items():
             for course in instances:
-                if hasattr(course, 'room') and room_name in course.room:
+                if hasattr(course, "room") and room_name in course.room:
                     course.room = [r for r in course.room if r != room_name]
 
         # Remove from faculty room preferences
         for name, faculty in faculty_dict.items():
-            if hasattr(faculty, 'room_preferences') and room_name in faculty.room_preferences:
+            if (
+                hasattr(faculty, "room_preferences")
+                and room_name in faculty.room_preferences
+            ):
                 del faculty.room_preferences[room_name]

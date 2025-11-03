@@ -1,18 +1,12 @@
-import src.models.main_model as main_model
-import src.views.cli.main_view as main_view
-from scheduler import (
-    Scheduler,
-    load_config_from_file,
-)
-from scheduler.config import CombinedConfig
 from src.views.cli import schedules_view
+from src.models.room_day_model import schedule_to_location_blocks
 import json
 
-class generate_controller():
+
+class generate_controller:
     def __init__(self, schedules):
         self.schedules = schedules
         self.index = 0
-
 
     def next_schedule(self):
         self.index += 1
@@ -24,11 +18,34 @@ class generate_controller():
         if self.index < 0:
             self.index = len(self.schedules) - 1
 
+    def get_current_schedule_strings(self):
+        """Return the current schedule as a list of CSV strings."""
+        if not self.schedules or self.index < 0 or self.index >= len(self.schedules):
+            return []
+        schedule = self.schedules[self.index]
+        strings = []
+        for course in schedule:
+            if course is None:
+                continue
+            try:
+                if hasattr(course, 'as_csv'):
+                    strings.append(course.as_csv())
+                elif isinstance(course, str):
+                    strings.append(course)
+            except Exception:
+                continue
+        return strings
+
+    def get_room_day_blocks(self):
+        """Return room->List[TimeBlock] for the current schedule combining labs under rooms."""
+        csv_list = self.get_current_schedule_strings()
+        return schedule_to_location_blocks(csv_list)
+
     def _save_schedules_to_file(self, output_file: str, format_type: str):
         """Save generated schedules to file"""
         try:
-            if format_type == 'csv':
-                with open(output_file, 'w', encoding='utf-8') as f:
+            if format_type == "csv":
+                with open(output_file, "w", encoding="utf-8") as f:
                     f.write("Schedule,Course,Day,Time,Duration,Room,Lab,Faculty\n")
                     for i, schedule in enumerate(self.schedules, 1):
                         for course in schedule:
@@ -39,12 +56,12 @@ class generate_controller():
                 json_schedules = []
                 for i, schedule in enumerate(self.schedules, 1):
                     schedule_data = {
-                        'schedule_id': i,
-                        'courses': [course.as_csv() for course in schedule]
+                        "schedule_id": i,
+                        "courses": [course.as_csv() for course in schedule],
                     }
                     json_schedules.append(schedule_data)
 
-                with open(output_file, 'w', encoding='utf-8') as f:
+                with open(output_file, "w", encoding="utf-8") as f:
                     json.dump(json_schedules, f, indent=2, ensure_ascii=False)
 
             print(f"✅ Schedules saved successfully to {output_file}")
@@ -54,41 +71,40 @@ class generate_controller():
         input("\nPress Enter to continue...")
 
     def save_schedules(self, output_file: str, format_type: str):
-            """Save generated schedules to file"""
-            try:
-                if format_type == 'csv':
-                    with open(output_file, 'w', encoding='utf-8') as f:
-                        f.write("Schedule,Course,Day,Time,Duration,Room,Lab,Faculty\n")
-                        for i, schedule in enumerate(self.schedules, 1):
-                            for course in schedule:
-                                csv_line = course.as_csv()
-                                f.write(f"{i},{csv_line}\n")
-                else:
-                    # JSON format
-                    json_schedules = []
+        """Save generated schedules to file"""
+        try:
+            if format_type == "csv":
+                with open(output_file, "w", encoding="utf-8") as f:
+                    f.write("Schedule,Course,Day,Time,Duration,Room,Lab,Faculty\n")
                     for i, schedule in enumerate(self.schedules, 1):
-                        schedule_data = {
-                        'schedule_id': i,
-                        'courses': [course.as_csv() for course in schedule]
+                        for course in schedule:
+                            csv_line = course.as_csv()
+                            f.write(f"{i},{csv_line}\n")
+            else:
+                # JSON format
+                json_schedules = []
+                for i, schedule in enumerate(self.schedules, 1):
+                    schedule_data = {
+                        "schedule_id": i,
+                        "courses": [course.as_csv() for course in schedule],
                     }
-                        json_schedules.append(schedule_data)
+                    json_schedules.append(schedule_data)
 
-                    with open(output_file, 'w', encoding='utf-8') as f:
-                        json.dump(json_schedules, f, indent=2, ensure_ascii=False)
+                with open(output_file, "w", encoding="utf-8") as f:
+                    json.dump(json_schedules, f, indent=2, ensure_ascii=False)
 
-                print(f"✅ Schedules saved successfully to {output_file}")
-            except Exception as e:
-                print(f"❌ Error saving schedules: {e}")
-
+            print(f"✅ Schedules saved successfully to {output_file}")
+        except Exception as e:
+            print(f"❌ Error saving schedules: {e}")
 
     def entry(self):
         total_schedules = len(self.schedules)
 
         # Display initial schedule
         if self.schedules:
-            print("\n" + "="*25)
+            print("\n" + "=" * 25)
             print(f"Schedule {self.index + 1} of {total_schedules}")
-            print("="*25)
+            print("=" * 25)
             schedules_view.display_schedule(self.schedules[self.index])
 
         while True:
@@ -98,9 +114,9 @@ class generate_controller():
                 # Next schedule
                 if self.index < total_schedules - 1:
                     self.next_schedule()
-                    print("\n" + "="*25)
+                    print("\n" + "=" * 25)
                     print(f"Schedule {self.index + 1} of {total_schedules}")
-                    print("="*25)
+                    print("=" * 25)
                     schedules_view.display_schedule(self.schedules[self.index])
                 else:
                     print("Already at the last schedule.")
@@ -109,9 +125,9 @@ class generate_controller():
                 # Previous schedule
                 if self.index > 0:
                     self.previous_schedule()
-                    print("\n" + "="*25)
+                    print("\n" + "=" * 25)
                     print(f"Schedule {self.index + 1} of {total_schedules}")
-                    print("="*25)
+                    print("=" * 25)
                     schedules_view.display_schedule(self.schedules[self.index])
                 else:
                     print("Already at the first schedule.")
@@ -119,15 +135,19 @@ class generate_controller():
             elif user_input == "3":
                 # Go to specific schedule
                 try:
-                    schedule_num = int(input(f"Enter schedule number (1-{total_schedules}): ").strip())
+                    schedule_num = int(
+                        input(f"Enter schedule number (1-{total_schedules}): ").strip()
+                    )
                     if 1 <= schedule_num <= total_schedules:
                         self.index = schedule_num - 1
-                        print("\n" + "="*25)
+                        print("\n" + "=" * 25)
                         print(f"Schedule {self.index + 1} of {total_schedules}")
-                        print("="*25)
+                        print("=" * 25)
                         schedules_view.display_schedule(self.schedules[self.index])
                     else:
-                        print(f"Invalid schedule number. Please enter a number between 1 and {total_schedules}.")
+                        print(
+                            f"Invalid schedule number. Please enter a number between 1 and {total_schedules}."
+                        )
                         input("Press Enter to continue...")
                 except ValueError:
                     print("Invalid input. Please enter a valid number.")
@@ -135,13 +155,21 @@ class generate_controller():
             elif user_input == "4":
                 # View by room/lab
                 # Convert schedule objects to CSV strings
-                current_schedule_strings = [course.as_csv() for course in self.schedules[self.index] if course is not None]
+                current_schedule_strings = [
+                    course.as_csv()
+                    for course in self.schedules[self.index]
+                    if course is not None
+                ]
                 schedules_view.display_schedule_by_room(current_schedule_strings)
                 input("\nPress Enter to continue...")
             elif user_input == "5":
                 # View by faculty
                 # Convert schedule objects to CSV strings
-                current_schedule_strings = [course.as_csv() for course in self.schedules[self.index] if course is not None]
+                current_schedule_strings = [
+                    course.as_csv()
+                    for course in self.schedules[self.index]
+                    if course is not None
+                ]
                 schedules_view.display_schedule_by_faculty(current_schedule_strings)
                 input("\nPress Enter to continue...")
             elif user_input == "6":
@@ -155,8 +183,10 @@ class generate_controller():
                 print("Invalid option. Please select 1-7.")
                 input("Press Enter to continue...")
 
-class raw_schedules_controller():
+
+class raw_schedules_controller:
     """Controller for navigating imported/raw schedules (from JSON files)"""
+
     def __init__(self, schedules):
         self.schedules = schedules
         self.index = 0
@@ -181,9 +211,9 @@ class raw_schedules_controller():
 
         # Display initial schedule
         if self.schedules:
-            print("\n" + "="*25)
+            print("\n" + "=" * 25)
             print(f"Schedule {self.index + 1} of {total_schedules}")
-            print("="*25)
+            print("=" * 25)
             schedules_view.display_schedule_basic(self.schedules[self.index])
 
         while True:
@@ -193,9 +223,9 @@ class raw_schedules_controller():
                 # Next schedule
                 if self.index < total_schedules - 1:
                     self.next_schedule()
-                    print("\n" + "="*25)
+                    print("\n" + "=" * 25)
                     print(f"Schedule {self.index + 1} of {total_schedules}")
-                    print("="*25)
+                    print("=" * 25)
                     schedules_view.display_schedule_basic(self.schedules[self.index])
                 else:
                     print("Already at the last schedule.")
@@ -204,9 +234,9 @@ class raw_schedules_controller():
                 # Previous schedule
                 if self.index > 0:
                     self.previous_schedule()
-                    print("\n" + "="*25)
+                    print("\n" + "=" * 25)
                     print(f"Schedule {self.index + 1} of {total_schedules}")
-                    print("="*25)
+                    print("=" * 25)
                     schedules_view.display_schedule_basic(self.schedules[self.index])
                 else:
                     print("Already at the first schedule.")
@@ -214,15 +244,21 @@ class raw_schedules_controller():
             elif user_input == "3":
                 # Go to specific schedule
                 try:
-                    schedule_num = int(input(f"Enter schedule number (1-{total_schedules}): ").strip())
+                    schedule_num = int(
+                        input(f"Enter schedule number (1-{total_schedules}): ").strip()
+                    )
                     if 1 <= schedule_num <= total_schedules:
                         self.index = schedule_num - 1
-                        print("\n" + "="*25)
+                        print("\n" + "=" * 25)
                         print(f"Schedule {self.index + 1} of {total_schedules}")
-                        print("="*25)
-                        schedules_view.display_schedule_basic(self.schedules[self.index])
+                        print("=" * 25)
+                        schedules_view.display_schedule_basic(
+                            self.schedules[self.index]
+                        )
                     else:
-                        print(f"Invalid schedule number. Please enter a number between 1 and {total_schedules}.")
+                        print(
+                            f"Invalid schedule number. Please enter a number between 1 and {total_schedules}."
+                        )
                         input("Press Enter to continue...")
                 except ValueError:
                     print("Invalid input. Please enter a valid number.")
@@ -249,8 +285,8 @@ class raw_schedules_controller():
     def _save_schedules_to_file(self, output_file: str, format_type: str):
         """Save raw schedules (from imported JSON) to file"""
         try:
-            if format_type == 'csv':
-                with open(output_file, 'w', encoding='utf-8') as f:
+            if format_type == "csv":
+                with open(output_file, "w", encoding="utf-8") as f:
                     f.write("Schedule,Course\n")
                     for i, schedule in enumerate(self.schedules, 1):
                         for course_str in schedule:
@@ -260,12 +296,12 @@ class raw_schedules_controller():
                 json_schedules = []
                 for i, schedule in enumerate(self.schedules, 1):
                     schedule_data = {
-                        'schedule_id': i,
-                        'courses': schedule  # Already CSV strings
+                        "schedule_id": i,
+                        "courses": schedule,  # Already CSV strings
                     }
                     json_schedules.append(schedule_data)
 
-                with open(output_file, 'w', encoding='utf-8') as f:
+                with open(output_file, "w", encoding="utf-8") as f:
                     json.dump(json_schedules, f, indent=2, ensure_ascii=False)
 
             print(f"✅ Schedules saved successfully to {output_file}")

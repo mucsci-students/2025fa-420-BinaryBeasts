@@ -2,40 +2,58 @@
 
 from typing import List, Dict
 from scheduler.config import CombinedConfig
+from src.observer_pattern import Observable, EventType, EventData
 
 
-class LabManager:
-    """Manages lab data with support for both dict-based and CombinedConfig-based workflows."""
+class LabManager(Observable):
+    """
+    Lab Manager with Observer pattern support.
+    
+    Manages lab data and notifies observers when labs are added, updated, or removed.
+    """
 
-    def __init__(self, config: CombinedConfig = None):
+    def __init__(self, config):
         """
-        Initialize LabManager.
+        Initialize LabManager with Observer pattern support.
 
         Args:
             config: Optional CombinedConfig object. If provided, loads labs from it.
         """
+        Observable.__init__(self)  # Initialize observer pattern
         self.labs: List[str] = []
         if config:
             self.load_labs(config)
 
     def load_labs(self, config: CombinedConfig) -> None:
         """
-        Load labs from a CombinedConfig object.
+        Load labs from a CombinedConfig object and notify observers.
 
         Args:
             config: CombinedConfig object containing lab data
         """
         # Handle both CombinedConfig (config.config.labs) and SchedulerConfig (config.labs)
-        if hasattr(config, 'config') and hasattr(config.config, 'labs'):
-            self.labs = list(config.config.labs) if config.config.labs else []
-        elif hasattr(config, 'labs'):
-            self.labs = list(config.labs) if config.labs else []
+        if hasattr(config, "config") and hasattr(config.config, "labs"):
+            labs_data = getattr(config.config, "labs", None)
+            self.labs = list(labs_data) if labs_data else []
+        elif hasattr(config, "labs"):
+            labs_data = getattr(config, "labs", None)
+            self.labs = list(labs_data) if labs_data else []
         else:
             self.labs = []
+        
+        # Notify observers that labs have been loaded
+        self.notify_observers(
+            EventType.LABS_LOADED,
+            EventData(
+                source=self,
+                new_value=self.labs.copy(),
+                count=len(self.labs)
+            )
+        )
 
     def add_lab(self, lab_name: str) -> bool:
         """
-        Add a new lab.
+        Add a new lab and notify observers.
 
         Args:
             lab_name: Name of the lab to add
@@ -50,11 +68,22 @@ class LabManager:
             return False
 
         self.labs.append(lab_name)
+        
+        # Notify observers of the new lab
+        self.notify_observers(
+            EventType.LAB_ADDED,
+            EventData(
+                source=self,
+                new_value=lab_name,
+                total_labs=len(self.labs)
+            )
+        )
+        
         return True
 
     def delete_lab(self, lab_name: str) -> bool:
         """
-        Delete a lab.
+        Delete a lab and notify observers.
 
         Args:
             lab_name: Name of the lab to delete
@@ -66,6 +95,17 @@ class LabManager:
             return False
 
         self.labs.remove(lab_name)
+        
+        # Notify observers of the deletion
+        self.notify_observers(
+            EventType.LAB_REMOVED,
+            EventData(
+                source=self,
+                old_value=lab_name,
+                total_labs=len(self.labs)
+            )
+        )
+        
         return True
 
     def edit_lab(self, old_name: str, new_name: str) -> bool:
@@ -90,6 +130,16 @@ class LabManager:
 
         index = self.labs.index(old_name)
         self.labs[index] = new_name
+        
+        # Notify observers of the update
+        self.notify_observers(
+            EventType.LAB_UPDATED,
+            EventData(
+                source=self,
+                old_value=old_name,
+                new_value=new_name
+            )
+        )
         return True
 
     def get_labs(self) -> List[str]:
@@ -129,9 +179,7 @@ class LabManager:
         Returns:
             Dictionary with 'labs' key containing list of lab names
         """
-        return {
-            'labs': self.labs
-        }
+        return {"labs": self.labs}
 
     def save_config(self, config: Dict) -> Dict:
         """
@@ -143,7 +191,7 @@ class LabManager:
         Returns:
             Updated configuration dictionary
         """
-        config['labs'] = self.labs
+        config["labs"] = self.labs
         return config
 
     def save_with_combined_config(self, config: CombinedConfig) -> CombinedConfig:
@@ -157,12 +205,13 @@ class LabManager:
             Updated CombinedConfig object
         """
         # Update labs in the config
-        config.labs = self.labs.copy()
+        config.config.labs = self.labs.copy()
         return config
 
     @staticmethod
-    def update_lab_references(old_name: str, new_name: str,
-                              courses_dict: Dict, faculty_dict: Dict) -> None:
+    def update_lab_references(
+        old_name: str, new_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Update lab references in courses and faculty when a lab is renamed.
 
@@ -175,19 +224,23 @@ class LabManager:
         # Update course lab assignments
         for course_id, instances in courses_dict.items():
             for course in instances:
-                if hasattr(course, 'lab') and old_name in course.lab:
-                    course.lab = [new_name if l == old_name else l for l in course.lab]
+                if hasattr(course, "lab") and old_name in course.lab:
+                    course.lab = [new_name if lab_name == old_name else lab_name for lab_name in course.lab]
 
         # Update faculty lab preferences
         for name, faculty in faculty_dict.items():
-            if hasattr(faculty, 'lab_preferences') and old_name in faculty.lab_preferences:
+            if (
+                hasattr(faculty, "lab_preferences")
+                and old_name in faculty.lab_preferences
+            ):
                 preference = faculty.lab_preferences[old_name]
                 del faculty.lab_preferences[old_name]
                 faculty.lab_preferences[new_name] = preference
 
     @staticmethod
-    def remove_lab_references(lab_name: str,
-                              courses_dict: Dict, faculty_dict: Dict) -> None:
+    def remove_lab_references(
+        lab_name: str, courses_dict: Dict, faculty_dict: Dict
+    ) -> None:
         """
         Remove lab references from courses and faculty when a lab is deleted.
 
@@ -199,10 +252,13 @@ class LabManager:
         # Remove from course lab assignments
         for course_id, instances in courses_dict.items():
             for course in instances:
-                if hasattr(course, 'lab') and lab_name in course.lab:
-                    course.lab = [l for l in course.lab if l != lab_name]
+                if hasattr(course, "lab") and lab_name in course.lab:
+                    course.lab = [course_lab for course_lab in course.lab if course_lab != lab_name]
 
         # Remove from faculty lab preferences
         for name, faculty in faculty_dict.items():
-            if hasattr(faculty, 'lab_preferences') and lab_name in faculty.lab_preferences:
+            if (
+                hasattr(faculty, "lab_preferences")
+                and lab_name in faculty.lab_preferences
+            ):
                 del faculty.lab_preferences[lab_name]

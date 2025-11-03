@@ -1,18 +1,24 @@
-from PyQt5.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QPushButton,
-    QListWidget, QListWidgetItem, QLabel, QLineEdit,
-    QDialogButtonBox, QMessageBox
-)
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont
+from PyQt5.QtWidgets import ( # type : ignore
+    QDialog,
+    QVBoxLayout,
+    QHBoxLayout,
+    QPushButton,
+    QListWidget,
+    QLabel,
+    QLineEdit,
+    QDialogButtonBox,
+    QMessageBox,
+) # type : ignore
+from PyQt5.QtCore import Qt # type : ignore
+from PyQt5.QtGui import QFont # type : ignore
 
 BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
 )
-TITLE_FONT = QFont('Arial', 19, QFont.Bold)
-LABEL_FONT = QFont('Arial', 15)
-BUTTON_FONT = QFont('Arial', 15)
+TITLE_FONT = QFont("Arial", 19, QFont.Bold)
+LABEL_FONT = QFont("Arial", 15)
+BUTTON_FONT = QFont("Arial", 15)
 
 
 class RoomDialog(QDialog):
@@ -28,7 +34,7 @@ class RoomDialog(QDialog):
         # Title
         title_label = QLabel("Add Room" if room_name is None else "Edit Room")
         title_label.setFont(TITLE_FONT)
-        title_label.setAlignment(Qt.AlignCenter)
+        title_label.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Room name input
         self.room_input = QLineEdit()
@@ -83,7 +89,7 @@ class RoomsDialog(QDialog):
 
         header = QLabel("Edit Rooms")
         header.setFont(TITLE_FONT)
-        header.setAlignment(Qt.AlignCenter)
+        header.setAlignment(Qt.AlignCenter) # type : ignore
 
         # Room list
         self.room_list = QListWidget()
@@ -96,8 +102,13 @@ class RoomsDialog(QDialog):
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
 
-        for b in (self.add_button, self.edit_button, self.delete_button,
-                  self.save_button, self.cancel_button):
+        for b in (
+            self.add_button,
+            self.edit_button,
+            self.delete_button,
+            self.save_button,
+            self.cancel_button,
+        ):
             b.setFont(BUTTON_FONT)
             b.setStyleSheet(BUTTON_STYLE)
 
@@ -128,70 +139,190 @@ class RoomsDialog(QDialog):
         main_layout.addLayout(list_layout)
         main_layout.addLayout(button_row)
 
-        # Populate list
-        self.refresh_rooms()
+        # Populate list and validate initialization
+        try:
+            self.refresh_rooms()
+            # Validate that the controller is working
+            rooms_count = len(self.controller.get_rooms())
+            print(f"Room Manager initialized with {rooms_count} rooms")  # Debug info
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Initialization Error",
+                f"Failed to initialize room manager: {str(e)}"
+            )
 
     def refresh_rooms(self):
         """Update the room list."""
         self.room_list.clear()
-        for room in sorted(self.controller.get_rooms()):
-            self.room_list.addItem(room)
+        try:
+            rooms = self.controller.get_rooms()
+            for room in sorted(rooms):
+                self.room_list.addItem(room)
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Error",
+                f"Failed to refresh room list: {str(e)}"
+            )
 
     def add_room(self):
         """Add a new room."""
         dialog = RoomDialog(self)
         if dialog.exec_() == QDialog.Accepted:
             if dialog.result_room:
-                success = self.controller.add_room(dialog.result_room)
-                if success:
-                    QMessageBox.information(self, "Success", f"Room '{dialog.result_room}' added successfully.")
-                    self.refresh_rooms()
-                else:
-                    QMessageBox.warning(self, "Error", f"Room '{dialog.result_room}' already exists.")
+                try:
+                    success = self.controller.add_room(dialog.result_room)
+                    if success:
+                        # Update the combined config with the new room
+                        try:
+                            with self.combined_config.edit_mode() as editable_config:
+                                editable_config.config.rooms = self.controller.get_rooms()
+                        except Exception as e:
+                            QMessageBox.warning(
+                                self,
+                                "Warning", 
+                                f"Room added but failed to save to config: {str(e)}"
+                            )
+                            return
+                            
+                        QMessageBox.information(
+                            self,
+                            "Success",
+                            f"Room '{dialog.result_room}' added successfully.",
+                        )
+                        self.refresh_rooms()
+                    else:
+                        QMessageBox.warning(
+                            self, "Error", f"Room '{dialog.result_room}' already exists."
+                        )
+                except ValueError as e:
+                    QMessageBox.warning(
+                        self,
+                        "Error",
+                        f"Failed to add room: {str(e)}"
+                    )
+                except Exception as e:
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"Unexpected error while adding room: {str(e)}"
+                    )
 
     def edit_room(self):
         """Edit selected room."""
         item = self.room_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No room selected", "Please select a room to edit.")
+            QMessageBox.information(
+                self, "No room selected", "Please select a room to edit."
+            )
             return
 
         old_name = item.text()
         dialog = RoomDialog(self, room_name=old_name)
         if dialog.exec_() == QDialog.Accepted:
             if dialog.result_room and dialog.result_room != old_name:
-                success = self.controller.edit_room(old_name, dialog.result_room)
-                if success:
-                    # Update references in courses and faculty
+                # Step 1: Clean and validate the new name first
+                new_room_name = dialog.result_room.strip()
+                if not new_room_name:
+                    QMessageBox.warning(self, "Error", "Room name cannot be empty")
+                    return
+                
+                current_rooms = self.controller.get_rooms()
+                if new_room_name in current_rooms:
+                    QMessageBox.warning(self, "Error", f"Room '{new_room_name}' already exists")
+                    return
+                    
+                try:
+                    # Step 2: Update the controller's room list
+                    print(f"DEBUG: Attempting to edit '{old_name}' to '{new_room_name}'")
+                    print(f"DEBUG: Current rooms: {current_rooms}")
+                    
+                    success = self.controller.edit_room(old_name, new_room_name)
+                    print(f"DEBUG: Edit result: {success}")
+                    
+                    if not success:
+                        QMessageBox.warning(
+                            self,
+                            "Error",
+                            f"Failed to rename room. Room '{old_name}' may not exist.",
+                        )
+                        return
+                    
+                    # Step 3: Update references in the combined config
                     try:
+                        if not hasattr(self.combined_config, 'edit_mode'):
+                            raise AttributeError("CombinedConfig does not have edit_mode method")
+                        
+                        print("DEBUG: Starting config update")
                         with self.combined_config.edit_mode() as editable_config:
+                            print("DEBUG: In edit mode")
+                            
                             # Update course room assignments
                             for course in editable_config.config.courses:
-                                if hasattr(course, 'room') and isinstance(course.room, list):
-                                    course.room = [dialog.result_room if r == old_name else r for r in course.room]
+                                if hasattr(course, "room") and isinstance(course.room, list):
+                                    course.room = [
+                                        new_room_name if r == old_name else r
+                                        for r in course.room
+                                    ]
 
                             # Update faculty room preferences
                             for faculty in editable_config.config.faculty:
-                                if hasattr(faculty, 'room_preferences') and isinstance(faculty.room_preferences, dict):
+                                if hasattr(faculty, "room_preferences") and isinstance(
+                                    faculty.room_preferences, dict
+                                ):
                                     if old_name in faculty.room_preferences:
                                         preference = faculty.room_preferences[old_name]
                                         del faculty.room_preferences[old_name]
-                                        faculty.room_preferences[dialog.result_room] = preference
+                                        faculty.room_preferences[new_room_name] = preference
+                            
+                            # Update the rooms list in the config
+                            editable_config.config.rooms = self.controller.get_rooms()
+                            print("DEBUG: Config updated successfully")
+                        
+                        print("DEBUG: Edit mode completed")
+                        
                     except Exception as e:
-                        QMessageBox.warning(self, "Warning", f"Room renamed but failed to update references:\n{e}")
+                        print(f"DEBUG: Exception in config update: {str(e)}")
+                        # If config update fails, revert the controller change
+                        self.controller.edit_room(new_room_name, old_name)  # Revert
+                        QMessageBox.warning(
+                            self,
+                            "Error",
+                            f"Failed to update configuration: {str(e)}"
+                        )
+                        return
 
-                    QMessageBox.information(self, "Success",
-                        f"Room '{old_name}' renamed to '{dialog.result_room}'.\n"
-                        "All course and faculty references have been updated.")
+                    QMessageBox.information(
+                        self,
+                        "Success",
+                        f"Room '{old_name}' renamed to '{new_room_name}'.\n"
+                        "All course and faculty references have been updated.",
+                    )
                     self.refresh_rooms()
-                else:
-                    QMessageBox.warning(self, "Error", f"Failed to rename room. '{dialog.result_room}' may already exist.")
+                    
+                except ValueError as e:
+                    print(f"DEBUG: ValueError caught: {str(e)}")
+                    QMessageBox.warning(
+                        self,
+                        "Validation Error", 
+                        f"Failed to rename room: {str(e)}"
+                    )
+                except Exception as e:
+                    print(f"DEBUG: Unexpected exception: {str(e)}")
+                    QMessageBox.critical(
+                        self,
+                        "Error",
+                        f"Unexpected error while renaming room: {str(e)}"
+                    )
 
     def delete_room(self):
         """Delete selected room."""
         item = self.room_list.currentItem()
         if not item:
-            QMessageBox.information(self, "No room selected", "Please select a room to delete.")
+            QMessageBox.information(
+                self, "No room selected", "Please select a room to delete."
+            )
             return
 
         room_name = item.text()
@@ -202,11 +333,17 @@ class RoomsDialog(QDialog):
 
         try:
             for course in self.combined_config.config.courses:
-                if hasattr(course, 'room') and isinstance(course.room, list) and room_name in course.room:
+                if (
+                    hasattr(course, "room")
+                    and isinstance(course.room, list)
+                    and room_name in course.room
+                ):
                     affected_courses.append(course.course_id)
 
             for faculty in self.combined_config.config.faculty:
-                if hasattr(faculty, 'room_preferences') and isinstance(faculty.room_preferences, dict):
+                if hasattr(faculty, "room_preferences") and isinstance(
+                    faculty.room_preferences, dict
+                ):
                     if room_name in faculty.room_preferences:
                         affected_faculty.append(faculty.name)
         except Exception:
@@ -215,7 +352,9 @@ class RoomsDialog(QDialog):
         # Build confirmation message
         impact_msg = f"Delete room '{room_name}'?\n\n"
         if affected_courses:
-            impact_msg += f"This will remove the room from {len(affected_courses)} course(s):\n"
+            impact_msg += (
+                f"This will remove the room from {len(affected_courses)} course(s):\n"
+            )
             impact_msg += ", ".join(affected_courses[:5])
             if len(affected_courses) > 5:
                 impact_msg += f" and {len(affected_courses) - 5} more"
@@ -229,36 +368,63 @@ class RoomsDialog(QDialog):
 
         confirm = QMessageBox.question(self, "Confirm Deletion", impact_msg)
         if confirm == QMessageBox.Yes:
-            success = self.controller.delete_room(room_name)
-            if success:
-                # Remove references
-                try:
-                    with self.combined_config.edit_mode() as editable_config:
-                        # Remove from courses
-                        for course in editable_config.config.courses:
-                            if hasattr(course, 'room') and isinstance(course.room, list):
-                                if room_name in course.room:
-                                    course.room = [r for r in course.room if r != room_name]
+            try:
+                success = self.controller.delete_room(room_name)
+                if success:
+                    # Remove references and update room list
+                    try:
+                        if not hasattr(self.combined_config, 'edit_mode'):
+                            raise AttributeError("CombinedConfig does not have edit_mode method")
+                        with self.combined_config.edit_mode() as editable_config:
+                            # First, update the rooms list in the config
+                            editable_config.config.rooms = self.controller.get_rooms()
+                            
+                            # Remove from courses
+                            for course in editable_config.config.courses:
+                                if hasattr(course, "room") and isinstance(
+                                    course.room, list
+                                ):
+                                    if room_name in course.room:
+                                        course.room = [
+                                            r for r in course.room if r != room_name
+                                        ]
 
-                        # Remove from faculty
-                        for faculty in editable_config.config.faculty:
-                            if hasattr(faculty, 'room_preferences') and isinstance(faculty.room_preferences, dict):
-                                if room_name in faculty.room_preferences:
-                                    del faculty.room_preferences[room_name]
-                except Exception as e:
-                    QMessageBox.warning(self, "Warning", f"Room deleted but failed to update references:\n{e}")
+                            # Remove from faculty
+                            for faculty in editable_config.config.faculty:
+                                if hasattr(faculty, "room_preferences") and isinstance(
+                                    faculty.room_preferences, dict
+                                ):
+                                    if room_name in faculty.room_preferences:
+                                        del faculty.room_preferences[room_name]
+                    except Exception as e:
+                        QMessageBox.warning(
+                            self,
+                            "Warning",
+                            f"Room deleted but failed to update references:\n{e}",
+                        )
+                        return
 
-                QMessageBox.information(self, "Success", f"Room '{room_name}' deleted successfully.")
-                self.refresh_rooms()
-            else:
-                QMessageBox.warning(self, "Error", f"Failed to delete room '{room_name}'.")
+                    QMessageBox.information(
+                        self, "Success", f"Room '{room_name}' deleted successfully."
+                    )
+                    self.refresh_rooms()
+                else:
+                    QMessageBox.warning(
+                        self, "Error", f"Failed to delete room '{room_name}'. Room may not exist."
+                    )
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    "Error",
+                    f"Unexpected error while deleting room: {str(e)}"
+                )
 
     def save_and_close(self):
         """Save changes and close."""
         try:
-            if self.controller.save_to_combined_config(self.combined_config):
-                self.accept()
-            else:
-                QMessageBox.critical(self, "Error", "Failed to save")
+            # Ensure final synchronization of room data
+            with self.combined_config.edit_mode() as editable_config:
+                editable_config.config.rooms = self.controller.get_rooms()
+            self.accept()
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to save: {str(e)}")
