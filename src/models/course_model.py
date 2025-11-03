@@ -2,6 +2,7 @@
 
 import json
 from typing import Dict, List, Set, Optional
+from src.observer_pattern import Observable, EventType, EventData
 
 
 class Course:
@@ -32,8 +33,16 @@ class Course:
             raise ValueError("Credits must be positive")
 
 
-class CourseManager:
+class CourseManager(Observable):
+    """
+    Course Manager with Observer pattern support.
+    
+    This class manages course data and notifies observers when
+    courses are added, updated, or removed.
+    """
+    
     def __init__(self, schedule: Optional[Dict[str, List[Course]]] = None) -> None:
+        Observable.__init__(self)  # Initialize observer pattern
         self.courses: Dict[str, List[Course]] = schedule or {}
         self.rooms: Set[str] = set()
         self.labs: Set[str] = set()
@@ -43,8 +52,9 @@ class CourseManager:
 
     def load_courses(self, courses_data: List[Dict]) -> None:
         """
-        Load the course data from JSON files.
+        Load the course data from JSON files and notify observers.
         """
+        loaded_courses = []
         for cd in courses_data:
             try:
                 course = Course(
@@ -55,30 +65,58 @@ class CourseManager:
                     conflicts=list(cd.get("conflicts", [])),
                     faculty=list(cd.get("faculty", [])),
                 )
-                self.add_course(course)
+                self.add_course(course, notify=False)  # Don't notify for individual adds during load
+                loaded_courses.append(course)
             except (ValueError, TypeError) as e:
                 print(f"warning invalid course data {e}")
+        
+        # Notify observers that courses have been loaded
+        if loaded_courses:
+            self.notify_observers(
+                EventType.COURSES_LOADED,
+                EventData(
+                    source=self,
+                    new_value=loaded_courses,
+                    count=len(loaded_courses)
+                )
+            )
 
-    def add_course(self, course: Course) -> None:
+    def add_course(self, course: Course, notify: bool = True) -> None:
         """
-        Add a course to the database.
+        Add a course to the database and notify observers.
 
         Creates a new list for course_id if not present.
         Appends this course instance to the list for its course_id.
         Updates resource sets (rooms, labs, faculty).
+        
         :param course: Course object to add
+        :param notify: Whether to notify observers (default: True)
         """
         if course.course_id not in self.courses:
             self.courses[course.course_id] = []
+        
         self.courses[course.course_id].append(course)
+        
         # Update with this course's data.
         self.rooms.update(course.room)
         self.labs.update(course.lab)
         self.faculty.update(course.faculty)
+        
+        # Notify observers of the new course
+        if notify:
+            self.notify_observers(
+                EventType.COURSE_ADDED,
+                EventData(
+                    source=self,
+                    new_value=course,
+                    course_id=course.course_id,
+                    total_courses=self.get_course_count()
+                )
+            )
 
     def delete_course(self, course_id: str, index: int) -> bool:
         """
-        Delete the specified course from the schedule.
+        Delete the specified course from the schedule and notify observers.
 
         Removes the course at (course_id, index).
         If list becomes empty, removes the course_id key.
@@ -87,16 +125,33 @@ class CourseManager:
         :param course_id: Course ID to delete
         :param index: Course index to delete
         :return: True if deleted, False if not
-
         """
         if course_id not in self.courses:
             return False
+            
         if 0 <= index < len(self.courses[course_id]):
+            # Store reference to course before deletion for notification
+            deleted_course = self.courses[course_id][index]
+            
             self.courses[course_id].pop(index)  # remove the instance
             if not self.courses[course_id]:
                 del self.courses[course_id]
-        self.get_resources()  # refresh resources to remove old values
-        return True
+            
+            self.get_resources()  # refresh resources to remove old values
+            
+            # Notify observers of the deletion
+            self.notify_observers(
+                EventType.COURSE_REMOVED,
+                EventData(
+                    source=self,
+                    old_value=deleted_course,
+                    course_id=course_id,
+                    total_courses=self.get_course_count()
+                )
+            )
+            return True
+        
+        return False
 
     def get_resources(self) -> None:
         """
@@ -138,10 +193,18 @@ class CourseManager:
         Get all courses.
         """
         return self.courses.copy()
+    
+    def get_course_count(self) -> int:
+        """
+        Get the total number of course instances across all course IDs.
+        
+        :return: Total number of courses
+        """
+        return sum(len(instances) for instances in self.courses.values())
 
     def modify_course(self, course_id: str, index: int, new_course: Course) -> bool:
         """
-        Modify the specified course in the schedule.
+        Modify the specified course in the schedule and notify observers.
         """
         if course_id not in self.courses or not (
             0 <= index < len(self.courses[course_id])
@@ -150,8 +213,24 @@ class CourseManager:
         if new_course.credits <= 0:
             raise ValueError("Credits must be positive")
 
+        # Store old course for notification
+        old_course = self.courses[course_id][index]
+        
         self.courses[course_id][index] = new_course
         self.get_resources()
+        
+        # Notify observers of the update
+        self.notify_observers(
+            EventType.COURSE_UPDATED,
+            EventData(
+                source=self,
+                old_value=old_course,
+                new_value=new_course,
+                course_id=course_id,
+                index=index
+            )
+        )
+        
         return True
 
     def course_exists(self, course_id: str) -> bool:

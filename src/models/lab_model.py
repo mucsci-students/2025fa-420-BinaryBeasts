@@ -2,25 +2,31 @@
 
 from typing import List, Dict
 from scheduler.config import CombinedConfig
+from src.observer_pattern import Observable, EventType, EventData
 
 
-class LabManager:
-    """Manages lab data with support for both dict-based and CombinedConfig-based workflows."""
+class LabManager(Observable):
+    """
+    Lab Manager with Observer pattern support.
+    
+    Manages lab data and notifies observers when labs are added, updated, or removed.
+    """
 
     def __init__(self, config):
         """
-        Initialize LabManager.
+        Initialize LabManager with Observer pattern support.
 
         Args:
             config: Optional CombinedConfig object. If provided, loads labs from it.
         """
+        Observable.__init__(self)  # Initialize observer pattern
         self.labs: List[str] = []
         if config:
             self.load_labs(config)
 
     def load_labs(self, config: CombinedConfig) -> None:
         """
-        Load labs from a CombinedConfig object.
+        Load labs from a CombinedConfig object and notify observers.
 
         Args:
             config: CombinedConfig object containing lab data
@@ -29,13 +35,23 @@ class LabManager:
         if hasattr(config, "config") and hasattr(config.config, "labs"):
             self.labs = list(config.config.labs) if config.config.labs else []
         elif hasattr(config, "labs"):
-            self.labs = list(self.config.labs) if config.labs else []
+            self.labs = list(config.labs) if config.labs else []
         else:
             self.labs = []
+        
+        # Notify observers that labs have been loaded
+        self.notify_observers(
+            EventType.LABS_LOADED,
+            EventData(
+                source=self,
+                new_value=self.labs.copy(),
+                count=len(self.labs)
+            )
+        )
 
     def add_lab(self, lab_name: str) -> bool:
         """
-        Add a new lab.
+        Add a new lab and notify observers.
 
         Args:
             lab_name: Name of the lab to add
@@ -50,11 +66,22 @@ class LabManager:
             return False
 
         self.labs.append(lab_name)
+        
+        # Notify observers of the new lab
+        self.notify_observers(
+            EventType.LAB_ADDED,
+            EventData(
+                source=self,
+                new_value=lab_name,
+                total_labs=len(self.labs)
+            )
+        )
+        
         return True
 
     def delete_lab(self, lab_name: str) -> bool:
         """
-        Delete a lab.
+        Delete a lab and notify observers.
 
         Args:
             lab_name: Name of the lab to delete
@@ -66,6 +93,17 @@ class LabManager:
             return False
 
         self.labs.remove(lab_name)
+        
+        # Notify observers of the deletion
+        self.notify_observers(
+            EventType.LAB_REMOVED,
+            EventData(
+                source=self,
+                old_value=lab_name,
+                total_labs=len(self.labs)
+            )
+        )
+        
         return True
 
     def edit_lab(self, old_name: str, new_name: str) -> bool:
@@ -90,6 +128,16 @@ class LabManager:
 
         index = self.labs.index(old_name)
         self.labs[index] = new_name
+        
+        # Notify observers of the update
+        self.notify_observers(
+            EventType.LAB_UPDATED,
+            EventData(
+                source=self,
+                old_value=old_name,
+                new_value=new_name
+            )
+        )
         return True
 
     def get_labs(self) -> List[str]:

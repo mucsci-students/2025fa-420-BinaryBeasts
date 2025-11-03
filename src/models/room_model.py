@@ -2,25 +2,32 @@
 
 from typing import List, Dict
 from scheduler.config import CombinedConfig
+from src.observer_pattern import Observable, EventType, EventData
+from src.observer_pattern import Observable, EventType, EventData
 
 
-class RoomManager:
-    """Manages room data with support for both dict-based and CombinedConfig-based workflows."""
+class RoomManager(Observable):
+    """
+    Room Manager with Observer pattern support.
+    
+    Manages room data and notifies observers when rooms are added, updated, or removed.
+    """
 
     def __init__(self, config):
         """
-        Initialize RoomManager.
+        Initialize RoomManager with Observer pattern support.
 
         Args:
             config: Optional CombinedConfig object. If provided, loads rooms from it.
         """
+        Observable.__init__(self)  # Initialize observer pattern
         self.rooms: List[str] = []
         if config:
             self.load_rooms(config)
 
     def load_rooms(self, config: CombinedConfig) -> None:
         """
-        Load rooms from a CombinedConfig object.
+        Load rooms from a CombinedConfig object and notify observers.
 
         Args:
             config: CombinedConfig object containing room data
@@ -32,10 +39,20 @@ class RoomManager:
             self.rooms = list(config.rooms or [])  # type: ignore[arg-type]
         else:
             self.rooms = []
+        
+        # Notify observers that rooms have been loaded
+        self.notify_observers(
+            EventType.ROOMS_LOADED,
+            EventData(
+                source=self,
+                new_value=self.rooms.copy(),
+                count=len(self.rooms)
+            )
+        )
 
     def add_room(self, room_name: str) -> bool:
         """
-        Add a new room.
+        Add a new room and notify observers.
 
         Args:
             room_name: Name of the room to add
@@ -50,11 +67,22 @@ class RoomManager:
             return False
 
         self.rooms.append(room_name)
+        
+        # Notify observers of the new room
+        self.notify_observers(
+            EventType.ROOM_ADDED,
+            EventData(
+                source=self,
+                new_value=room_name,
+                total_rooms=len(self.rooms)
+            )
+        )
+        
         return True
 
     def delete_room(self, room_name: str) -> bool:
         """
-        Delete a room.
+        Delete a room and notify observers.
 
         Args:
             room_name: Name of the room to delete
@@ -66,6 +94,17 @@ class RoomManager:
             return False
 
         self.rooms.remove(room_name)
+        
+        # Notify observers of the deletion
+        self.notify_observers(
+            EventType.ROOM_REMOVED,
+            EventData(
+                source=self,
+                old_value=room_name,
+                total_rooms=len(self.rooms)
+            )
+        )
+        
         return True
 
     def edit_room(self, old_name: str, new_name: str) -> bool:
@@ -90,6 +129,16 @@ class RoomManager:
 
         index = self.rooms.index(old_name)
         self.rooms[index] = new_name
+        
+        # Notify observers of the update
+        self.notify_observers(
+            EventType.ROOM_UPDATED,
+            EventData(
+                source=self,
+                old_value=old_name,
+                new_value=new_name
+            )
+        )
         return True
 
     def get_rooms(self) -> List[str]:

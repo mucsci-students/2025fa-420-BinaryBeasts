@@ -130,11 +130,34 @@ class FacultyDialog(QDialog):
         # Load times
         for day, time_input in self.time_inputs.items():
             if day in faculty.times and faculty.times[day]:
-                time_input.setText(
-                    faculty.times[day][0]
-                    if isinstance(faculty.times[day], list)
-                    else faculty.times[day]
-                )
+                try:
+                    time_value = faculty.times[day]
+                    
+                    # Handle different time value formats
+                    if isinstance(time_value, list) and time_value:
+                        # If it's a list, take the first item
+                        time_obj = time_value[0]
+                    else:
+                        # If it's a single value
+                        time_obj = time_value
+                    
+                    # Convert TimeRange object to string format
+                    if hasattr(time_obj, 'start') and hasattr(time_obj, 'end'):
+                        # TimeRange object with start and end
+                        time_str = f"{time_obj.start}-{time_obj.end}"
+                    elif isinstance(time_obj, str):
+                        # Already a string
+                        time_str = time_obj
+                    else:
+                        # Convert to string as fallback
+                        time_str = str(time_obj)
+                    
+                    time_input.setText(time_str)
+                    
+                except Exception as e:
+                    # If any error occurs, just set empty string and continue
+                    print(f"Warning: Could not load time for {day}: {e}")
+                    time_input.setText("")
 
         # Load preferences
         if faculty.course_preferences:
