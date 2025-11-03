@@ -9,6 +9,11 @@ from PyQt5.QtCore import Qt, QRect
 
 from src.controllers.schedules_controller import generate_controller
 from src.models.room_day_model import min_max_hours, TimeBlock
+from hashlib import sha1
+_COLOR_CACHE = {}
+_USED_HUES = []
+_GOLDEN_ANGLE = 137.508
+_MIN_HUE_DIST = 18
 
 
 DAY_LABELS = ["MON", "TUE", "WED", "THU", "FRI"]
@@ -21,16 +26,20 @@ MIN_BLOCK_HEIGHT = 20  # Minimum height for text readability
 
 
 def _key_color(key: str) -> QColor:
-    # Deterministic color hashed from an arbitrary key (course id)
-    h = 0x10293847
-    for ch in key:
-        h = (h ^ ord(ch)) * 2654435761 & 0xFFFFFFFF
-    hue = h % 360
-    # Convert to RGB approx via HSV
-    color = QColor()
-    color.setHsv(hue, 200, 180)
-    return color
+    """Generate a stable, soft color per course (labs share the same color)."""
+    clean = key.replace("(Lab)", "").replace("Lab", "").strip().lower()
+    if clean in _COLOR_CACHE:
+        return QColor(_COLOR_CACHE[clean])
 
+    hue = int.from_bytes(sha1(clean.encode()).digest()[:2], "big") % 360
+    for used in _USED_HUES:
+        if abs(hue - used) < _MIN_HUE_DIST or abs(hue - used) > 360 - _MIN_HUE_DIST:
+            hue = (hue + _GOLDEN_ANGLE) % 360
+    color = QColor()
+    color.setHsv(int(hue), 120, 215)
+    _USED_HUES.append(int(hue))
+    _COLOR_CACHE[clean] = QColor(color)
+    return color
 
 class RoomPanel(QWidget):
     """Canvas panel that draws one location (room or lab) schedule across days."""
@@ -101,11 +110,7 @@ class RoomPanel(QWidget):
             rect = QRect(x, y, w, h)
             
             # Color by course id with better contrast
-            color = _key_color(b.course)
-            fill = QColor(color)
-            if getattr(b, "is_lab", False):
-                # More distinct lab coloring
-                fill = QColor(max(0, color.red() - 20), min(255, color.green() + 40), max(0, color.blue() - 10))
+            fill = QColor(_key_color(b.course))
             
             # Draw block with border
             p.fillRect(rect, fill)
@@ -140,7 +145,7 @@ class RoomPanel(QWidget):
             p.setClipRect(rect.adjusted(2, 2, -2, -2))  # Clip with margin
             
             # Use white text on dark backgrounds, black on light
-            text_color = QColor("white") if color.lightness() < 128 else QColor("black")
+            text_color = QColor("white") if fill.lightness() < 128 else QColor("black")
             p.setPen(QPen(text_color))
 
             if h >= needed_two and w > 40:
@@ -248,11 +253,7 @@ class FacultyPanel(QWidget):
             h = max(MIN_BLOCK_HEIGHT, (b.duration * 80) // 60)
 
             rect = QRect(x, y, w, h)
-            color = _key_color(b.course)
-            fill = QColor(color)
-            if getattr(b, "is_lab", False):
-                # Consistent lab coloring with RoomPanel
-                fill = QColor(max(0, color.red() - 20), min(255, color.green() + 40), max(0, color.blue() - 10))
+            fill = QColor(_key_color(b.course))
             
             # Draw block with border
             p.fillRect(rect, fill)
@@ -265,7 +266,7 @@ class FacultyPanel(QWidget):
                 p.setClipRect(rect.adjusted(2, 2, -2, -2))
                 
                 # Choose text color based on background
-                text_color = QColor("white") if color.lightness() < 128 else QColor("black")
+                text_color = QColor("white") if fill.lightness() < 128 else QColor("black")
                 p.setPen(QPen(text_color))
                 
                 # Prepare fonts

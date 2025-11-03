@@ -3,10 +3,11 @@ import sys
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QLabel, QScrollArea, QComboBox, QTableWidget,
                              QTableWidgetItem, QHeaderView, QApplication,
-                             QFileDialog, QMessageBox)
+                             QFileDialog, QMessageBox, QCheckBox)
 from PyQt5.QtGui import QFont, QColor
 from PyQt5.QtCore import Qt
 from src.controllers.schedules_controller import generate_controller
+from src.views.gui.schedule_visualization_view import RoomPanel, FacultyPanel
 
 FONT = QFont("Arial", 13)
 FONT2 = QFont("Arial", 14)
@@ -41,10 +42,11 @@ TABLE_STYLE = """
 
 
 class SchedulesGUI(QWidget):
-    def __init__(self, schedules=None, config=None):
+    def __init__(self, schedules=None, config=None, parent_gui=None):
         super().__init__()
         self.schedules = schedules if schedules else []
         self.config = config
+        self.parent_gui = parent_gui
         # Use the schedules_controller for navigation and saving logic
         self.controller = generate_controller(self.schedules)
         # Room view state
@@ -80,19 +82,13 @@ class SchedulesGUI(QWidget):
         view_label.setFont(FONT2)
         header_layout.addWidget(view_label)
 
+        #checkbox
         self.view_selector = QComboBox()
-        self.view_selector.addItems(['All Schedules', 'By Room', 'By Faculty'])
+        self.view_selector.addItems(['By Room', 'By Faculty', 'All Schedules'])
         self.view_selector.setFont(FONT)
         self.view_selector.setMinimumWidth(150)
         self.view_selector.currentTextChanged.connect(self.view_by)
         header_layout.addWidget(self.view_selector)
-
-        # Visual schedule view (button in header)
-        self.VisualizeButton = QPushButton('Visualize Schedules')
-        self.VisualizeButton.setFont(QFont('Arial', 10))
-        self.VisualizeButton.setStyleSheet('padding: 6px 10px; background-color: #607D8B; color: white; border-radius: 5px;')
-        self.VisualizeButton.clicked.connect(self.open_visualization)
-        header_layout.addWidget(self.VisualizeButton)
 
         self.layout.addLayout(header_layout)
 
@@ -151,6 +147,12 @@ class SchedulesGUI(QWidget):
         self.SaveButton.clicked.connect(self.save_schedule)
         action_layout.addWidget(self.SaveButton)
 
+        # checkbox to toggle single vs all
+        self.show_all_checkbox = QCheckBox('Show all rooms')
+        self.show_all_checkbox.setFont(FONT)
+        self.show_all_checkbox.stateChanged.connect(self.show_all_toggled)
+        header_layout.addWidget(self.show_all_checkbox)
+
         action_layout.addStretch(1)
 
         self.BackButton = QPushButton('← Back to Main Menu')
@@ -163,6 +165,9 @@ class SchedulesGUI(QWidget):
         self.layout.addLayout(action_layout)
         self.setLayout(self.layout)
 
+        self.view_selector.setCurrentText('By Room')
+        self.view_by_room()
+
         self.fill_jump_selector()
 
     def open_visualization(self):
@@ -172,11 +177,11 @@ class SchedulesGUI(QWidget):
             return
         try:
             from src.views.gui.schedule_visualization_view import ScheduleVisualizationView
-            
+
             # Determine initial filter state based on current view
             initial_filter = "all"
             initial_index = 0
-            
+
             view_text = self.view_selector.currentText()
             if view_text == 'By Room' and hasattr(self, 'room_list') and self.room_list:
                 initial_filter = "room"
@@ -184,9 +189,9 @@ class SchedulesGUI(QWidget):
             elif view_text == 'By Faculty' and hasattr(self, 'faculty_list') and self.faculty_list:
                 initial_filter = "faculty"
                 initial_index = self.current_faculty_index
-            
+
             self.visualization_view = ScheduleVisualizationView(
-                self.schedules, 
+                self.schedules,
                 initial_index=self.controller.index,
                 initial_filter=initial_filter,
                 initial_item_index=initial_index
@@ -195,15 +200,164 @@ class SchedulesGUI(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open visualization:\n{e}")
 
+    def refresh_current_view(self, preserve_index: bool = True):
+        """Rebuild UI for the current schedule depending on view selection."""
+        view_text = self.view_selector.currentText()
+
+        if view_text == 'All Schedules':
+            self.generate_schedules()
+            return
+
+        # Parse the current schedule to rebuild lists
+        if not self.schedules or not self.schedules[self.controller.index]:
+            self.display_layout.addWidget(QLabel("No schedule available."))
+            return
+
+        from src.views.cli.schedules_view import parse_course_string
+        current_schedule_strings = [
+            c.as_csv() for c in self.schedules[self.controller.index] if c is not None
+        ]
+
+        if view_text == 'By Room':
+            new_map = {}
+            for s in current_schedule_strings:
+                course = parse_course_string(s)
+                if course:
+                    new_map.setdefault(course["room"], []).append(course)
+
+            # update state
+            old_idx = self.current_room_index
+            self.room_schedule_data = new_map
+            self.room_list = sorted(new_map.keys())
+
+            #  index
+            if not preserve_index or old_idx >= len(self.room_list):
+                self.current_room_index = 0
+            else:
+                self.current_room_index = old_idx
+
+            self.title.setText('Schedule Viewer — By Room')
+            self.fill_jump_selector()
+            self.display_current_room()
+            return
+
+        if view_text == 'By Faculty':
+            new_map = {}
+            for s in current_schedule_strings:
+                course = parse_course_string(s)
+                if course:
+                    new_map.setdefault(course["faculty"], []).append(course)
+
+            old_idx = self.current_faculty_index
+            self.faculty_schedule_data = new_map
+            self.faculty_list = sorted(new_map.keys())
+
+            if not preserve_index or old_idx >= len(self.faculty_list):
+                self.current_faculty_index = 0
+            else:
+                self.current_faculty_index = old_idx
+
+            self.title.setText('Schedule Viewer — By Faculty')
+            self.fill_jump_selector()
+            self.display_current_faculty()
+            return
+
     def view_by(self, view_text):
         """Handle view selector changes"""
-        if view_text == 'All Schedules':
-            self.back_to_schedule_view()
-        elif view_text == 'By Room':
+        if view_text == 'By Room':
+            self.show_all_checkbox.setText('Show all rooms')
+            self.show_all_checkbox.show()
+            self.show_all_checkbox.setChecked(False)
             self.view_by_room()
+            self.jump_selector.setEnabled(True)
         elif view_text == 'By Faculty':
+            self.show_all_checkbox.setText('Show all faculty')
+            self.show_all_checkbox.show()
+            self.show_all_checkbox.setChecked(False)
             self.view_by_faculty()
+            self.jump_selector.setEnabled(True)
+        else:  # 'All Schedules'
+            self.show_all_checkbox.hide()
+            self.back_to_schedule_view()
+            self.jump_selector.setEnabled(True)
+
         self.fill_jump_selector()
+
+    def display_all_rooms(self):
+        while self.display_layout.count():
+            item = self.display_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        by_loc = self.controller.get_room_day_blocks()
+        if not by_loc:
+            label = QLabel("No rooms found in schedule.")
+            label.setStyleSheet("color: #7f8c8d; font-size: 14px; padding: 20px;")
+            label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
+            self.display_layout.addWidget(label)
+            return
+
+        # Title
+        title = QLabel(f"Schedule {self.controller.index + 1} — All Rooms")
+        title.setFont(LABEL_FONT)
+        title.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
+        self.display_layout.addWidget(title)
+
+        for loc in sorted(by_loc.keys()):
+            panel = RoomPanel(loc, by_loc[loc], self)
+            self.display_layout.addWidget(panel)
+        self.display_layout.addStretch()
+
+    def display_all_faculty(self):
+        while self.display_layout.count():
+            item = self.display_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        # Collect blocks by faculty
+        by_loc = self.controller.get_room_day_blocks()
+        all_blocks = []
+        for room_blocks in by_loc.values():
+            all_blocks.extend(room_blocks)
+
+        if not all_blocks:
+            label = QLabel("No faculty found in schedule.")
+            label.setStyleSheet("color: #7f8c8d; font-size: 14px; padding: 20px;")
+            label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
+            self.display_layout.addWidget(label)
+            return
+
+        title = QLabel(f"Schedule {self.controller.index + 1} — All Faculty")
+        title.setFont(LABEL_FONT)
+        title.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
+        self.display_layout.addWidget(title)
+
+        by_faculty = {}
+        for b in all_blocks:
+            by_faculty.setdefault(b.faculty, []).append(b)
+
+        for faculty in sorted(by_faculty.keys()):
+            panel = FacultyPanel(faculty, by_faculty[faculty], self)
+            self.display_layout.addWidget(panel)
+        self.display_layout.addStretch()
+
+    def show_all_toggled(self, state):
+        view_text = self.view_selector.currentText()
+        show_all = self.show_all_checkbox.isChecked()
+
+        # Disable item dropdown when showing all; enable when single
+        self.jump_selector.setEnabled(not show_all)
+
+        if view_text == 'By Room':
+            if show_all:
+                self.display_all_rooms()
+            else:
+                self.display_current_room()
+        elif view_text == 'By Faculty':
+            if show_all:
+                self.display_all_faculty()
+            else:
+                self.display_current_faculty()
 
     def fill_jump_selector(self):
         """fill in dropdown based on current view"""
@@ -232,35 +386,41 @@ class SchedulesGUI(QWidget):
 
     def generate_schedules(self):
         """Display the current schedule using controller's index in table format"""
+        while self.display_layout.count():
+            item = self.display_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
         if not self.schedules:
             label = QLabel("No schedules generated yet.")
             label.setStyleSheet("color: #7f8c8d; font-size: 14px; padding: 20px;")
             label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
-
-            while self.display_layout.count():
-                item = self.display_layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-
             self.display_layout.addWidget(label)
             return
 
-        schedule = self.schedules[self.controller.index]
+        view_text = self.view_selector.currentText()
 
-        # Parse all courses
-        from src.views.cli.schedules_view import parse_course_string, get_earliest_time
+        if view_text == 'All Schedules':
+            # tabular
+            schedule = self.schedules[self.controller.index]
+            from src.views.cli.schedules_view import parse_course_string
+            courses = []
+            for course_obj in schedule:
+                if course_obj is None:
+                    continue
+                course = parse_course_string(course_obj.as_csv())
+                if course:
+                    courses.append(course)
+            title_text = f"Schedule {self.controller.index + 1} of {len(self.schedules)}"
+            self.create_schedule_table(courses, title_text)
+            return
 
-        courses = []
-        for course_obj in schedule:
-            course = parse_course_string(course_obj.as_csv())
-            if course:
-                courses.append(course)
-
-        # Sort courses by earliest time slot
-        courses_sorted = sorted(courses, key=get_earliest_time)
-
-        title_text = f"Schedule {self.controller.index + 1} of {len(self.schedules)}"
-        self.create_schedule_table(courses_sorted, title_text)
+        #By room visual
+        by_loc = self.controller.get_room_day_blocks()
+        for loc in sorted(by_loc.keys()):
+            panel = RoomPanel(loc, by_loc[loc], self)
+            self.display_layout.addWidget(panel)
+        self.display_layout.addStretch()
 
     def create_schedule_table(self, courses, title_text):
         """Create a table for schedule display"""
@@ -383,24 +543,14 @@ class SchedulesGUI(QWidget):
 
     def go_next_schedule(self):
         """Navigate to next schedule using controller logic"""
-        view_text = self.view_selector.currentText()
-        if view_text == 'All Schedules':
-            self.next_schedule()
-        elif view_text == 'By Room':
-            self.next_room()
-        elif view_text == 'By Faculty':
-            self.next_faculty()
+        self.controller.next_schedule()
+        self.refresh_current_view(preserve_index=True)
         self.fill_jump_selector()
 
     def go_previous_schedule(self):
         """Navigate to previous schedule using controller logic"""
-        view_text = self.view_selector.currentText()
-        if view_text == 'All Schedules':
-            self.previous_schedule()
-        elif view_text == 'By Room':
-            self.previous_room()
-        elif view_text == 'By Faculty':
-            self.previous_faculty()
+        self.controller.previous_schedule()
+        self.refresh_current_view(preserve_index=True)
         self.fill_jump_selector()
 
     def previous_schedule(self):
@@ -415,10 +565,12 @@ class SchedulesGUI(QWidget):
 
     def back(self):
         """Return to main menu"""
-        from src.views.gui.main_gui import MainGUI as MainMenuGUI
-
-        self.main_menu_window = MainMenuGUI()
-        self.main_menu_window.show()
+        if self.parent_gui:
+            self.parent_gui.show()
+        else:
+            from src.views.gui.main_gui import MainGUI as MainMenuGUI
+            self.main_menu_window = MainMenuGUI()
+            self.main_menu_window.show()
         self.close()
 
     def jump_to(self, index):
@@ -430,9 +582,13 @@ class SchedulesGUI(QWidget):
             self.controller.index = index
             self.generate_schedules()
         elif view_text == 'By Room':
+            if hasattr(self, 'show_all_checkbox') and self.show_all_checkbox.isChecked():
+                return
             self.current_room_index = index
             self.display_current_room()
         elif view_text == 'By Faculty':
+            if hasattr(self, 'show_all_checkbox') and self.show_all_checkbox.isChecked():
+                return
             self.current_faculty_index = index
             self.display_current_faculty()
 
@@ -465,36 +621,31 @@ class SchedulesGUI(QWidget):
         self.viewing_by_room = True
 
         self.display_current_room()
+        self.title.setText('Schedule Viewer — By Room')
 
     def display_current_room(self):
         """Display the current room's schedule in weekly grid format"""
+        while self.display_layout.count():
+            item = self.display_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
         if not self.room_list:
             label = QLabel("No rooms found in schedule.")
             label.setStyleSheet("color: #7f8c8d; font-size: 14px; padding: 20px;")
             label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
-
-            while self.display_layout.count():
-                item = self.display_layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-
             self.display_layout.addWidget(label)
             return
 
         room = self.room_list[self.current_room_index]
-        courses = self.room_schedule_data[room]
 
-        # Sort courses by earliest time slot
-        from src.views.cli.schedules_view import get_earliest_time
-        courses_sorted = sorted(courses, key=get_earliest_time)
-
-        title_text = f"Schedule {self.controller.index + 1} - Room {self.current_room_index + 1} of {len(self.room_list)}: {room}"
-
-        # Add faculty info to courses for display
-        for course in courses_sorted:
-            course['room'] = course.get('faculty', '')
-
-        self.create_schedule_table(courses_sorted, title_text)
+        # Get blocks for this room only
+        by_loc = self.controller.get_room_day_blocks()
+        if room in by_loc:
+            title = f"Schedule {self.controller.index + 1} - Room {self.current_room_index + 1} of {len(self.room_list)}: {room}"
+            panel = RoomPanel(title, by_loc[room], self)
+            self.display_layout.addWidget(panel)
+            self.display_layout.addStretch()
 
     def next_room(self):
         """Navigate to next room"""
@@ -540,28 +691,39 @@ class SchedulesGUI(QWidget):
 
     def display_current_faculty(self):
         """Display the current faculty's schedule in weekly grid format"""
+        # If "show all faculty" is checked, render list view
+        if hasattr(self, 'show_all_checkbox') and self.show_all_checkbox.isChecked():
+            self.display_all_faculty()
+            return
+        while self.display_layout.count():
+            item = self.display_layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
         if not self.faculty_list:
             label = QLabel("No faculty found in schedule.")
             label.setStyleSheet("color: #7f8c8d; font-size: 14px; padding: 20px;")
             label.setAlignment(Qt.AlignCenter)  # type: ignore[attr-defined]
-
-            while self.display_layout.count():
-                item = self.display_layout.takeAt(0)
-                if item.widget():
-                    item.widget().deleteLater()
-
             self.display_layout.addWidget(label)
             return
 
         faculty = self.faculty_list[self.current_faculty_index]
-        courses = self.faculty_schedule_data[faculty]
 
-        # Sort courses by earliest time slot
-        from src.views.cli.schedules_view import get_earliest_time
-        courses_sorted = sorted(courses, key=get_earliest_time)
+        # Get all blocks and filter by faculty
+        by_loc = self.controller.get_room_day_blocks()
+        all_blocks = []
+        for room_blocks in by_loc.values():
+            all_blocks.extend(room_blocks)
 
-        title_text = f"Schedule {self.controller.index + 1} - Faculty {self.current_faculty_index + 1} of {len(self.faculty_list)}: {faculty}"
-        self.create_schedule_table(courses_sorted, title_text)
+        faculty_blocks = [b for b in all_blocks if b.faculty == faculty]
+
+        if faculty_blocks:
+            title = f"Schedule {self.controller.index + 1} - Faculty {self.current_faculty_index + 1} of {len(self.faculty_list)}: {faculty}"
+            panel = FacultyPanel(title, faculty_blocks, self)
+            self.display_layout.addWidget(panel)
+            self.display_layout.addStretch()
+
+        self.title.setText('Schedule Viewer — By Faculty')
 
     def next_faculty(self):
         """Navigate to next faculty"""
