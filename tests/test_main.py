@@ -181,15 +181,88 @@ def test_controller_basic_methods():
     """Test that controller has expected basic methods."""
     model = main_model()
     controller = main_controller(model)
-    
+
     # Check that expected methods exist
     assert hasattr(controller, 'load_config')
     assert hasattr(controller, 'load_config_gui')
-    assert hasattr(controller, 'generate_schedules') 
+    assert hasattr(controller, 'generate_schedules')
     assert hasattr(controller, 'save_schedules')
-    
+
     # Methods should be callable
     assert callable(getattr(controller, 'load_config'))
     assert callable(getattr(controller, 'load_config_gui'))
     assert callable(getattr(controller, 'generate_schedules'))
     assert callable(getattr(controller, 'save_schedules'))
+
+
+def test_main_model_set_config():
+    """Test set_config method."""
+    model = main_model()
+
+    # Create a mock config object
+    mock_config = {"test": "config"}
+
+    # Set config
+    model.set_config(mock_config)
+
+    # Verify config was set
+    assert model.config == mock_config
+
+
+def test_main_model_set_num_schedules():
+    """Test set_num_schedules method."""
+    model = main_model()
+
+    # Initially should be 0
+    assert model.num_schedules == 0
+
+    # Set number of schedules
+    model.set_num_schedules(5)
+
+    # Verify it was set
+    assert model.num_schedules == 5
+
+
+def test_main_model_next_schedule():
+    """Test next_schedule method."""
+    model = main_model()
+
+    # Add some mock schedules
+    model.schedules = ["schedule_0", "schedule_1", "schedule_2"]
+
+    # Test accessing schedules by index
+    assert model.next_schedule(0) == "schedule_0"
+    assert model.next_schedule(1) == "schedule_1"
+    assert model.next_schedule(2) == "schedule_2"
+
+
+def test_main_model_previous_schedule():
+    """Test previous_schedule method."""
+    model = main_model()
+
+    # Add some mock schedules
+    model.schedules = ["schedule_0", "schedule_1", "schedule_2"]
+
+    # Test accessing schedules by index
+    assert model.previous_schedule(0) == "schedule_0"
+    assert model.previous_schedule(1) == "schedule_1"
+    assert model.previous_schedule(2) == "schedule_2"
+
+
+def test_main_model_set_limit():
+    """Test set_limit method."""
+    model = main_model()
+
+    # Create a mock config object with limit attribute
+    class MockConfig:
+        def __init__(self):
+            self.limit = 0
+
+    mock_config = MockConfig()
+    model.config = mock_config
+
+    # Set limit
+    model.set_limit(100)
+
+    # Verify limit was set on config
+    assert model.config.limit == 100
