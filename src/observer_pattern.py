@@ -28,6 +28,7 @@ class EventType(Enum):
     COURSE_ADDED = "course_added"
     COURSE_UPDATED = "course_updated"
     COURSE_REMOVED = "course_removed"
+    COURSES_LOADED = "courses_loaded"
     
     # Faculty-related events
     FACULTY_ADDED = "faculty_added"
@@ -39,11 +40,13 @@ class EventType(Enum):
     ROOM_ADDED = "room_added"
     ROOM_UPDATED = "room_updated"
     ROOM_REMOVED = "room_removed"
+    ROOMS_LOADED = "rooms_loaded"
     
     # Lab-related events
     LAB_ADDED = "lab_added"
     LAB_UPDATED = "lab_updated"
     LAB_REMOVED = "lab_removed"
+    LABS_LOADED = "labs_loaded"
 
 
 class Observer(ABC):
