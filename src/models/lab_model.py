@@ -33,9 +33,11 @@ class LabManager(Observable):
         """
         # Handle both CombinedConfig (config.config.labs) and SchedulerConfig (config.labs)
         if hasattr(config, "config") and hasattr(config.config, "labs"):
-            self.labs = list(config.config.labs) if config.config.labs else []
+            labs_data = getattr(config.config, "labs", None)
+            self.labs = list(labs_data) if labs_data else []
         elif hasattr(config, "labs"):
-            self.labs = list(config.labs) if config.labs else []
+            labs_data = getattr(config, "labs", None)
+            self.labs = list(labs_data) if labs_data else []
         else:
             self.labs = []
         

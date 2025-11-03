@@ -82,7 +82,9 @@ class Observable:
         self._observers: List[Observer] = []
         self._event_filters: Dict[Observer, List[EventType]] = {}
     
-    def add_observer(self, observer: Observer, event_types: List[EventType] = None) -> None:
+    def add_observer(
+        self, observer: Observer, event_types: List[EventType] | None = None
+    ) -> None:
         """
         Add an observer to be notified of events.
         

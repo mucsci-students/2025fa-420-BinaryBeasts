@@ -42,7 +42,7 @@ class ConflictResolutionObserver(Observer):
         if combined_config not in self.combined_configs:
             self.combined_configs.append(combined_config)
     
-    def update(self, event_type: EventType, data: EventData = None) -> None:
+    def update(self, event_type: EventType, data: EventData | None = None) -> None:
         """
         Handle events and resolve conflicts across managers.
         
@@ -51,6 +51,10 @@ class ConflictResolutionObserver(Observer):
             data (EventData): Additional event data
         """
         try:
+            # Skip processing if no data provided
+            if data is None:
+                return
+                
             # Handle faculty deletion - check and update courses
             if event_type == EventType.FACULTY_REMOVED:
                 self._handle_faculty_removal(data)
