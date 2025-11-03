@@ -1,10 +1,36 @@
 class main_model:
+    """
+    Main model now implementing Singleton pattern.
+    Ensuring only one instance exists throughout the application.
+    """
+    _instance = None
+
+    def __new__(cls):
+        """Create or return the singleton instance."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
     def __init__(self):
-        super().__init__()
+        """Initialize the model only once."""
+        # Only initialize once to prevent resetting state on multiple instantiations
+        if not hasattr(self, '_initialized'):
+            super().__init__()
+            self._reset()
+            self._initialized = True
+
+    def _reset(self):
+        """Reset singleton state - useful for testing and initialization."""
         self.schedules = []
         self.current_schedule_index = 0
         self.config = None
         self.num_schedules = 0
+
+    @classmethod
+    def reset_instance(cls):
+        """Force reset the singleton - for testing only."""
+        if cls._instance and hasattr(cls._instance, '_reset'):
+            cls._instance._reset()
 
     def set_config(self, config):
         self.config = config
