@@ -35,11 +35,6 @@ A comprehensive course scheduling system with both **Command-Line Interface (CLI
 - **CLI**: Full-featured command-line interface with menu-driven navigation
 - **GUI**: Modern PyQt5-based graphical interface with modal dialogs
 
-### Design Patterns Implementation
-- **Observer Pattern**: Automatic cross-manager dependency resolution - when entities are deleted or renamed, all references are automatically updated across the system
-- **Factory Pattern**: Centralized dialog creation with consistent initialization and configuration for all management interfaces
-- **Singleton Pattern**: Centralized state management for application-wide schedule data and configuration
-
 ## Prerequisites
 
 - Python 3.13.1 (or Python 3.7+)
@@ -244,9 +239,26 @@ pip install -r requirements.txt
 
 The application follows the **Model-View-Controller (MVC)** pattern:
 
-- **Models**: Manage data and business logic (CourseManager, FacultyManager, RoomManager, LabManager)
-- **Views**: Handle user interface (CLI views with static methods, GUI views with PyQt5 dialogs)
-- **Controllers**: Bridge between models and views (CourseController, FacultyController, etc.)
+- **Models**: Manage data and business logic (Course Model, Faculty Model, Room Model, Lab Model, Main Model)
+- **Views**: Handle user interface (CLI Views for command-line interface, GUI Views for graphical interface)
+- **Controllers**: Bridge between models and views (Course Controller, Faculty Controller, Room Controller, Lab Controller, etc.)
+
+### Design Patterns Implementation
+
+**Observer Pattern**: Automatic cross-manager dependency resolution
+- **Core Files**: Observer Pattern module (Observable base class, EventType enum, EventData container)
+- **Implementation**: Conflict Resolution module (ConflictResolutionObserver)
+- **Integration**: All model managers inherit from Observable and emit events when data changes
+
+**Factory Pattern**: Centralized dialog creation with consistent initialization
+- **Core Files**: Dialog Factory module (DialogFactory class, DialogType constants)
+- **Integration**: Main GUI uses factory to create all management dialogs
+- **Products**: Course, Faculty, Lab, and Room management dialogs with their controllers and managers
+
+**Singleton Pattern**: Centralized state management for application-wide data
+- **Core Files**: Main Model module (main_model class with singleton implementation)
+- **Usage**: Main Controller uses singleton for schedule and configuration management
+- **Benefits**: Ensures consistent state across the application lifecycle
 
 **Key Design Principles:**
 - Separation of concerns
