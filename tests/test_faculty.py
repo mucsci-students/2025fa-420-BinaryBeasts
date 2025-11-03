@@ -1,5 +1,6 @@
 import json
 import pytest
+from unittest.mock import MagicMock
 
 from src.models.faculty_model import Faculty, FacultyManager
 from src.controllers.faculty_controller import FacultyController
@@ -367,7 +368,7 @@ def test_save_config_with_error(tmp_path):
 
 def test_save_with_combined_config():
     """Test save_with_combined_config method (GUI-specific)."""
-    from unittest.mock import MagicMock, patch, MagicMock as Mock
+    from unittest.mock import patch
 
     mgr = FacultyManager()
 

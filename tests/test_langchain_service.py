@@ -4,14 +4,11 @@ Basic tests for AI Assistant functionality.
 Tests the main user-facing features without getting too complex.
 """
 
-import pytest
 from unittest.mock import Mock, patch
 from src.langchain_service import (
     LangChainService,
     list_courses_wrapper,
     list_faculty_wrapper,
-    list_rooms_wrapper,
-    list_labs_wrapper,
 )
 from src.models.course_model import CourseManager
 from src.models.faculty_model import FacultyManager
@@ -96,7 +93,7 @@ def test_process_command_fails_without_setup():
 
 @patch.dict('os.environ', {'OPENAI_API_KEY': 'test-api-key'})
 @patch('src.langchain_service.init_chat_model')
-@patch('src.langchain_service.create_react_agent')
+@patch('src.langchain_service.create_agent')
 def test_agent_setup_works(mock_create_agent, mock_init_model):
     """Test that agent can be set up with mocked API."""
     # Mock the LLM and agent
@@ -117,13 +114,17 @@ def test_agent_setup_works(mock_create_agent, mock_init_model):
     room_controller = Mock()
     room_controller.get_rooms.return_value = ["Roddy 136", "Roddy 140"]
 
+    # Mock config
+    mock_config = Mock()
+
     # Setup service
     service = LangChainService()
     service.setup_agent(
-        course_controller,
-        faculty_controller,
-        lab_controller,
-        room_controller
+        config=mock_config,
+        course_controller=course_controller,
+        faculty_controller=faculty_controller,
+        lab_controller=lab_controller,
+        room_controller=room_controller
     )
 
     # Verify it was set up
@@ -133,7 +134,7 @@ def test_agent_setup_works(mock_create_agent, mock_init_model):
 
 @patch.dict('os.environ', {'OPENAI_API_KEY': 'test-api-key'})
 @patch('src.langchain_service.init_chat_model')
-@patch('src.langchain_service.create_react_agent')
+@patch('src.langchain_service.create_agent')
 def test_process_command_returns_response(mock_create_agent, mock_init_model):
     """Test that processing a command returns a response."""
     # Mock the LLM and agent
@@ -149,9 +150,15 @@ def test_process_command_returns_response(mock_create_agent, mock_init_model):
     }
     mock_create_agent.return_value = mock_agent
 
-    # Setup service
+    # Setup service with proper signature
     service = LangChainService()
-    service.setup_agent(Mock(), Mock(), Mock(), Mock())
+    service.setup_agent(
+        config=Mock(),
+        course_controller=Mock(),
+        faculty_controller=Mock(),
+        lab_controller=Mock(),
+        room_controller=Mock()
+    )
 
     # Process command
     result = service.process_command("list courses")
@@ -163,7 +170,7 @@ def test_process_command_returns_response(mock_create_agent, mock_init_model):
 
 @patch.dict('os.environ', {'OPENAI_API_KEY': 'test-api-key'})
 @patch('src.langchain_service.init_chat_model')
-@patch('src.langchain_service.create_react_agent')
+@patch('src.langchain_service.create_agent')
 def test_process_command_handles_errors(mock_create_agent, mock_init_model):
     """Test that errors are handled gracefully."""
     mock_init_model.return_value = Mock()
@@ -174,7 +181,13 @@ def test_process_command_handles_errors(mock_create_agent, mock_init_model):
     mock_create_agent.return_value = mock_agent
 
     service = LangChainService()
-    service.setup_agent(Mock(), Mock(), Mock(), Mock())
+    service.setup_agent(
+        config=Mock(),
+        course_controller=Mock(),
+        faculty_controller=Mock(),
+        lab_controller=Mock(),
+        room_controller=Mock()
+    )
 
     result = service.process_command("list courses")
 

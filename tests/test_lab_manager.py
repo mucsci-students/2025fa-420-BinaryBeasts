@@ -120,7 +120,7 @@ class TestLabManager(unittest.TestCase):
 
         # The bug on line 32 causes AttributeError when trying to access self.config
         with self.assertRaises(AttributeError):
-            lab_manager = LabManager(mock_config)
+            LabManager(mock_config)
 
     def test_load_labs_with_no_labs_attribute(self):
         """Test: Should handle config with no labs attribute"""
