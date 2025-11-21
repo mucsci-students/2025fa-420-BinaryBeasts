@@ -18,6 +18,7 @@ from src.models.course_model import CourseManager
 from src.models.room_model import RoomManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
+from src.undo_manager import SnapshotUndoManager
 # Controllers and models are now handled by the factory pattern
 from src.views.gui.dialog_factory import DialogFactory, DialogType
 # Controllers and models are now handled by the factory pattern
