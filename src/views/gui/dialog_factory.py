@@ -21,6 +21,7 @@ from src.models.course_model import CourseManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
 from src.models.room_model import RoomManager
+from src.undo_manager import SnapshotUndoManager
 
 
 class DialogFactory:
@@ -66,18 +67,13 @@ class DialogFactory:
             
         else:
             raise ValueError(f"Unknown dialog type: {dialog_type}")
-    
+
     @staticmethod
     def _create_courses_dialog(config, parent, conflict_observer=None):
         """Create and configure a courses management dialog."""
         # Create course manager
         course_manager = CourseManager()
-        
-        # Attach conflict resolution observer if provided
-        if conflict_observer and hasattr(course_manager, 'add_observer'):
-            course_manager.add_observer(conflict_observer)
-            conflict_observer.register_manager('course', course_manager)
-        
+
         # Extract and format courses data from config
         courses_data = []
         for course in config.config.courses:
@@ -89,16 +85,25 @@ class DialogFactory:
                 "faculty": list(course.faculty) if hasattr(course.faculty, "__iter__") else [course.faculty],
                 "conflicts": list(course.conflicts) if hasattr(course.conflicts, "__iter__") else [course.conflicts],
             })
-        
+
         # Load data into manager (this will trigger COURSES_LOADED event)
         course_manager.load_courses(courses_data)
-        
+
+        undo_manager = SnapshotUndoManager(
+            get_state=course_manager.snapshot_state,
+            set_state=course_manager.restore_state,
+        )
+
+        # Attach conflict resolution observer if provided
+        if conflict_observer and hasattr(course_manager, 'add_observer'):
+            course_manager.add_observer(conflict_observer)
+            conflict_observer.register_manager('course', course_manager)
+
         # Create controller
-        controller = CourseController(course_manager)
-        
+        controller = CourseController(course_manager, undo_manager=undo_manager)
         # Create and return dialog
         return CoursesDialog(controller, config, parent)
-    
+
     @staticmethod
     def _create_faculty_dialog(config, parent, conflict_observer=None):
         """Create and configure a faculty management dialog."""
@@ -126,9 +131,14 @@ class DialogFactory:
         
         # Load data into manager (this will trigger FACULTY_LOADED event)
         faculty_manager.load_faculty(faculty_data)
-        
+
+        faculty_undo = SnapshotUndoManager(
+            get_state=faculty_manager.snapshot_state,
+            set_state=faculty_manager.restore_state,
+        )
+
         # Create controller
-        controller = FacultyController(faculty_manager)
+        controller = FacultyController(faculty_manager, undo_manager=faculty_undo)
         
         # Create and return dialog
         return FacultiesDialog(controller, config, parent)
@@ -138,6 +148,11 @@ class DialogFactory:
         """Create and configure a labs management dialog."""
         # Create lab manager with config
         lab_manager = LabManager(config)
+
+        lab_undo = SnapshotUndoManager(
+            get_state=lab_manager.snapshot_state,
+            set_state=lab_manager.restore_state,
+        )
         
         # Attach conflict resolution observer if provided
         if conflict_observer and hasattr(lab_manager, 'add_observer'):
@@ -145,7 +160,7 @@ class DialogFactory:
             conflict_observer.register_manager('lab', lab_manager)
         
         # Create controller
-        controller = LabController(lab_manager)
+        controller = LabController(lab_manager, undo_manager=lab_undo)
         
         # Create and return dialog
         return LabsDialog(controller, config, parent)
@@ -155,6 +170,10 @@ class DialogFactory:
         """Create and configure a rooms management dialog."""
         # Create room manager with config
         room_manager = RoomManager(config)
+        room_undo = SnapshotUndoManager(
+            get_state=room_manager.snapshot_state,
+            set_state=room_manager.restore_state,
+        )
         
         # Attach conflict resolution observer if provided
         if conflict_observer and hasattr(room_manager, 'add_observer'):
@@ -162,7 +181,7 @@ class DialogFactory:
             conflict_observer.register_manager('room', room_manager)
         
         # Create controller
-        controller = RoomController(room_manager)
+        controller = RoomController(room_manager, undo_manager=room_undo)
         
         # Create and return dialog
         return RoomsDialog(controller, config, parent)

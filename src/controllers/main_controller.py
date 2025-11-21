@@ -9,6 +9,7 @@ from src.controllers.lab_controller import LabController
 from src.models.lab_model import LabManager
 from src.controllers import schedules_controller
 from src.controllers.nl_controller import NLController
+from src.undo_manager import SnapshotUndoManager
 from src.views.cli.nl_view import NLView
 from scheduler import (
     Scheduler,
@@ -259,8 +260,14 @@ class main_controller:
 
         manager.load_courses(courses_data)
 
-        # Create controller and run
-        controller = CourseController(manager)
+        # Create undo manager *for this manager*
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+
+        # Create controller with undo support
+        controller = CourseController(manager, undo_manager=undo_manager)
         from src.views.cli.course_view_cli import CourseView
 
         while True:
@@ -285,8 +292,20 @@ class main_controller:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return
+            elif choice == "7":
+                # UNDO
+                if controller.undo():
+                    print("↩️ Undid last change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                # REDO
+                if controller.redo():
+                    print("↪️ Redid last undone change.")
+                else:
+                    print("Nothing to redo.")
             else:
-                print("❌ Invalid choice. Please select 1-6.")
+                print("❌ Invalid choice. Please select 1-8.")
 
     def manage_faculty(self):
         """Manage faculty using the faculty management system"""
@@ -311,8 +330,14 @@ class main_controller:
 
         manager.load_faculty(faculty_data)
 
+        # Set up undo/redo for faculty (snapshot-based)
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+
         # Create controller and run
-        controller = FacultyController(manager)
+        controller = FacultyController(manager, undo_manager=undo_manager)
         from src.views.cli.faculty_view import FacultyView
 
         # Get available resources for validation
@@ -366,16 +391,31 @@ class main_controller:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return
+            elif choice == "7":
+                if controller.undo():
+                    print("↩️ Undid last faculty change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                if controller.redo():
+                    print("↪️ Redid last undone faculty change.")
+                else:
+                    print("Nothing to redo.")
             else:
-                print("❌ Invalid choice. Please select 1-6.")
+                print("❌ Invalid choice. Please select 1-8.")
 
     def manage_rooms(self):
         """Manage rooms using the room management system"""
         # Create RoomManager and load rooms from CombinedConfig
         manager = RoomManager(self.model.config.config)
 
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+
         # Create controller and run
-        controller = RoomController(manager)
+        controller = RoomController(manager, undo_manager=undo_manager)
         from src.views.cli.room_view import RoomView
 
         # Get course and faculty data for impact analysis
@@ -435,16 +475,30 @@ class main_controller:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return
+            elif choice == "7":
+                if controller.undo():
+                    print("↩️ Undid last room change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                if controller.redo():
+                    print("↪️ Redid last undone room change.")
+                else:
+                    print("Nothing to redo.")
             else:
-                print("❌ Invalid choice. Please select 1-6.")
+                print("❌ Invalid choice. Please select 1-8.")
 
     def manage_labs(self):
         """Manage labs using the lab management system"""
         # Create LabManager and load labs from CombinedConfig
         manager = LabManager(self.model.config)
 
-        # Create controller and run
-        controller = LabController(manager)
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+
+        controller = LabController(manager, undo_manager=undo_manager)
         from src.views.cli.lab_view_cli import LabView
 
         # Get course and faculty data for impact analysis
@@ -504,8 +558,16 @@ class main_controller:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return
-            else:
-                print("❌ Invalid choice. Please select 1-6.")
+            elif choice == "7":
+                if controller.undo():
+                    print("↩️ Undid last lab change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                if controller.redo():
+                    print("↪️ Redid last undone lab change.")
+                else:
+                    print("Nothing to redo.")
 
     def process_input(self, input_data):
         # edit course has been selected

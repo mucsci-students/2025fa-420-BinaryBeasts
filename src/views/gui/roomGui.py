@@ -16,9 +16,14 @@ BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
 )
+SMALL_BUTTON_STYLE = (
+    "padding: 6px; background-color: #327f66; color: white; "
+    "border-radius: 4px; min-width: 70px;"
+)
 TITLE_FONT = QFont("Arial", 19, QFont.Bold)
 LABEL_FONT = QFont("Arial", 15)
 BUTTON_FONT = QFont("Arial", 15)
+
 
 
 class RoomDialog(QDialog):
@@ -101,6 +106,8 @@ class RoomsDialog(QDialog):
         self.delete_button = QPushButton("Delete Room")
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
+        self.undo_button = QPushButton("Undo")
+        self.redo_button = QPushButton("Redo")
 
         for b in (
             self.add_button,
@@ -112,11 +119,17 @@ class RoomsDialog(QDialog):
             b.setFont(BUTTON_FONT)
             b.setStyleSheet(BUTTON_STYLE)
 
+        for b in (self.undo_button, self.redo_button):
+            b.setFont(QFont("Arial", 12))
+            b.setStyleSheet(SMALL_BUTTON_STYLE)
+
         self.add_button.clicked.connect(self.add_room)
         self.edit_button.clicked.connect(self.edit_room)
         self.delete_button.clicked.connect(self.delete_room)
         self.save_button.clicked.connect(self.save_and_close)
         self.cancel_button.clicked.connect(self.reject)
+        self.undo_button.clicked.connect(self.handle_undo)
+        self.redo_button.clicked.connect(self.handle_redo)
 
         # Layout
         list_layout = QVBoxLayout()
@@ -124,6 +137,11 @@ class RoomsDialog(QDialog):
         list_label.setFont(LABEL_FONT)
         list_layout.addWidget(list_label)
         list_layout.addWidget(self.room_list)
+
+        top_button_row = QHBoxLayout()
+        top_button_row.addWidget(self.undo_button)
+        top_button_row.addWidget(self.redo_button)
+        top_button_row.addStretch()
 
         # Bottom button row
         button_row = QHBoxLayout()
@@ -136,6 +154,7 @@ class RoomsDialog(QDialog):
         # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(header)
+        main_layout.addLayout(top_button_row)
         main_layout.addLayout(list_layout)
         main_layout.addLayout(button_row)
 
@@ -165,6 +184,18 @@ class RoomsDialog(QDialog):
                 "Error",
                 f"Failed to refresh room list: {str(e)}"
             )
+
+    def handle_undo(self):
+        if self.controller.undo():
+            self.refresh_rooms()
+        else:
+            QMessageBox.information(self, "Undo", "Nothing to undo.")
+
+    def handle_redo(self):
+        if self.controller.redo():
+            self.refresh_rooms()
+        else:
+            QMessageBox.information(self, "Redo", "Nothing to redo.")
 
     def add_room(self):
         """Add a new room."""

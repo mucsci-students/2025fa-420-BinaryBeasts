@@ -1,13 +1,14 @@
 # src/controllers/room_controller.py
 
 from src.models.room_model import RoomManager
-from typing import List, Dict
+from typing import List, Dict, Optional
+from src.undo_manager import SnapshotUndoManager
 
 
 class RoomController:
     """Controller layer for room management - bridges view and model."""
 
-    def __init__(self, manager: RoomManager) -> None:
+    def __init__(self, manager: RoomManager, undo_manager: Optional[SnapshotUndoManager] = None) -> None:
         """
         Initialize RoomController.
 
@@ -15,6 +16,12 @@ class RoomController:
             manager: RoomManager instance to control
         """
         self.mgr = manager
+        self.undo_manager = undo_manager
+
+    def _record_change(self) -> None:
+        """Helper: record a snapshot after a successful change."""
+        if self.undo_manager is not None:
+            self.undo_manager.record_change()
 
     def add_room(self, room_name: str) -> bool:
         """
@@ -27,7 +34,10 @@ class RoomController:
             True if room was added, False if it already exists
         """
         try:
-            return self.mgr.add_room(room_name)
+            ok = self.mgr.add_room(room_name)
+            if ok:
+                self._record_change()
+            return ok
         except ValueError as e:
             raise e
 
@@ -41,7 +51,10 @@ class RoomController:
         Returns:
             True if room was deleted, False if it doesn't exist
         """
-        return self.mgr.delete_room(room_name)
+        ok = self.mgr.delete_room(room_name)
+        if ok:
+            self._record_change()
+        return ok
 
     def edit_room(self, old_name: str, new_name: str) -> bool:
         """
@@ -55,9 +68,24 @@ class RoomController:
             True if room was renamed, False if old_name doesn't exist or new_name already exists
         """
         try:
-            return self.mgr.edit_room(old_name, new_name)
+            ok = self.mgr.edit_room(old_name, new_name)
+            if ok:
+                self._record_change()
+            return ok
         except ValueError as e:
             raise e
+
+    def undo(self) -> bool:
+        """Undo the last room change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.undo()
+
+    def redo(self) -> bool:
+        """Redo the last undone room change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.redo()
 
     def get_rooms(self) -> List[str]:
         """

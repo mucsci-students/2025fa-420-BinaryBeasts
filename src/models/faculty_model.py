@@ -1,6 +1,7 @@
 # src/models/faculty_model.py
 
 import json
+from copy import deepcopy
 from typing import Dict, List, Optional
 from src.observer_pattern import Observable, EventType, EventData
 
@@ -304,3 +305,18 @@ class FacultyManager(Observable):
         except Exception as e:
             print(f"Error saving: {e}")
             return False
+
+    def snapshot_state(self) -> dict:
+        """
+        Return a snapshot of the current faculty state.
+        Used by the undo/redo system.
+        """
+        return {
+            "faculty": deepcopy(self.faculty),
+        }
+
+    def restore_state(self, state: dict) -> None:
+        """
+        Restore state from a snapshot created by snapshot_state().
+        """
+        self.faculty = deepcopy(state.get("faculty", {}))

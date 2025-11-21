@@ -294,9 +294,11 @@ class CourseView:
         print("4. ❌ Delete course")
         print("5. 💾 Save changes and exit")
         print("6. 🚪 Exit without saving")
+        print("7. ↩️ Undo last change")
+        print("8. ↪️ Redo last change")
         print("=" * 50)
 
     @staticmethod
     def get_menu_choice() -> str:
         """Get user's menu choice."""
-        return input("Select an option (1-6): ").strip()
+        return input("Select an option (1-8): ").strip()
