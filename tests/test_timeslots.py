@@ -1,3 +1,4 @@
+import os
 import pytest
 from unittest.mock import MagicMock, patch
 from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox
@@ -13,6 +14,8 @@ from src.views.gui.timeslot_gui import (
 @pytest.fixture(scope="session")
 def qapp():
     """Fixture for creating a QApplication instance."""
+    # Ensure headless CI can construct Qt widgets
+    os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     app = QApplication.instance()
     if app is None:
         app = QApplication([])
