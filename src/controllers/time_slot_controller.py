@@ -2,7 +2,6 @@
 
 from typing import List, Optional, Tuple
 from src.models.time_slot_model import TimeSlotManager
-from src.views.cli.time_slot_view_cli import TimeSlotView
 
 
 class TimeSlotController:
@@ -85,6 +84,8 @@ class TimeSlotController:
 
     def run(self, config: dict, config_file: str) -> dict:
         """Main controller loop."""
+        from src.views.cli.time_slot_view_cli import TimeSlotView
+        
         # Load existing time slot configuration
         time_slot_data = config.get("time_slot_config", {})
         if time_slot_data:
