@@ -59,3 +59,12 @@ testpaths = ["tests"]
 packages = ["src"]
 
 
+[tool.uv]
+# Help uv resolve platform-specific wheels correctly on Windows.
+# This prevents uv from choosing linux/mac-only Qt subpackages like `pyqt5-qt5`
+# when running on win_amd64.
+required-environments = [
+  "sys_platform == 'win32' and platform_machine == 'AMD64'",
+]
+
+
