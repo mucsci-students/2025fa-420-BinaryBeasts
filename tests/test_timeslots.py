@@ -195,7 +195,7 @@ class TestTimeSlotManager:
                 self.time_slot_config = TSCfg()
 
         mgr = TimeSlotManager()
-        mgr.load_time_slots(Cfg())
+        mgr.load_time_slots(Cfg())  # type: ignore[arg-type]
         assert mgr.daily_times["MON"][0]["spacing"] == 60
         assert mgr.class_patterns[0]["disabled"] is True
         assert mgr.class_patterns[0]["meetings"][0]["lab"] is True
@@ -217,7 +217,7 @@ class TestTimeSlotManager:
                         self.classes = []
                 self.time_slot_config = TS()
 
-        mgr.load_time_slots(DictTimesCfg())
+        mgr.load_time_slots(DictTimesCfg())  # type: ignore[arg-type]
         assert mgr.daily_times["MON"][0]["start"] == "10:00"
 
 class TestTimeSlotController:

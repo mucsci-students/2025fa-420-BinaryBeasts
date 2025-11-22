@@ -1,3 +1,6 @@
+from typing import Optional, Any
+
+
 class main_model:
     """
     Main model now implementing Singleton pattern.
@@ -23,7 +26,7 @@ class main_model:
         """Reset singleton state - useful for testing and initialization."""
         self.schedules = []
         self.current_schedule_index = 0
-        self.config = None
+        self.config: Optional[Any] = None
         self.num_schedules = 0
 
     @classmethod
@@ -39,7 +42,8 @@ class main_model:
         self.num_schedules = num
 
     def set_limit(self, limit: int):
-        self.config.limit = limit
+        if self.config is not None:
+            self.config.limit = limit
 
     def next_schedule(self, num):
         return self.schedules[num]

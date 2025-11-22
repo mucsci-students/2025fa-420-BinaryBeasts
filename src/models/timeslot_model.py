@@ -39,7 +39,14 @@ class TimeSlotManager(Observable):
         if hasattr(config, "time_slot_config") and hasattr(config.time_slot_config, "times"):
             times = config.time_slot_config.times
             for day in self.daily_times.keys():
-                day_slots = getattr(times, day, []) if hasattr(times, day) else times.get(day, [])
+                # Support both object-style (attributes) and dict-style access safely
+                if hasattr(times, day):
+                    day_slots = getattr(times, day, [])
+                elif isinstance(times, dict):
+                    from typing import cast, Any
+                    day_slots = cast(dict[str, Any], times).get(day, [])
+                else:
+                    day_slots = []
                 self.daily_times[day] = []
                 for slot in day_slots:
                     self.daily_times[day].append({
