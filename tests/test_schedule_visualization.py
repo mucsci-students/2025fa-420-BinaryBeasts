@@ -1,7 +1,4 @@
-import pytest
-from PyQt5.QtWidgets import QDialog
-
-from src.views.gui.schedule_visualization_view import ScheduleVisualizationView, RoomPanel, FacultyPanel
+from src.views.gui.schedule_visualization_view import ScheduleVisualizationView
 
 
 class CourseStub:

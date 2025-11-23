@@ -1,5 +1,3 @@
-import pytest
-
 from src.models.room_day_model import _parse_time_str, schedule_to_location_blocks, min_max_hours, TimeBlock
 
 
