@@ -2,14 +2,21 @@
 
 from typing import List, Optional, Tuple
 from src.models.time_slot_model import TimeSlotManager
+from src.undo_manager import SnapshotUndoManager
 
 
 class TimeSlotController:
     """Controller for managing time slot operations."""
 
-    def __init__(self, manager: TimeSlotManager) -> None:
+    def __init__(self, manager: TimeSlotManager, undo_manager: Optional[SnapshotUndoManager] = None) -> None:
         """Initialize the controller with a time slot manager."""
         self.mgr = manager
+        self.undo_manager = undo_manager
+
+    def _record_change(self) -> None:
+        """Record a snapshot if undo manager is attached."""
+        if self.undo_manager is not None:
+            self.undo_manager.record_change()
 
     def load_time_slots(self, time_slot_data: dict) -> None:
         """Load time slot configuration from data."""
@@ -37,33 +44,66 @@ class TimeSlotController:
 
     def add_time_block(self, day: str, time_block_data: dict) -> bool:
         """Add a new time block to a specific day."""
-        return self.mgr.add_time_block(day, time_block_data)
+        ok = self.mgr.add_time_block(day, time_block_data)
+        if ok:
+            self._record_change()
+        return ok
 
     def modify_time_block(self, day: str, block_index: int,
                          new_data: dict) -> bool:
         """Modify an existing time block."""
-        return self.mgr.modify_time_block(day, block_index, new_data)
+        ok = self.mgr.modify_time_block(day, block_index, new_data)
+        if ok:
+            self._record_change()
+        return ok
 
     def delete_time_block(self, day: str, block_index: int) -> bool:
         """Delete a time block from a specific day."""
-        return self.mgr.remove_time_block(day, block_index)
+        ok = self.mgr.remove_time_block(day, block_index)
+        if ok:
+            self._record_change()
+        return ok
 
     def add_class_pattern(self, pattern_data: dict) -> bool:
         """Add a new class pattern."""
-        return self.mgr.add_class_pattern(pattern_data)
+        ok = self.mgr.add_class_pattern(pattern_data)
+        if ok:
+            self._record_change()
+        return ok
 
     def modify_class_pattern(self, pattern_index: int,
                             new_data: dict) -> bool:
         """Modify an existing class pattern."""
-        return self.mgr.modify_class_pattern(pattern_index, new_data)
+        ok = self.mgr.modify_class_pattern(pattern_index, new_data)
+        if ok:
+            self._record_change()
+        return ok
 
     def delete_class_pattern(self, pattern_index: int) -> bool:
         """Delete a class pattern."""
-        return self.mgr.remove_class_pattern(pattern_index)
+        ok = self.mgr.remove_class_pattern(pattern_index)
+        if ok:
+            self._record_change()
+        return ok
 
     def toggle_pattern_status(self, pattern_index: int) -> bool:
         """Toggle the enabled/disabled status of a class pattern."""
-        return self.mgr.toggle_pattern_status(pattern_index)
+        ok = self.mgr.toggle_pattern_status(pattern_index)
+        if ok:
+            self._record_change()
+        return ok
+
+    def undo(self) -> bool:
+        """Undo the last faculty change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.undo()
+
+    def redo(self) -> bool:
+        """Redo the last undone faculty change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.redo()
 
     def update_gap_settings(self, max_time_gap: Optional[int] = None,
                            min_time_overlap: Optional[int] = None) -> bool:
@@ -114,4 +154,15 @@ class TimeSlotController:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return config
-            print("❌ Invalid choice. Please select 1-6.")
+            elif choice == "7":
+                if self.undo():
+                    print("↩️ Successfully undid last change.")
+                else:
+                    print("❌ Nothing to undo.")
+            elif choice == "8":
+                if self.redo():
+                    print("↪️ Successfully redid last change.")
+                else:
+                    print("❌ Nothing to redo.")
+            else:
+                print("❌ Invalid choice. Please select 1-8.")
