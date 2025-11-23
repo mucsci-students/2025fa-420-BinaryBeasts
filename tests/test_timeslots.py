@@ -461,6 +461,8 @@ def test_class_pattern_add_remove_and_accept():
 class FakeController:
     def __init__(self):
         self.saved = False
+        # declared for the type checker; tests will mutate this flag
+        self.save_ok: bool = True
 
     def get_daily_times_for_day(self, day):
         return [{"start": "08:00", "end": "10:00", "spacing": 30}]

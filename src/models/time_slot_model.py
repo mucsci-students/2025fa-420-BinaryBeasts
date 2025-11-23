@@ -402,8 +402,11 @@ class TimeSlotManager(Observable):
     def _validate_times_structure(self) -> List[str]:
         """Validate the times structure and return errors."""
         errors = []
-        times = self.time_slot_config["times"]
-        
+        # Safely access 'times' — time_slot_config may be None or not a dict
+        times = {}
+        if isinstance(self.time_slot_config, dict):
+            times = self.time_slot_config.get("times", {})
+
         if not isinstance(times, dict):
             errors.append("'times' must be a dictionary")
         else:
@@ -438,8 +441,11 @@ class TimeSlotManager(Observable):
     def _validate_classes_structure(self) -> List[str]:
         """Validate the classes structure and return errors."""
         errors = []
-        classes = self.time_slot_config["classes"]
-        
+        # Safely access 'classes' — time_slot_config may be None or not a dict
+        classes = []
+        if isinstance(self.time_slot_config, dict):
+            classes = self.time_slot_config.get("classes", [])
+
         if not isinstance(classes, list):
             errors.append("'classes' must be a list")
         else:
