@@ -147,6 +147,14 @@ class SchedulesGUI(QWidget):
         self.SaveButton.clicked.connect(self.save_schedule)
         action_layout.addWidget(self.SaveButton)
 
+        # Export by faculty PDF button
+        self.ExportFacultyButton = QPushButton('Export by Faculty (PDF)')
+        self.ExportFacultyButton.setFont(FONT2)
+        self.ExportFacultyButton.setStyleSheet(
+            'padding: 12px 20px; background-color: #1976D2; color: white; border-radius: 5px;')
+        self.ExportFacultyButton.clicked.connect(self.export_by_faculty_pdf)
+        action_layout.addWidget(self.ExportFacultyButton)
+
         # checkbox to toggle single vs all
         self.show_all_checkbox = QCheckBox('Show all rooms')
         self.show_all_checkbox.setFont(FONT)
@@ -540,6 +548,31 @@ class SchedulesGUI(QWidget):
                 )
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to save schedules:\n{e}")
+
+
+    def export_by_faculty_pdf(self):
+        """Export the current schedule grouped by faculty to a PDF file."""
+        if not self.schedules:
+            QMessageBox.warning(self, "No Schedules", "No schedules available to export.")
+            return
+
+        file_dialog = QFileDialog()
+        file_path, _ = file_dialog.getSaveFileName(self, "Export by Faculty to PDF", "faculty_schedules.pdf", "PDF Files (*.pdf)")
+        if not file_path:
+            return
+
+        try:
+            # Prepare current schedule objects (list of course objects) for exporter
+            schedule_objs = self.schedules[self.controller.index]
+            from src.views.cli.schedules_view import save_schedules_by_faculty_pdf
+
+            written = save_schedules_by_faculty_pdf(schedule_objs, file_path)
+            if written:
+                QMessageBox.information(self, "Exported", f"Faculty PDF written to: {written}")
+            else:
+                QMessageBox.critical(self, "Error", "Failed to write faculty PDF.")
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to export faculty PDF:\n{e}")
 
     def go_next_schedule(self):
         """Navigate to next schedule using controller logic"""

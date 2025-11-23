@@ -299,9 +299,10 @@ def schedule_navigation_view():
     print("   4. View by room/lab")
     print("   5. View by faculty")
     print("   6. Export schedules to file")
-    print("   7. Return to main menu")
+    print("   7. Export current schedule by faculty (PDF)")
+    print("   8. Return to main menu")
     print("-" * 60)
-    return input("Select an option (1-7): ").strip()
+    return input("Select an option (1-8): ").strip()
 
 
 def save_schedules_view():
@@ -318,6 +319,17 @@ def save_schedules_view():
         filename = f"{filename}.{format_type}"
 
     return filename, format_type
+
+
+def save_faculty_pdf_view(default_name: str = "faculty_schedules.pdf") -> str:
+    """Prompt for filename to save faculty PDF (returns filename)."""
+    filename = input(f"Enter filename to save faculty PDF (default '{default_name}'): ").strip()
+    if not filename:
+        filename = default_name
+    # ensure extension
+    if not filename.lower().endswith('.pdf'):
+        filename = filename + '.pdf'
+    return filename
 
 
 def display_schedule(schedule):
@@ -337,3 +349,138 @@ def display_schedule(schedule):
 
     # Display using tabular format
     display_schedule_basic(schedule_strings)
+
+
+def save_schedules_by_faculty_pdf(schedule: list, filename: str = "faculty_schedules.pdf") -> str:
+    """
+    Save schedules grouped by faculty into a simple PDF-like text file.
+    This minimal exporter accepts schedule as a list of course objects (with as_csv())
+    or raw CSV strings. It writes a readable text file saved with .pdf extension so
+    users can print or preview it. It's intentionally lightweight to avoid adding
+    heavy dependencies in this branch.
+    """
+    # Normalize to CSV strings
+    schedule_strings = []
+    for item in schedule:
+        if item is None:
+            continue
+        if hasattr(item, "as_csv"):
+            try:
+                schedule_strings.append(item.as_csv())
+            except Exception:
+                schedule_strings.append(str(item))
+        else:
+            schedule_strings.append(str(item))
+
+    # Build faculty mapping
+    faculty_map = {}
+    for csv in schedule_strings:
+        c = parse_course_string(csv)
+        if not c:
+            continue
+        fac = c.get("faculty", "Unknown")
+        faculty_map.setdefault(fac, []).append(c)
+
+    # Prepare pages as simple text lines per faculty
+    pages = []
+    for fac in sorted(faculty_map.keys()):
+        lines = [fac, "=" * max(20, len(fac))]
+        courses = sorted(faculty_map[fac], key=get_earliest_time)
+        for course in courses:
+            lab_display = course["lab"] if course["lab"].lower() != "none" else "-"
+            lines.append(f"{course['course_id']} | Room: {course['room']} | Lab: {lab_display}")
+            for slot in course["time_slots"]:
+                lines.append(f"  - {slot}")
+            lines.append("")
+        pages.append(lines)
+
+    if not pages:
+        pages = [["No schedule data available."]]
+
+    # Try to use reportlab for a proper PDF; otherwise fallback to a plain text file
+    try:
+        from reportlab.lib.pagesizes import letter
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+        from reportlab.lib.styles import getSampleStyleSheet
+    except Exception:
+        # reportlab not available — fall back to simple text-based output and inform user
+        print("reportlab not installed; writing a readable text file with .pdf extension.\nTo get a proper PDF install: pip install reportlab")
+        try:
+            if not filename.lower().endswith('.pdf'):
+                filename = filename + '.pdf'
+            with open(filename, 'wb') as f:
+                content = []
+                for p in pages:
+                    content.extend(p)
+                    content.append('\f')
+                text = '\n'.join(content)
+                f.write(text.encode('utf-8'))
+            return filename
+        except Exception as e:
+            print(f"Failed to write faculty PDF fallback: {e}")
+            return ""
+
+    # Build a proper PDF using reportlab with tables that mirror the GUI layout
+    try:
+        if not filename.lower().endswith('.pdf'):
+            filename = filename + '.pdf'
+
+        from reportlab.lib import colors as rl_colors
+        from reportlab.lib.pagesizes import letter
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak
+        from reportlab.lib.styles import getSampleStyleSheet
+
+        doc = SimpleDocTemplate(filename, pagesize=letter, leftMargin=36, rightMargin=36, topMargin=36, bottomMargin=36)
+        styles = getSampleStyleSheet()
+        elements = []
+
+        header = ['Course', 'Room', 'Lab', 'MON', 'TUE', 'WED', 'THU', 'FRI']
+
+        for fac in sorted(faculty_map.keys()):
+            courses = sorted(faculty_map[fac], key=get_earliest_time)
+            # Title
+            elements.append(Paragraph(fac, styles['Title']))
+            elements.append(Spacer(1, 6))
+
+            # Build table data
+            data = [header]
+            for course in courses:
+                day_times = {'MON': '', 'TUE': '', 'WED': '', 'THU': '', 'FRI': ''}
+                for slot in course['time_slots']:
+                    slot_clean = slot.replace('^', '')
+                    parts = slot_clean.split(' ', 1)
+                    if len(parts) == 2:
+                        day = parts[0].strip()
+                        time = parts[1].strip()
+                        if day in day_times:
+                            if day_times[day]:
+                                day_times[day] += '\n' + time
+                            else:
+                                day_times[day] = time
+
+                lab_display = course['lab'] if course['lab'].lower() != 'none' else '-'
+                row = [course['course_id'], course['room'], lab_display, day_times['MON'], day_times['TUE'], day_times['WED'], day_times['THU'], day_times['FRI']]
+                data.append(row)
+
+            # Create styled table
+            tbl = Table(data, repeatRows=1, hAlign='LEFT')
+            tbl_style = TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), rl_colors.HexColor('#f0f0f0')),
+                ('GRID', (0, 0), (-1, -1), 0.5, rl_colors.grey),
+                ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                ('ALIGN', (3, 0), (-1, -1), 'CENTER'),
+                ('FONTSIZE', (0, 0), (-1, -1), 9),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+            ])
+            tbl.setStyle(tbl_style)
+
+            elements.append(tbl)
+            elements.append(Spacer(1, 12))
+            elements.append(PageBreak())
+
+        # Build document
+        doc.build(elements)
+        return filename
+    except Exception as e:
+        print(f"Failed to generate PDF with reportlab: {e}")
+        return ""
