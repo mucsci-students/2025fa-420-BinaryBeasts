@@ -399,6 +399,113 @@ class TestTimeSlotsDialog:
         assert len(timeslot_controller.get_class_patterns()) == 1
         assert timeslots_dialog.class_patterns_list.count() == 1
 
+
+def test_daily_time_slot_dialog_validation_and_accept():
+    dlg = DailyTimeSlotDialog()
+
+    # Empty inputs -> should not accept and result_data remains None
+    dlg.start_input.setText("")
+    dlg.end_input.setText("")
+    dlg.accept()
+    assert dlg.result_data is None
+
+    # Invalid format -> still no result
+    dlg.start_input.setText("8am")
+    dlg.end_input.setText("10:00")
+    dlg.accept()
+    assert dlg.result_data is None
+
+    # Valid inputs -> result_data populated
+    dlg.start_input.setText("08:00")
+    dlg.end_input.setText("10:00")
+    dlg.spacing_input.setValue(45)
+    dlg.accept()
+    assert dlg.result_data is not None
+    assert dlg.result_data["start"] == "08:00"
+    assert dlg.result_data["end"] == "10:00"
+    assert dlg.result_data["spacing"] == 45
+
+
+def test_class_pattern_add_remove_and_accept():
+    dlg = ClassPatternDialog()
+
+    # Initially one meeting
+    assert len(dlg.meeting_widgets) == 1
+
+    # Removing the only meeting should be blocked (warning) and not remove
+    widget = dlg.meeting_widgets[0]["widget"]
+    dlg.remove_meeting(widget)
+    assert len(dlg.meeting_widgets) == 1
+
+    # Add another meeting with data
+    dlg.add_meeting({"day": "TUE", "duration": 75, "lab": True})
+    assert len(dlg.meeting_widgets) == 2
+
+    # Invalid start_time should block accept
+    dlg.start_time_input.setText("25:00")
+    dlg.accept()
+    assert dlg.result_data is None
+
+    # Valid start_time, accept should populate result_data
+    dlg.start_time_input.setText("09:00")
+    dlg.credits_input.setValue(4)
+    # mark second meeting lab checkbox
+    dlg.meeting_widgets[1]["lab_checkbox"].setChecked(True)
+    dlg.accept()
+    assert dlg.result_data is not None
+    assert dlg.result_data["credits"] == 4
+    assert any(m["lab"] for m in dlg.result_data["meetings"])
+    assert dlg.result_data.get("start_time") == "09:00"
+
+
+class FakeController:
+    def __init__(self):
+        self.saved = False
+
+    def get_daily_times_for_day(self, day):
+        return [{"start": "08:00", "end": "10:00", "spacing": 30}]
+
+    def get_class_patterns(self):
+        return [{"credits": 3, "meetings": [{"day": "MON", "duration": 50}], "disabled": False}]
+
+    def save_to_combined_config(self, combined_config):
+        return getattr(self, "save_ok", True)
+
+
+def test_timeslots_dialog_refresh_spacing_and_save(monkeypatch):
+    controller = FakeController()
+    combined = MagicMock()
+
+    dlg = TimeSlotsDialog(controller, combined)
+
+    # After initialization, daily_times_list should be populated
+    assert dlg.daily_times_list.count() >= 1
+
+    # Test calculate possible start times
+    times = dlg._calculate_possible_start_times("08:00", "10:00", 30)
+    assert times[0] == "08:00"
+    assert times[-1] == "10:00"
+    assert len(times) == 5
+
+    # Show spacing dialog: patch QDialog.exec_ to avoid blocking
+    with patch.object(QDialog, "exec_", return_value=QDialog.Accepted):
+        dlg.daily_times_list.setCurrentRow(0)
+        dlg.show_spacing_details()
+
+    # save_and_close: success branch
+    called_info = []
+    monkeypatch.setattr("src.views.gui.timeslot_gui.QMessageBox.information", lambda *a, **k: called_info.append(True))
+    controller.save_ok = True
+    dlg.save_and_close()
+    assert called_info
+
+    # save_and_close: warning branch
+    called_warn = []
+    monkeypatch.setattr("src.views.gui.timeslot_gui.QMessageBox.warning", lambda *a, **k: called_warn.append(True))
+    controller.save_ok = False
+    dlg.save_and_close()
+    assert called_warn
+
     def test_edit_class_pattern(self, timeslots_dialog, timeslot_controller):
         """Test editing a class pattern through the GUI."""
         timeslot_controller.add_class_pattern(3, [{"day": "MON", "duration": 50}])
