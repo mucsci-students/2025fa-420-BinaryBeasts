@@ -7,6 +7,9 @@ from src.controllers.room_controller import RoomController
 from src.models.room_model import RoomManager
 from src.controllers.lab_controller import LabController
 from src.models.lab_model import LabManager
+from src.controllers.time_slot_controller import TimeSlotController
+from src.models.time_slot_model import TimeSlotManager
+from src.views.cli.time_slot_view_cli import TimeSlotView
 from src.controllers import schedules_controller
 from src.controllers.nl_controller import NLController
 from src.views.cli.nl_view import NLView
@@ -516,6 +519,70 @@ class main_controller:
             else:
                 print("❌ Invalid choice. Please select 1-6.")
 
+    def manage_time_slots(self):
+        """Manage time slot configuration using the time slot management system"""
+        # Check if configuration is loaded
+        if not self.model.config:
+            print("❌ No configuration loaded. Please load a configuration file first.")
+            print("   Use the 'Load Configuration' option from the main menu.")
+            return
+
+        # Create TimeSlotManager and load time slot config from CombinedConfig
+        manager = TimeSlotManager()
+
+        # Extract time slot configuration from CombinedConfig
+        time_slot_data = {}
+        if (hasattr(self.model.config, 'time_slot_config') and
+                self.model.config.time_slot_config):
+            time_slot_data = self.model.config.time_slot_config.model_dump()
+        elif (hasattr(self.model.config, 'config') and
+              hasattr(self.model.config.config, 'time_slot_config')):
+            time_slot_data = self.model.config.config.time_slot_config.model_dump()
+
+        if not time_slot_data:
+            print("⚠️  No time slot configuration found in the loaded file.")
+            print("   This can happen if:")
+            print("   1. The configuration file is empty or corrupted")
+            print("   2. The file doesn't contain a 'time_slot_config' section")
+            print()
+            print("💡 To fix this:")
+            print("   • Load a different configuration file that includes time slot data")
+            print("   • Use 'example.json' which has a complete configuration")
+            print("   • Create a new time slot configuration manually")
+            return
+
+        if time_slot_data:
+            manager.load_time_slots(time_slot_data)
+
+        # Create controller and run
+        controller = TimeSlotController(manager)
+
+        while True:
+            TimeSlotView.show_menu()
+            choice = TimeSlotView.get_menu_choice()
+
+            if choice == "1":
+                TimeSlotView.display_time_slots(controller)
+            elif choice == "2":
+                TimeSlotView.manage_time_blocks(controller)
+            elif choice == "3":
+                TimeSlotView.manage_class_patterns(controller)
+            elif choice == "4":
+                TimeSlotView.configure_settings(controller)
+            elif choice == "5":
+                # Save changes back to CombinedConfig
+                if controller.save_to_combined_config(self.model.config):
+                    print("✅ Time slot configuration saved successfully")
+                    print("📋 Updated configuration will be used for schedule generation")
+                else:
+                    print("❌ Failed to save time slot configuration")
+                return
+            elif choice == "6":
+                print("Exiting without saving changes.")
+                return
+            else:
+                print("❌ Invalid choice. Please select 1-6.")
+
     def process_input(self, input_data):
         # edit course has been selected
         if input_data == "1":
@@ -529,8 +596,11 @@ class main_controller:
         # edit room has been selected
         elif input_data == "4":
             self.manage_rooms()
-        # generate schedules has been selected
+        # edit time slots has been selected
         elif input_data == "5":
+            self.manage_time_slots()
+        # generate schedules has been selected
+        elif input_data == "6":
             config_flags = main_view.generate_schedules()
             num = config_flags[0]
             self.model.config.optimizer_flags = config_flags[1]
@@ -538,10 +608,10 @@ class main_controller:
             controller = schedules_controller.generate_controller(scheds)
             controller.entry()
         # import schedules has been selected
-        elif input_data == "6":
+        elif input_data == "7":
             self.load_schedules()
         # AI assistant has been selected
-        elif input_data == "7":
+        elif input_data == "8":
             # Create managers from config
             course_manager = CourseManager()
             courses_data = []
@@ -601,7 +671,7 @@ class main_controller:
                 controller = schedules_controller.generate_controller(nl_controller.generated_schedules)
                 controller.entry()
         # exit has been selected
-        elif input_data == "8":
+        elif input_data == "9":
             print("Exiting program.")
             exit(0)
 

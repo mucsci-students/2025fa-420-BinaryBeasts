@@ -16,13 +16,13 @@ def get_user_input():
                                 return manual_choice  # Return 1-4 from manual edit menu
                         # If None, loop continues to show main menu again
                 elif choice == '2':
-                        return '5'  # Map to old option 5 (Generate Schedules)
+                        return '6'  # Map to option 6 (Generate Schedules)
                 elif choice == '3':
-                        return '6'  # Map to old option 6 (Import Schedules)
+                        return '7'  # Map to option 7 (Import Schedules)
                 elif choice == '4':
-                        return '7'  # AI Assistant
+                        return '8'  # AI Assistant
                 elif choice == '5':
-                        return '8'  # Exit
+                        return '9'  # Exit
                 else:
                         print("Please try again.")
 
@@ -35,12 +35,13 @@ def manual_edit_options():
         print("2. 🔬 Edit Lab")
         print("3. 👥 Edit Faculty")
         print("4. 🏢 Edit Room")
-        print("5. 🔙 Back to Main Menu")
-        choice = input("Enter your choice (1-5): ").strip()
+        print("5. ⏰ Edit Time Slots")
+        print("6. 🔙 Back to Main Menu")
+        choice = input("Enter your choice (1-6): ").strip()
 
-        if choice in ['1', '2', '3', '4']:
+        if choice in ['1', '2', '3', '4', '5']:
             return choice
-        elif choice == '5':
+        elif choice == '6':
             return None  # go back to main menu
         else:
             print("Please try again.")
