@@ -108,7 +108,10 @@ class TimeSlotController:
     def update_gap_settings(self, max_time_gap: Optional[int] = None,
                            min_time_overlap: Optional[int] = None) -> bool:
         """Update time gap and overlap settings."""
-        return self.mgr.update_gap_settings(max_time_gap, min_time_overlap)
+        ok = self.mgr.update_gap_settings(max_time_gap, min_time_overlap)
+        if ok:
+            self._record_change()
+        return ok
 
     def validate_configuration(self) -> Tuple[bool, List[str]]:
         """Validate the current configuration."""

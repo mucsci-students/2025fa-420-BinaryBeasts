@@ -129,10 +129,12 @@ class TimeSlotView:
             print("2. ➕ Add time block")
             print("3. ✏️  Modify time block")
             print("4. ❌ Delete time block")
-            print("5. 🔙 Back to main menu")
+            print("5. ↩️ Undo last change")
+            print("6. ↪️ Redo last change")
+            print("7. 🔙 Back to main menu")
             print("=" * 50)
 
-            choice = input("Select an option (1-5): ").strip()
+            choice = input("Select an option (1-7): ").strip()
 
             if choice == "1":
                 TimeSlotView._display_time_blocks_only(controller)
@@ -143,9 +145,19 @@ class TimeSlotView:
             elif choice == "4":
                 TimeSlotView._delete_time_block_interactive(controller)
             elif choice == "5":
+                if controller.undo():
+                    print("↩️ Undid last change to time blocks.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "6":
+                if controller.redo():
+                    print("↪️ Redid last undone change to time blocks.")
+                else:
+                    print("Nothing to redo.")
+            elif choice == "7":
                 break
             else:
-                print("❌ Invalid choice. Please select 1-5.")
+                print("❌ Invalid choice. Please select 1-7.")
 
     @staticmethod
     def manage_class_patterns(controller: TimeSlotController) -> None:
@@ -156,13 +168,15 @@ class TimeSlotView:
             print("=" * 50)
             print("1. 👀 View class patterns")
             print("2. ➕ Add class pattern")
-            print("3. ✏️  Modify class pattern")
+            print("3. ✏️ Modify class pattern")
             print("4. ❌ Delete class pattern")
             print("5. 🔄 Toggle pattern status")
-            print("6. 🔙 Back to main menu")
+            print("6. ↩️ Undo last change")
+            print("7. ↪️ Redo last change")
+            print("8. 🔙 Back to main menu")
             print("=" * 50)
 
-            choice = input("Select an option (1-6): ").strip()
+            choice = input("Select an option (1-8): ").strip()
 
             if choice == "1":
                 TimeSlotView._display_class_patterns_only(controller)
@@ -175,9 +189,19 @@ class TimeSlotView:
             elif choice == "5":
                 TimeSlotView._toggle_pattern_status_interactive(controller)
             elif choice == "6":
+                if controller.undo():
+                    print("↩️ Undid last change to class patterns.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "7":
+                if controller.redo():
+                    print("↪️ Redid last undone change to class patterns.")
+                else:
+                    print("Nothing to redo.")
+            elif choice == "8":
                 break
             else:
-                print("❌ Invalid choice. Please select 1-6.")
+                print("❌ Invalid choice. Please select 1-8.")
 
     @staticmethod
     def configure_settings(controller: TimeSlotController) -> None:
