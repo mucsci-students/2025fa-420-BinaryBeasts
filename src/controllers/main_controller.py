@@ -649,8 +649,16 @@ class main_controller:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return
-            else:
-                print("❌ Invalid choice. Please select 1-6.")
+            elif choice == "7":
+                if controller.undo():
+                    print("↩️ Undid last time-slot change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                if controller.redo():
+                    print("↪️ Redid last undone time-slot change.")
+                else:
+                    print("Nothing to redo.")
 
     def process_input(self, input_data):
         # edit course has been selected

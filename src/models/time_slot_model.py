@@ -454,9 +454,11 @@ class TimeSlotManager(Observable):
                 errors.append("At least one class pattern must be defined")
             else:
                 # Check for all disabled patterns
-                enabled_patterns = [p for p in classes
-                                  if not p.get("disabled", False)]
-                if not enabled_patterns:
+                enabled_patterns = []
+                for p in classes:
+                    if isinstance(p, dict) and not p.get("disabled", False):
+                        enabled_patterns.append(p)
+                if classes and not enabled_patterns:
                     errors.append("All class patterns are disabled")
 
             for i, pattern in enumerate(classes):
