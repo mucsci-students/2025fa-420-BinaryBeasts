@@ -7,7 +7,6 @@ integration, and error handling.
 """
 
 import pytest
-from typing import Any
 from unittest.mock import Mock, patch, mock_open
 
 from src.models.time_slot_model import TimeSlotManager
