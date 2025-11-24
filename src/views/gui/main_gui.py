@@ -19,6 +19,7 @@ from src.models.course_model import CourseManager
 from src.models.room_model import RoomManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
+from src.undo_manager import SnapshotUndoManager
 # Controllers and models are now handled by the factory pattern
 from src.views.gui.dialog_factory import DialogFactory, DialogType
 # Controllers and models are now handled by the factory pattern
@@ -435,7 +436,11 @@ class MainGUI(QWidget):
                     }
                 )
             course_manager.load_courses(courses_data)
-            course_controller = CourseController(course_manager)
+            course_undo = SnapshotUndoManager(
+                get_state=course_manager.snapshot_state,
+                set_state=course_manager.restore_state,
+            )
+            course_controller = CourseController(course_manager, undo_manager=course_undo)
 
             # Create faculty controller
             faculty_manager = FacultyManager()
@@ -462,14 +467,28 @@ class MainGUI(QWidget):
                     }
                 )
             faculty_manager.load_faculty(faculty_data)
-            faculty_controller = FacultyController(faculty_manager)
+            faculty_undo = SnapshotUndoManager(
+                get_state=faculty_manager.snapshot_state,
+                set_state=faculty_manager.restore_state,
+            )
+            faculty_controller = FacultyController(
+                faculty_manager, undo_manager=faculty_undo
+            )
 
             # Create lab and room controllers
             lab_manager = LabManager(self.config)
-            lab_controller = LabController(lab_manager)
+            lab_undo = SnapshotUndoManager(
+                get_state=lab_manager.snapshot_state,
+                set_state=lab_manager.restore_state,
+            )
+            lab_controller = LabController(lab_manager, undo_manager=lab_undo)
 
             room_manager = RoomManager(self.config)
-            room_controller = RoomController(room_manager)
+            room_undo = SnapshotUndoManager(
+                get_state=room_manager.snapshot_state,
+                set_state=room_manager.restore_state,
+            )
+            room_controller = RoomController(room_manager, undo_manager=room_undo)
 
             # Create NL controller with all controllers and config
             nl_controller = NLController(

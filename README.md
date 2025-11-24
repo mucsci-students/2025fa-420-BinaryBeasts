@@ -20,14 +20,15 @@ A comprehensive course scheduling system with both **Command-Line Interface (CLI
 - **Room Management**: Manage classroom inventory with automatic reference updates and impact analysis
 - **Lab Management**: Manage lab types (Mac, Linux, Windows) as global resources with automatic reference updates
 - **Faculty Management**: Comprehensive faculty profiles with availability, preferences (courses, rooms, labs), and credit limits
-- **Schedule Generation**: Generate optimized schedules using constraint-based solver
+- **Time Slot Management**: Manage time slots and class patterns
+- **Schedule Generation**: Generate optimized schedules using constraint-based solver and export schedules
 - **Configuration Management**: Import/export configurations in JSON format with validation
 
 ### Schedule Viewing & Navigation
 - **Multiple View Modes**:
-  - **Basic View**: Tabular schedule with all courses
-  - **Room View**: Navigate room-by-room with weekly grid layout
-  - **Faculty View**: Navigate faculty-by-faculty with course assignments
+- **Basic View**: Tabular schedule with all courses
+- **Room View**: Navigate room-by-room with weekly grid layout
+- **Faculty View**: Navigate faculty-by-faculty with course assignments
 - **Schedule Navigation**: Browse through multiple generated schedules
 - **Export Options**: Save schedules in PDF, JSON or CSV format
 
@@ -68,8 +69,14 @@ source .venv/bin/activate
 ### Step 3: Install Dependencies
 
 ```bash
-pip install -r requirements.txt
+pip install uv
+uv --sync
 ```
+
+### Step 4: Add OpenAI API Key
+
+Create a .env file in the directory and add OPENAI_API_KEY=your-api-key-here
+
 
 **Required packages:**
 - PyQt5 (for GUI)
@@ -86,21 +93,23 @@ pip install -r requirements.txt
 
 2. **Upload Configuration:**
    - Click "Upload Configuration File"
-   - Select a JSON configuration file 
+   - Select a JSON configuration file
 
 3. **Manage Resources:**
+   - **AI-Assistant**: Use natural language to edit
+   - **Edit Time Slots**: Manage time slots and class patterns
    - **Edit Courses**: Add, modify, or delete course sections
    - **Edit Faculty**: Manage faculty profiles and preferences
    - **Edit Labs**: Manage lab types 
    - **Edit Rooms**: Manage classroom inventory
 
-4. **Generate Schedules:**
+5. **Generate Schedules:**
    - Click "Generate Schedule"
    - Enter number of schedules to generate
    - View schedules with navigation and multiple view modes
-   - Export to JSON or CSV
+   - Export to PDF, JSON or CSV
 
-5. **Load Saved Schedules:**
+6. **Load Saved Schedules:**
    - Click "Upload Schedule"
    - Select previously saved schedule file 
    - Navigate and view schedules
@@ -232,6 +241,7 @@ pip install -r requirements.txt
 **Schedule Files:**
 - Export schedules to JSON (with schedule IDs)
 - Export schedules to CSV (spreadsheet format)
+- Export schedules to PDF
 - Export schedules by faculty to PDF
 - Import previously saved schedules for viewing
 
@@ -265,6 +275,11 @@ The application follows the **Model-View-Controller (MVC)** pattern:
 - **Core Files**: strategy_pattern
 - **Usage**: Provide preset flags for users to pick
 - **Benefits**: Lets users select preset optimization combinations with one click instead of manually checking 3-7 individual flag boxes.
+
+**Momento**: Tracks states for undos and redos
+- **Core File**: Undo manager
+- **Usage**: Saves and holds state for undo/redo
+- **Benefits**: Allows for unlimited undos/redos
 
 **Key Design Principles:**
 - Separation of concerns

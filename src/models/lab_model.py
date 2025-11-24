@@ -208,6 +208,21 @@ class LabManager(Observable):
         config.config.labs = self.labs.copy()
         return config
 
+    def snapshot_state(self) -> dict:
+        """
+        Create a snapshot of the current lab state.
+        Used by the undo/redo system.
+        """
+        return {
+            "labs": list(self.labs),
+        }
+
+    def restore_state(self, state: dict) -> None:
+        """
+        Restore lab state from snapshot.
+        """
+        self.labs = list(state.get("labs", []))
+
     @staticmethod
     def update_lab_references(
         old_name: str, new_name: str, courses_dict: Dict, faculty_dict: Dict

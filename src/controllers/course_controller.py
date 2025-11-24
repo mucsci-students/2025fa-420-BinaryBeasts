@@ -1,12 +1,19 @@
 # src/controllers/course_controller.py
 
-from typing import Dict, List
+from typing import Dict, List, Optional
 from src.models.course_model import Course, CourseManager
+from src.undo_manager import SnapshotUndoManager
 
 
 class CourseController:
-    def __init__(self, manager: CourseManager) -> None:
+    def __init__(self, manager: CourseManager, undo_manager: Optional[SnapshotUndoManager] = None) -> None:
         self.mgr = manager
+        self.undo_manager = undo_manager
+
+    def _record_change(self) -> None:
+        """Helper: record snapshot if undo manager is attached."""
+        if self.undo_manager is not None:
+            self.undo_manager.record_change()
 
     def load_courses(self, courses_data: list) -> None:
         """Load courses from data."""
@@ -28,15 +35,35 @@ class CourseController:
         """Add a new course."""
         course = Course(**data)
         self.mgr.add_course(course)
+        self._record_change()
 
     def modify_course(self, course_id: str, index: int, data: dict) -> bool:
         """Modify an existing course."""
         new_course = Course(**data)
-        return self.mgr.modify_course(course_id, index, new_course)
+        ok = self.mgr.modify_course(course_id, index, new_course)
+        if ok:
+            self._record_change()
+        return ok
 
     def delete_course(self, course_id: str, index: int) -> bool:
         """Delete a course instance."""
-        return self.mgr.delete_course(course_id, index)
+        ok = self.mgr.delete_course(course_id, index)
+        if ok:
+            self._record_change()
+        return ok
+
+    def undo(self) -> bool:
+        """Undo the last faculty change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.undo()
+
+    def redo(self) -> bool:
+        """Redo the last undone faculty change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.redo()
+
 
     def save_to_file(self, config: dict, time_slots: dict, config_file: str) -> bool:
         """Save to JSON file (CLI)."""
