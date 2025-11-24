@@ -362,3 +362,21 @@ class TimeSlotManager(Observable):
             return True
         except Exception:
             return False
+
+    def snapshot_state(self) -> dict:
+        """Return a snapshot of the current time-slot state."""
+        return {
+            "daily_times": {day: [slot.copy() for slot in slots]
+                            for day, slots in self.daily_times.items()},
+            "class_patterns": [pattern.copy() for pattern in self.class_patterns],
+        }
+
+    def restore_state(self, state: dict) -> None:
+        """Restore state from a snapshot."""
+        self.daily_times = {
+            day: [slot.copy() for slot in slots]
+            for day, slots in state.get("daily_times", {}).items()
+        }
+        self.class_patterns = [
+            pattern.copy() for pattern in state.get("class_patterns", [])
+        ]

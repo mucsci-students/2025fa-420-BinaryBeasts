@@ -2,12 +2,13 @@
 
 from src.models.timeslot_model import TimeSlotManager
 from typing import List, Dict, Any, Optional
+from src.undo_manager import SnapshotUndoManager
 
 
 class TimeSlotController:
     """Controller layer for time slot management - bridges view and model."""
 
-    def __init__(self, manager: TimeSlotManager) -> None:
+    def __init__(self, manager: TimeSlotManager, undo_manager: Optional[SnapshotUndoManager] = None) -> None:
         """
         Initialize TimeSlotController.
 
@@ -15,6 +16,24 @@ class TimeSlotController:
             manager: TimeSlotManager instance to control
         """
         self.mgr = manager
+        self.undo_manager = undo_manager
+
+    def _record_change(self) -> None:
+        """Record a snapshot if undo manager is attached."""
+        if self.undo_manager is not None:
+            self.undo_manager.record_change()
+
+    def undo(self) -> bool:
+        """Undo the last time-slot change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.undo()
+
+    def redo(self) -> bool:
+        """Redo the last undone time-slot change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.redo()
 
     def add_daily_time_slot(self, day: str, start: str, end: str, spacing: Optional[int] = None) -> bool:
         """
@@ -30,7 +49,10 @@ class TimeSlotController:
             True if time slot was added, False otherwise
         """
         try:
-            return self.mgr.add_daily_time_slot(day, start, end, spacing)
+            ok = self.mgr.add_daily_time_slot(day, start, end, spacing)
+            if ok:
+                self._record_change()
+            return ok
         except ValueError as e:
             raise e
 
@@ -45,7 +67,10 @@ class TimeSlotController:
         Returns:
             True if slot was deleted, False if invalid index
         """
-        return self.mgr.delete_daily_time_slot(day, slot_index)
+        ok = self.mgr.delete_daily_time_slot(day, slot_index)
+        if ok:
+            self._record_change()
+        return ok
 
     def update_daily_time_slot(self, day: str, slot_index: int, start: str, end: str, 
                               spacing: Optional[int] = None) -> bool:
@@ -88,6 +113,7 @@ class TimeSlotController:
                     new_value={"day": day, "index": slot_index, "slot": new_slot}
                 )
             )
+            self._record_change()
             
             return True
         except ValueError as e:
@@ -108,7 +134,10 @@ class TimeSlotController:
             True if pattern was added
         """
         try:
-            return self.mgr.add_class_pattern(credits, meetings, disabled, start_time)
+            ok = self.mgr.add_class_pattern(credits, meetings, disabled, start_time)
+            if ok:
+                self._record_change()
+            return ok
         except ValueError as e:
             raise e
 
@@ -122,7 +151,10 @@ class TimeSlotController:
         Returns:
             True if pattern was deleted, False if invalid index
         """
-        return self.mgr.delete_class_pattern(pattern_index)
+        ok = self.mgr.delete_class_pattern(pattern_index)
+        if ok:
+            self._record_change()
+        return ok
 
     def update_class_pattern(self, pattern_index: int, credits: Optional[int] = None,
                            meetings: Optional[List[Dict[str, Any]]] = None,
@@ -142,7 +174,10 @@ class TimeSlotController:
             True if pattern was updated, False if invalid index
         """
         try:
-            return self.mgr.update_class_pattern(pattern_index, credits, meetings, disabled, start_time)
+            ok = self.mgr.update_class_pattern(pattern_index, credits, meetings, disabled, start_time)
+            if ok:
+                self._record_change()
+            return ok
         except ValueError as e:
             raise e
 

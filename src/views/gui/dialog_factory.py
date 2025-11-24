@@ -203,8 +203,14 @@ class DialogFactory:
             timeslot_manager.add_observer(conflict_observer)
             conflict_observer.register_manager('timeslot', timeslot_manager)
 
-        # Create controller
-        controller = TimeSlotController(timeslot_manager)
+        # Create undo/redo manager for time slots
+        undo_manager = SnapshotUndoManager(
+            get_state=timeslot_manager.snapshot_state,
+            set_state=timeslot_manager.restore_state,
+        )
+
+        # Create controller with undo manager
+        controller = TimeSlotController(timeslot_manager, undo_manager=undo_manager)
 
         # Create and return dialog
         return TimeSlotsDialog(controller, config, parent)

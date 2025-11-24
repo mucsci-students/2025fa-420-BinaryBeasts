@@ -28,6 +28,10 @@ TITLE_FONT = QFont("Arial", 19, QFont.Bold)
 LABEL_FONT = QFont("Arial", 15)
 BUTTON_FONT = QFont("Arial", 15)
 SMALL_FONT = QFont("Arial", 12)
+SMALL_BUTTON_STYLE = (
+    "padding: 6px; background-color: #327f66; color: white; "
+    "border-radius: 4px; min-width: 70px;"
+)
 
 FRAME_STYLE = """
 QFrame {
@@ -364,6 +368,25 @@ class TimeSlotsDialog(QDialog):
         header.setAlignment(Qt.AlignCenter) # type: ignore
         main_layout.addWidget(header)
 
+        self.undo_button = QPushButton("Undo")
+        self.redo_button = QPushButton("Redo")
+
+        self.undo_button.setFont(QFont("Arial", 12))
+        self.redo_button.setFont(QFont("Arial", 12))
+
+        self.undo_button.setStyleSheet(SMALL_BUTTON_STYLE)
+        self.redo_button.setStyleSheet(SMALL_BUTTON_STYLE)
+
+        self.undo_button.clicked.connect(self.handle_undo)
+        self.redo_button.clicked.connect(self.handle_redo)
+
+        top_button_row = QHBoxLayout()
+        top_button_row.addWidget(self.undo_button)
+        top_button_row.addWidget(self.redo_button)
+        top_button_row.addStretch()
+
+        main_layout.addLayout(top_button_row)
+
         # Tab widget for daily times and class patterns
         self.tab_widget = QTabWidget()
         
@@ -378,23 +401,22 @@ class TimeSlotsDialog(QDialog):
         main_layout.addWidget(self.tab_widget)
 
         # Bottom buttons
-        button_layout = QHBoxLayout()
-        
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
-        
+
         for btn in (self.save_button, self.cancel_button):
             btn.setFont(BUTTON_FONT)
             btn.setStyleSheet(BUTTON_STYLE)
-        
+
         self.save_button.clicked.connect(self.save_and_close)
         self.cancel_button.clicked.connect(self.reject)
-        
-        button_layout.addStretch()
-        button_layout.addWidget(self.save_button)
-        button_layout.addWidget(self.cancel_button)
-        
-        main_layout.addLayout(button_layout)
+
+        bottom_button_layout = QHBoxLayout()
+        bottom_button_layout.addStretch()
+        bottom_button_layout.addWidget(self.save_button)
+        bottom_button_layout.addWidget(self.cancel_button)
+
+        main_layout.addLayout(bottom_button_layout)
 
         # Initialize data
         try:
@@ -817,6 +839,20 @@ class TimeSlotsDialog(QDialog):
         layout.addLayout(button_layout)
         
         dialog.exec_()
+
+    def handle_undo(self):
+        if self.controller.undo():
+            self.refresh_daily_times()
+            self.refresh_class_patterns()
+        else:
+            QMessageBox.information(self, "Undo", "Nothing to undo.")
+
+    def handle_redo(self):
+        if self.controller.redo():
+            self.refresh_daily_times()
+            self.refresh_class_patterns()
+        else:
+            QMessageBox.information(self, "Redo", "Nothing to redo.")
 
     def save_and_close(self):
         """Save changes and close the dialog."""
