@@ -191,10 +191,24 @@ class generate_controller:
                     print(f"❌ Error exporting faculty PDF: {e}")
                 input("\nPress Enter to continue...")
             elif user_input == "8":
+                # Export current schedule grouped by room (PDF)
+                filename = schedules_view.save_room_pdf_view()
+                # Build current schedule objects list
+                schedule_objs = [c for c in self.schedules[self.index] if c is not None]
+                try:
+                    written = schedules_view.save_schedules_by_room_pdf(schedule_objs, filename)
+                    if written:
+                        print(f"✅ Room PDF written to: {written}")
+                    else:
+                        print("❌ Failed to write room PDF.")
+                except Exception as e:
+                    print(f"❌ Error exporting room PDF: {e}")
+                input("\nPress Enter to continue...")
+            elif user_input == "9":
                 # Return to main menu
                 break
             else:
-                print("Invalid option. Please select 1-7.")
+                print("Invalid option. Please select 1-9.")
                 input("Press Enter to continue...")
 
 
@@ -303,10 +317,23 @@ class raw_schedules_controller:
                     print(f"❌ Error exporting faculty PDF: {e}")
                 input("\nPress Enter to continue...")
             elif user_input == "8":
+                # Export current schedule grouped by room (PDF)
+                filename = schedules_view.save_room_pdf_view()
+                schedule_objs = [c for c in self.schedules[self.index] if c is not None]
+                try:
+                    written = schedules_view.save_schedules_by_room_pdf(schedule_objs, filename)
+                    if written:
+                        print(f"✅ Room PDF written to: {written}")
+                    else:
+                        print("❌ Failed to write room PDF.")
+                except Exception as e:
+                    print(f"❌ Error exporting room PDF: {e}")
+                input("\nPress Enter to continue...")
+            elif user_input == "9":
                 # Return to main menu
                 break
             else:
-                print("Invalid option. Please select 1-7.")
+                print("Invalid option. Please select 1-9.")
                 input("Press Enter to continue...")
 
     def _save_schedules_to_file(self, output_file: str, format_type: str):
