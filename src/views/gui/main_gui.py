@@ -2,7 +2,8 @@ import sys
 from PyQt5.QtWidgets import (
     QWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
     QFrame, QGridLayout, QInputDialog, QMessageBox,
-    QDialog, QCheckBox, QDialogButtonBox, QProgressDialog, QApplication
+    QDialog, QCheckBox, QDialogButtonBox, QProgressDialog, QApplication,
+    QComboBox
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
@@ -22,6 +23,9 @@ from src.undo_manager import SnapshotUndoManager
 # Controllers and models are now handled by the factory pattern
 from src.views.gui.dialog_factory import DialogFactory, DialogType
 # Controllers and models are now handled by the factory pattern
+from src.strategy_pattern import (
+    PackingStrategy, StabilityStrategy, PreferenceStrategy, BalancedStrategy
+)
 import json
 from scheduler import (
     Scheduler,
@@ -524,7 +528,20 @@ class MainGUI(QWidget):
         opt_dialog = QDialog(self)
         opt_dialog.setWindowTitle("Optimization Options")
         opt_layout = QVBoxLayout(opt_dialog)
-        opt_layout.addWidget(QLabel("Select optimization options:"))
+        
+        # Add preset dropdown (Strategy Pattern in action!)
+        opt_layout.addWidget(QLabel("Quick Presets:"))
+        preset_combo = QComboBox()
+        preset_combo.addItems([
+            "Custom (manual selection)",
+            "📦 Maximum Packing - fewer rooms/labs",
+            "🔒 Stability - same rooms/labs", 
+            "❤️  Faculty Preferences - optimize for faculty",
+            "⚖️  Balanced - preferences + stability"
+        ])
+        opt_layout.addWidget(preset_combo)
+        
+        opt_layout.addWidget(QLabel("\nOr select individual options:"))
 
         cb_fac_course = QCheckBox("Optimize faculty course")
         cb_fac_room = QCheckBox("Optimize faculty room")
@@ -544,6 +561,35 @@ class MainGUI(QWidget):
             (cb_pack_rooms, "pack_rooms"),
             (cb_pack_labs, "pack_labs"),
         ]
+        
+        # Create reverse map for easy checkbox lookup
+        checkbox_map = {name: cb for cb, name in flag_map}
+        
+        # Preset selection handler
+        def apply_preset(index):
+            if index == 0:  # Custom
+                return
+            # Clear all first
+            for cb, _ in flag_map:
+                cb.setChecked(False)
+            # Apply strategy
+            strategy = None
+            if index == 1:  # Packing
+                strategy = PackingStrategy()
+            elif index == 2:  # Stability
+                strategy = StabilityStrategy()
+            elif index == 3:  # Preference
+                strategy = PreferenceStrategy()
+            elif index == 4:  # Balanced
+                strategy = BalancedStrategy()
+            
+            if strategy:
+                for flag in strategy.get_flags():
+                    if flag in checkbox_map:
+                        checkbox_map[flag].setChecked(True)
+        
+        preset_combo.currentIndexChanged.connect(apply_preset)
+        
         # Pre-fill from existing config flags if available
         existing_flags = getattr(self.config, "optimizer_flags", None)
         if isinstance(existing_flags, (list, set, tuple)):

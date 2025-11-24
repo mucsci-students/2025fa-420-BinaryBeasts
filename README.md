@@ -271,6 +271,11 @@ The application follows the **Model-View-Controller (MVC)** pattern:
 - **Usage**: Main Controller uses singleton for schedule and configuration management
 - **Benefits**: Ensures consistent state across the application lifecycle
 
+**Strategy**: Provides preset algorithms for selecting optimizer flags
+- **Core Files**: strategy_pattern
+- **Usage**: Provide preset flags for users to pick
+- **Benefits**: Lets users select preset optimization combinations with one click instead of manually checking 3-7 individual flag boxes.
+
 **Momento**: Tracks states for undos and redos
 - **Core File**: Undo manager
 - **Usage**: Saves and holds state for undo/redo
