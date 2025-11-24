@@ -616,8 +616,15 @@ class main_controller:
         if time_slot_data:
             manager.load_time_slots(time_slot_data)
 
-        # Create controller and run
-        controller = TimeSlotController(manager)
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+        # record initial baseline
+        undo_manager.record_change()
+
+        # Create controller with undo support
+        controller = TimeSlotController(manager, undo_manager=undo_manager)
 
         while True:
             TimeSlotView.show_menu()
