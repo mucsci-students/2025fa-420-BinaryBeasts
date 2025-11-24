@@ -17,13 +17,13 @@ from src.controllers.course_controller import CourseController
 from src.controllers.faculty_controller import FacultyController
 from src.controllers.lab_controller import LabController
 from src.controllers.room_controller import RoomController
-from src.controllers.timeslot_controller import TimeSlotController
+from src.controllers.time_slot_controller import TimeSlotController
 
 from src.models.course_model import CourseManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
 from src.models.room_model import RoomManager
-from src.models.timeslot_model import TimeSlotManager
+from src.models.time_slot_model import TimeSlotManager
 
 
 class DialogFactory:
@@ -177,7 +177,26 @@ class DialogFactory:
     def _create_timeslots_dialog(config, parent, conflict_observer=None):
         """Create and configure a time slots management dialog."""
         # Create time slot manager
-        timeslot_manager = TimeSlotManager(config)
+        timeslot_manager = TimeSlotManager()
+        
+        # Load time slot configuration from the combined config
+        if hasattr(config, 'time_slot_config') and config.time_slot_config:
+            time_slot_config = config.time_slot_config
+            
+            # Convert TimeSlotConfig object to dictionary format
+            try:
+                # Try Pydantic v2 method first
+                config_dict = time_slot_config.model_dump()
+            except AttributeError:
+                try:
+                    # Try Pydantic v1 method
+                    config_dict = time_slot_config.dict()
+                except AttributeError:
+                    # If it's already a dictionary
+                    config_dict = time_slot_config
+                    
+            # Load the dictionary configuration
+            timeslot_manager.load_time_slots(config_dict)
         
         # Attach conflict resolution observer if provided
         if conflict_observer and hasattr(timeslot_manager, 'add_observer'):

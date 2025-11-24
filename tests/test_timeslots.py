@@ -2,8 +2,8 @@ import os
 import pytest
 from unittest.mock import MagicMock, patch
 from PyQt5.QtWidgets import QApplication, QDialog, QMessageBox
-from src.models.timeslot_model import TimeSlotManager
-from src.controllers.timeslot_controller import TimeSlotController
+from src.models.time_slot_model import TimeSlotManager
+from src.controllers.time_slot_controller import TimeSlotController
 from src.views.gui.timeslot_gui import (
     TimeSlotsDialog,
     DailyTimeSlotDialog,

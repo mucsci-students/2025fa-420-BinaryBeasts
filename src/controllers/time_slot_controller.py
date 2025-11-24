@@ -82,6 +82,42 @@ class TimeSlotController:
         """Save to CombinedConfig (GUI)."""
         return self.mgr.save_with_combined_config(combined_config)
 
+    # GUI compatibility methods (wrappers around main methods)
+    def get_daily_times_for_day(self, day: str) -> List[dict]:
+        """Get time blocks for a day (GUI compatibility)."""
+        return self.get_time_blocks_for_day(day)
+
+    def add_daily_time_slot(self, day: str, start: str, end: str, 
+                           spacing: Optional[int] = None) -> bool:
+        """Add daily time slot (GUI compatibility)."""
+        time_block_data: dict = {"start": start, "end": end}
+        if spacing is not None:
+            time_block_data["spacing"] = spacing
+        return self.add_time_block(day, time_block_data)
+
+    def update_daily_time_slot(self, day: str, slot_index: int, start: str, 
+                              end: str, spacing: Optional[int] = None) -> bool:
+        """Update daily time slot (GUI compatibility)."""
+        new_data: dict = {"start": start, "end": end}
+        if spacing is not None:
+            new_data["spacing"] = spacing
+        return self.modify_time_block(day, slot_index, new_data)
+
+    def delete_daily_time_slot(self, day: str, slot_index: int) -> bool:
+        """Delete daily time slot (GUI compatibility)."""
+        return self.delete_time_block(day, slot_index)
+
+    def update_class_pattern(self, pattern_index: int, credits: int,
+                            meetings: List[dict], disabled: bool = False,
+                            start_time: Optional[str] = None) -> bool:
+        """Update class pattern (GUI compatibility)."""
+        new_pattern = {"credits": credits, "meetings": meetings}
+        if disabled:
+            new_pattern["disabled"] = disabled
+        if start_time:
+            new_pattern["start_time"] = start_time
+        return self.modify_class_pattern(pattern_index, new_pattern)
+
     def run(self, config: dict, config_file: str) -> dict:
         """Main controller loop."""
         from src.views.cli.time_slot_view_cli import TimeSlotView
