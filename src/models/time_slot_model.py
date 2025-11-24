@@ -5,7 +5,8 @@ Provides TimeSlotManager class for managing time slot configurations with
 observer pattern support and Pydantic validation.
 """
 
-import json, copy
+import json
+import copy
 from typing import List, Optional
 from pydantic import ValidationError
 from src.observer_pattern import Observable, EventType, EventData
