@@ -6,10 +6,9 @@ including CRUD operations, configuration validation, observer pattern
 integration, and error handling.
 """
 
-import json
 import pytest
-from unittest.mock import Mock, patch, MagicMock, mock_open
-from pydantic import ValidationError
+from typing import Any
+from unittest.mock import Mock, patch, mock_open
 
 from src.models.time_slot_model import TimeSlotManager
 from src.observer_pattern import Observer, EventType, EventData
@@ -21,7 +20,7 @@ class MockObserver(Observer):
     def __init__(self):
         self.notifications = []
     
-    def update(self, event_type: EventType, data: EventData = None) -> None:
+    def update(self, event_type: EventType, data: 'EventData | None' = None) -> None:
         """Record notifications for testing."""
         self.notifications.append({
             'event_type': event_type,
@@ -90,7 +89,7 @@ class TestTimeSlotManagerConfiguration:
         manager = TimeSlotManager()
         
         with pytest.raises(ValueError, match="Time slot data must be a dictionary"):
-            manager.load_time_slots("invalid")
+            manager.load_time_slots("invalid")  # type: ignore
     
     def test_load_configuration_with_exception(self):
         """Test error handling during configuration loading."""
@@ -186,7 +185,7 @@ class TestTimeSlotManagerTimeBlocks:
         result = self.manager.add_time_block("WED", new_block)
         
         assert result is True
-        assert "WED" in self.manager.time_slot_config["times"]
+        assert "WED" in self.manager.time_slot_config["times"]  # type: ignore
         blocks = self.manager.get_time_blocks_for_day("WED")
         assert len(blocks) == 1
     
@@ -248,7 +247,7 @@ class TestTimeSlotManagerTimeBlocks:
     
     def test_modify_time_block_preserve_spacing(self):
         """Test modifying time block preserves spacing when not provided."""
-        original_spacing = self.manager.time_slot_config["times"]["MON"][0]["spacing"]
+        original_spacing = self.manager.time_slot_config["times"]["MON"][0]["spacing"]  # type: ignore
         new_block = {"start": "09:00", "end": "10:50"}
         
         result = self.manager.modify_time_block("MON", 0, new_block)
@@ -308,7 +307,7 @@ class TestTimeSlotManagerClassPatterns:
             "meetings": [{"day": "TUE", "duration": 150}],
             "disabled": True
         }
-        self.manager.time_slot_config["classes"].append(disabled_pattern)
+        self.manager.time_slot_config["classes"].append(disabled_pattern)  # type: ignore
         
         enabled = self.manager.get_enabled_class_patterns()
         assert len(enabled) == 1
@@ -436,7 +435,7 @@ class TestTimeSlotManagerClassPatterns:
     def test_toggle_pattern_status_disable_to_enable(self):
         """Test toggling pattern status from disabled to enabled."""
         # First disable the pattern
-        self.manager.time_slot_config["classes"][0]["disabled"] = True
+        self.manager.time_slot_config["classes"][0]["disabled"] = True  # type: ignore
         
         result = self.manager.toggle_pattern_status(0)
         
@@ -470,8 +469,8 @@ class TestTimeSlotManagerGapSettings:
         result = self.manager.update_gap_settings(max_time_gap=240, min_time_overlap=45)
         
         assert result is True
-        assert self.manager.time_slot_config["max_time_gap"] == 240
-        assert self.manager.time_slot_config["min_time_overlap"] == 45
+        assert self.manager.time_slot_config["max_time_gap"] == 240  # type: ignore
+        assert self.manager.time_slot_config["min_time_overlap"] == 45  # type: ignore
         
         # Check observer notification
         assert len(self.observer.notifications) == 1
@@ -482,16 +481,16 @@ class TestTimeSlotManagerGapSettings:
         result = self.manager.update_gap_settings(max_time_gap=300)
         
         assert result is True
-        assert self.manager.time_slot_config["max_time_gap"] == 300
-        assert self.manager.time_slot_config["min_time_overlap"] == 30  # Unchanged
+        assert self.manager.time_slot_config["max_time_gap"] == 300  # type: ignore
+        assert self.manager.time_slot_config["min_time_overlap"] == 30  # Unchanged  # type: ignore
     
     def test_update_gap_settings_overlap_only(self):
         """Test updating only overlap setting."""
         result = self.manager.update_gap_settings(min_time_overlap=60)
         
         assert result is True
-        assert self.manager.time_slot_config["max_time_gap"] == 180  # Unchanged
-        assert self.manager.time_slot_config["min_time_overlap"] == 60
+        assert self.manager.time_slot_config["max_time_gap"] == 180  # Unchanged  # type: ignore
+        assert self.manager.time_slot_config["min_time_overlap"] == 60  # type: ignore
     
     def test_update_gap_settings_no_config(self):
         """Test updating gap settings when no configuration is loaded."""
@@ -586,7 +585,7 @@ class TestTimeSlotManagerSaveConfiguration:
     
     def test_save_with_combined_config_none(self):
         """Test saving with None CombinedConfig."""
-        result = self.manager.save_with_combined_config(None)
+        result = self.manager.save_with_combined_config(None)  # type: ignore
         assert result is False
     
     def test_save_with_combined_config_validation_error(self):
