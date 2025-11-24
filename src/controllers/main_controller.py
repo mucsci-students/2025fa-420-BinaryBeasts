@@ -240,7 +240,16 @@ class main_controller:
 
     def save_schedules(self, path: str):
         with open(path, "w") as f:
-            f.write(str(self.schedules[self.current_schedule_index]))
+            # Support legacy tests that set schedules directly on the controller
+            schedules = getattr(self, "schedules", None)
+            index = getattr(self, "current_schedule_index", None)
+            if not isinstance(schedules, list) or not isinstance(index, int):
+                schedules = self.model.schedules
+                index = self.model.current_schedule_index
+            if not schedules:
+                f.write("[]")
+            else:
+                f.write(str(schedules[index]))
 
     def manage_courses(self):
         """Manage courses using the course management system"""

@@ -11,16 +11,19 @@ from src.views.gui.course_view_gui import CoursesDialog
 from src.views.gui.faculty_gui import FacultiesDialog
 from src.views.gui.lab_gui import LabsDialog
 from src.views.gui.roomGui import RoomsDialog
+from src.views.gui.timeslot_gui import TimeSlotsDialog
 
 from src.controllers.course_controller import CourseController
 from src.controllers.faculty_controller import FacultyController
 from src.controllers.lab_controller import LabController
 from src.controllers.room_controller import RoomController
+from src.controllers.timeslot_controller import TimeSlotController
 
 from src.models.course_model import CourseManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
 from src.models.room_model import RoomManager
+from src.models.timeslot_model import TimeSlotManager
 from src.undo_manager import SnapshotUndoManager
 
 
@@ -65,6 +68,9 @@ class DialogFactory:
         elif dialog_type == "rooms":
             return DialogFactory._create_rooms_dialog(config, parent, conflict_observer)
             
+        elif dialog_type == "timeslots":
+            return DialogFactory._create_timeslots_dialog(config, parent, conflict_observer)
+
         else:
             raise ValueError(f"Unknown dialog type: {dialog_type}")
 
@@ -153,7 +159,7 @@ class DialogFactory:
             get_state=lab_manager.snapshot_state,
             set_state=lab_manager.restore_state,
         )
-        
+
         # Attach conflict resolution observer if provided
         if conflict_observer and hasattr(lab_manager, 'add_observer'):
             lab_manager.add_observer(conflict_observer)
@@ -174,7 +180,7 @@ class DialogFactory:
             get_state=room_manager.snapshot_state,
             set_state=room_manager.restore_state,
         )
-        
+
         # Attach conflict resolution observer if provided
         if conflict_observer and hasattr(room_manager, 'add_observer'):
             room_manager.add_observer(conflict_observer)
@@ -186,6 +192,23 @@ class DialogFactory:
         # Create and return dialog
         return RoomsDialog(controller, config, parent)
 
+    @staticmethod
+    def _create_timeslots_dialog(config, parent, conflict_observer=None):
+        """Create and configure a time slots management dialog."""
+        # Create time slot manager
+        timeslot_manager = TimeSlotManager(config)
+
+        # Attach conflict resolution observer if provided
+        if conflict_observer and hasattr(timeslot_manager, 'add_observer'):
+            timeslot_manager.add_observer(conflict_observer)
+            conflict_observer.register_manager('timeslot', timeslot_manager)
+
+        # Create controller
+        controller = TimeSlotController(timeslot_manager)
+
+        # Create and return dialog
+        return TimeSlotsDialog(controller, config, parent)
+
 
 class DialogType:
     """Constants for dialog types to avoid string literals in client code."""
@@ -193,3 +216,4 @@ class DialogType:
     FACULTY = "faculty"
     LABS = "labs"
     ROOMS = "rooms"
+    TIMESLOTS = "timeslots"

@@ -29,7 +29,7 @@ class FacultyController:
         """Get all faculty names."""
         return self.mgr.get_faculty_names()
 
-    def get_faculty(self, name: str) -> Faculty:
+    def get_faculty(self, name: str) -> Optional[Faculty]:
         """Get a specific faculty member."""
         return self.mgr.get_faculty(name)
 

@@ -193,11 +193,13 @@ class MainGUI(QWidget):
         faculty_btn = make_edit_btn("Edit Faculty", self.open_faculty_manager)
         labs_btn = make_edit_btn("Edit Labs", self.open_lab_manager)
         rooms_btn = make_edit_btn("Edit Rooms", self.open_room_manager)
+        timeslots_btn = make_edit_btn("Edit Time Slots", self.open_timeslot_manager)
 
         grid.addWidget(courses_btn, 0, 0)
         grid.addWidget(faculty_btn, 0, 1)
         grid.addWidget(labs_btn, 1, 0)
         grid.addWidget(rooms_btn, 1, 1)
+        grid.addWidget(timeslots_btn, 2, 0)
 
         edit_layout.addLayout(grid)
         layout.addWidget(edit_section)
@@ -353,6 +355,27 @@ class MainGUI(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
+
+    def open_timeslot_manager(self):
+        """Open the time slot management dialog using the factory pattern."""
+        if not self.file_uploaded:
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
+            return
+
+        try:
+            # Use factory to create the time slots dialog with observer support
+            self.timeslot_window = DialogFactory.create_dialog(
+                DialogType.TIMESLOTS, 
+                self.config, 
+                self,
+                self.conflict_observer
+            )
+            self.timeslot_window.exec_()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Time Slot Manager:\n{e}")
 
     def save_configuration(self):
         if not self.file_uploaded:

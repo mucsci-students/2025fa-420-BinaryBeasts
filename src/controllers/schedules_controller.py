@@ -177,6 +177,20 @@ class generate_controller:
                 filename, format_type = schedules_view.save_schedules_view()
                 self._save_schedules_to_file(filename, format_type)
             elif user_input == "7":
+                # Export current schedule grouped by faculty (PDF)
+                filename = schedules_view.save_faculty_pdf_view()
+                # Build current schedule objects list
+                schedule_objs = [c for c in self.schedules[self.index] if c is not None]
+                try:
+                    written = schedules_view.save_schedules_by_faculty_pdf(schedule_objs, filename)
+                    if written:
+                        print(f"✅ Faculty PDF written to: {written}")
+                    else:
+                        print("❌ Failed to write faculty PDF.")
+                except Exception as e:
+                    print(f"❌ Error exporting faculty PDF: {e}")
+                input("\nPress Enter to continue...")
+            elif user_input == "8":
                 # Return to main menu
                 break
             else:
@@ -276,6 +290,19 @@ class raw_schedules_controller:
                 filename, format_type = schedules_view.save_schedules_view()
                 self._save_schedules_to_file(filename, format_type)
             elif user_input == "7":
+                # Export current schedule grouped by faculty (PDF)
+                filename = schedules_view.save_faculty_pdf_view()
+                schedule_objs = [c for c in self.schedules[self.index] if c is not None]
+                try:
+                    written = schedules_view.save_schedules_by_faculty_pdf(schedule_objs, filename)
+                    if written:
+                        print(f"✅ Faculty PDF written to: {written}")
+                    else:
+                        print("❌ Failed to write faculty PDF.")
+                except Exception as e:
+                    print(f"❌ Error exporting faculty PDF: {e}")
+                input("\nPress Enter to continue...")
+            elif user_input == "8":
                 # Return to main menu
                 break
             else:

@@ -29,7 +29,7 @@ A comprehensive course scheduling system with both **Command-Line Interface (CLI
   - **Room View**: Navigate room-by-room with weekly grid layout
   - **Faculty View**: Navigate faculty-by-faculty with course assignments
 - **Schedule Navigation**: Browse through multiple generated schedules
-- **Export Options**: Save schedules in JSON or CSV format
+- **Export Options**: Save schedules in PDF, JSON or CSV format
 
 ### User Interfaces
 - **CLI**: Full-featured command-line interface with menu-driven navigation
@@ -232,6 +232,7 @@ pip install -r requirements.txt
 **Schedule Files:**
 - Export schedules to JSON (with schedule IDs)
 - Export schedules to CSV (spreadsheet format)
+- Export schedules by faculty to PDF
 - Import previously saved schedules for viewing
 
 
