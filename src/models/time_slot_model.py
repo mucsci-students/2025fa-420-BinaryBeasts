@@ -6,6 +6,7 @@ observer pattern support and Pydantic validation.
 """
 
 import json
+import copy
 from typing import List, Optional
 from pydantic import ValidationError
 from src.observer_pattern import Observable, EventType, EventData
@@ -501,3 +502,15 @@ class TimeSlotManager(Observable):
                                    f"meeting {j} missing '{meeting_field}'")
                             errors.append(msg)
         return errors
+
+    def snapshot_state(self) -> dict:
+        """Return a snapshot of the current time slot configuration."""
+        # Deep copy so undo/redo doesn't share references
+        if self.time_slot_config is None:
+            return {}
+        return copy.deepcopy(self.time_slot_config)
+
+    def restore_state(self, state: dict) -> None:
+        """Restore state from a snapshot."""
+        # Deep copy again to avoid aliasing
+        self.time_slot_config = copy.deepcopy(state)
