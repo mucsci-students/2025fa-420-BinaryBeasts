@@ -1,13 +1,3 @@
-"""
-Strategy Pattern for Schedule Optimization.
-
-Defines different optimization strategies that can be swapped at runtime.
-This is the SIMPLEST design pattern to implement - only ~45 lines!
-
-Works with the actual config format where optimizer_flags is a list of strings:
-["faculty_course", "faculty_room", "faculty_lab", "same_room", "same_lab", "pack_rooms"]
-"""
-
 from abc import ABC, abstractmethod
 from typing import List
 
