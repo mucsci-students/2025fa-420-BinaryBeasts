@@ -1,7 +1,6 @@
 """Comprehensive tests for room PDF export functionality."""
 import os
 from unittest.mock import Mock, patch
-import pytest
 
 from src.views.cli import schedules_view as sv
 
