@@ -155,12 +155,6 @@ class CourseDialog(QDialog):
             QMessageBox.warning(self, "Error", "At least one room is required")
             return
 
-        if not faculty_list:
-            QMessageBox.warning(
-                self, "Error", "At least one faculty member is required"
-            )
-            return
-
         self.result_course = {
             "course_id": course_id,
             "credits": credits,
