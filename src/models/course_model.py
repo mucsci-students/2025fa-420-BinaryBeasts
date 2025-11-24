@@ -1,6 +1,7 @@
 # src/models/course_model.py
 
 import json
+from copy import deepcopy
 from typing import Dict, List, Set, Optional
 from src.observer_pattern import Observable, EventType, EventData
 
@@ -308,3 +309,24 @@ class CourseManager(Observable):
         except Exception as e:
             print(f"Error saving: {e}")
             return False
+
+    def snapshot_state(self) -> dict:
+        """
+        Return a plain-Python snapshot of current state.
+        Used by the undo/redo system.
+        """
+        return {
+            "courses": deepcopy(self.courses),
+            "rooms": set(self.rooms),
+            "labs": set(self.labs),
+            "faculty": set(self.faculty),
+        }
+
+    def restore_state(self, state: dict) -> None:
+        """
+        Restore state from a snapshot (made by snapshot_state).
+        """
+        self.courses = deepcopy(state.get("courses", {}))
+        self.rooms = set(state.get("rooms", set()))
+        self.labs = set(state.get("labs", set()))
+        self.faculty = set(state.get("faculty", set()))

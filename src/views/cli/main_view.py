@@ -16,13 +16,13 @@ def get_user_input():
                                 return manual_choice  # Return 1-4 from manual edit menu
                         # If None, loop continues to show main menu again
                 elif choice == '2':
-                        return '5'  # Map to old option 5 (Generate Schedules)
+                        return '6'  # Map to option 6 (Generate Schedules)
                 elif choice == '3':
-                        return '6'  # Map to old option 6 (Import Schedules)
+                        return '7'  # Map to option 7 (Import Schedules)
                 elif choice == '4':
-                        return '7'  # AI Assistant
+                        return '8'  # AI Assistant
                 elif choice == '5':
-                        return '8'  # Exit
+                        return '9'  # Exit
                 else:
                         print("Please try again.")
 
@@ -35,12 +35,13 @@ def manual_edit_options():
         print("2. 🔬 Edit Lab")
         print("3. 👥 Edit Faculty")
         print("4. 🏢 Edit Room")
-        print("5. 🔙 Back to Main Menu")
-        choice = input("Enter your choice (1-5): ").strip()
+        print("5. ⏰ Edit Time Slots")
+        print("6. 🔙 Back to Main Menu")
+        choice = input("Enter your choice (1-6): ").strip()
 
-        if choice in ['1', '2', '3', '4']:
+        if choice in ['1', '2', '3', '4', '5']:
             return choice
-        elif choice == '5':
+        elif choice == '6':
             return None  # go back to main menu
         else:
             print("Please try again.")
@@ -53,44 +54,86 @@ def load_config():
         return path
 
 def generate_schedules():
+       from src.strategy_pattern import (
+           PackingStrategy, StabilityStrategy, PreferenceStrategy, BalancedStrategy
+       )
+       
        num = input("How many schedules would you like? ")
        flags = []
-       while True:
-            print("Would you like to optimize generation?")
-            print("1. ⭐ Optimize Using Faculty Course Preferences")
-            print("2. 🏢 Optimize Using Faculty Room Preferences")
-            print("3. 🔬 Optimize Using Faculty Lab Preferences")
-            print("4. 📍 Same Room")
-            print("5. 🧪 Same Lab")
-            print("6. 📦 Pack Rooms")
-            print("7. 🗃️  Pack Labs")
-            print("8. ✅ No more flags")
-            choice = input("Enter your choice (1-8): ").strip()
-            if choice == '1':
-                if "faculty_course" not in flags:
-                    flags.append("faculty_course")
-            elif choice == '2':
-                if "faculty_room" not in flags:
-                    flags.append("faculty_room")
-            elif choice == '3':
-                if "faculty_lab" not in flags:
-                    flags.append("faculty_lab")
-            elif choice == '4':
-                if "same_room" not in flags:
-                    flags.append("same_room")
-            elif choice == '5':
-                if "same_lab" not in flags:
-                    flags.append("same_lab")
-            elif choice == '6':
-                if "pack_rooms" not in flags:
-                    flags.append("pack_rooms")
-            elif choice == '7':
-                if "pack_labs" not in flags:
-                    flags.append("pack_labs")
-            elif choice == '8':
-                break
-            else:
-                print("Invalid choice. Please try again.")
+       
+       # Show preset options first
+       print("\n" + "="*60)
+       print("OPTIMIZATION OPTIONS")
+       print("="*60)
+       print("\n🎯 Quick Presets (Strategy Pattern):")
+       print("  1. 📦 Maximum Packing - fewer rooms/labs")
+       print("  2. 🔒 Stability - same rooms/labs")
+       print("  3. ❤️  Faculty Preferences - optimize for faculty")
+       print("  4. ⚖️  Balanced - preferences + stability")
+       print("  5. 🎨 Custom - select individual flags\n")
+       
+       preset_choice = input("Choose preset (1/2/3/4/5) or press Enter for custom: ").strip().upper()
+       
+       if preset_choice == '1':
+           flags = PackingStrategy().get_flags()
+           print(f"✅ Applied Packing Strategy: {flags}")
+       elif preset_choice == '2':
+           flags = StabilityStrategy().get_flags()
+           print(f"✅ Applied Stability Strategy: {flags}")
+       elif preset_choice == '3':
+           flags = PreferenceStrategy().get_flags()
+           print(f"✅ Applied Preference Strategy: {flags}")
+       elif preset_choice == '4':
+           flags = BalancedStrategy().get_flags()
+           print(f"✅ Applied Balanced Strategy: {flags}")
+       else:
+           # Custom flag selection
+           print("\n📋 Select individual optimization flags:")
+           while True:
+                print("\n1. ⭐ Optimize Using Faculty Course Preferences")
+                print("2. 🏢 Optimize Using Faculty Room Preferences")
+                print("3. 🔬 Optimize Using Faculty Lab Preferences")
+                print("4. 📍 Same Room")
+                print("5. 🧪 Same Lab")
+                print("6. 📦 Pack Rooms")
+                print("7. 🗃️  Pack Labs")
+                print("8. ✅ Done selecting")
+                choice = input("Enter your choice (1-8): ").strip()
+                if choice == '1':
+                    if "faculty_course" not in flags:
+                        flags.append("faculty_course")
+                        print("   ✓ Added faculty_course")
+                elif choice == '2':
+                    if "faculty_room" not in flags:
+                        flags.append("faculty_room")
+                        print("   ✓ Added faculty_room")
+                elif choice == '3':
+                    if "faculty_lab" not in flags:
+                        flags.append("faculty_lab")
+                        print("   ✓ Added faculty_lab")
+                elif choice == '4':
+                    if "same_room" not in flags:
+                        flags.append("same_room")
+                        print("   ✓ Added same_room")
+                elif choice == '5':
+                    if "same_lab" not in flags:
+                        flags.append("same_lab")
+                        print("   ✓ Added same_lab")
+                elif choice == '6':
+                    if "pack_rooms" not in flags:
+                        flags.append("pack_rooms")
+                        print("   ✓ Added pack_rooms")
+                elif choice == '7':
+                    if "pack_labs" not in flags:
+                        flags.append("pack_labs")
+                        print("   ✓ Added pack_labs")
+                elif choice == '8':
+                    break
+                else:
+                    print("❌ Invalid choice. Please try again.")
+           
+       print(f"\n📊 Final flags: {flags if flags else 'None'}")
+       print("="*60 + "\n")
        return [int(num), flags]
 
 def import_schedules():

@@ -1,6 +1,7 @@
 # src/models/faculty_model.py
 
 import json
+from copy import deepcopy
 from typing import Dict, List, Optional
 from src.observer_pattern import Observable, EventType, EventData
 
@@ -260,12 +261,14 @@ class FacultyManager(Observable):
 
                     # Add all faculty from this manager
                     for faculty in self.faculty.values():
+                        # Hint types for ty: FacultyConfig expects Day->TimeRange mapping
+                        from typing import Any, cast
                         new_faculty = FacultyConfig(
                             name=faculty.name,
                             minimum_credits=faculty.minimum_credits,
                             maximum_credits=faculty.maximum_credits,
                             unique_course_limit=faculty.unique_course_limit,
-                            times=faculty.times,
+                            times=cast(Any, faculty.times),
                             course_preferences=faculty.course_preferences,
                             room_preferences=faculty.room_preferences,
                             lab_preferences=faculty.lab_preferences,
@@ -283,12 +286,13 @@ class FacultyManager(Observable):
                     # Direct update without validation
                     combined_config.config.faculty.clear()
                     for faculty in self.faculty.values():
+                        from typing import Any, cast
                         new_faculty = FacultyConfig(
                             name=faculty.name,
                             minimum_credits=faculty.minimum_credits,
                             maximum_credits=faculty.maximum_credits,
                             unique_course_limit=faculty.unique_course_limit,
-                            times=faculty.times,
+                            times=cast(Any, faculty.times),
                             course_preferences=faculty.course_preferences,
                             room_preferences=faculty.room_preferences,
                             lab_preferences=faculty.lab_preferences,
@@ -304,3 +308,18 @@ class FacultyManager(Observable):
         except Exception as e:
             print(f"Error saving: {e}")
             return False
+
+    def snapshot_state(self) -> dict:
+        """
+        Return a snapshot of the current faculty state.
+        Used by the undo/redo system.
+        """
+        return {
+            "faculty": deepcopy(self.faculty),
+        }
+
+    def restore_state(self, state: dict) -> None:
+        """
+        Restore state from a snapshot created by snapshot_state().
+        """
+        self.faculty = deepcopy(state.get("faculty", {}))

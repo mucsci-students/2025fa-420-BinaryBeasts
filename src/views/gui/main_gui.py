@@ -2,7 +2,8 @@ import sys
 from PyQt5.QtWidgets import (
     QWidget, QFileDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButton,
     QFrame, QGridLayout, QInputDialog, QMessageBox,
-    QDialog, QCheckBox, QDialogButtonBox, QProgressDialog, QApplication
+    QDialog, QCheckBox, QDialogButtonBox, QProgressDialog, QApplication,
+    QComboBox
 )
 from PyQt5.QtGui import QFont
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
@@ -18,9 +19,13 @@ from src.models.course_model import CourseManager
 from src.models.room_model import RoomManager
 from src.models.faculty_model import FacultyManager
 from src.models.lab_model import LabManager
+from src.undo_manager import SnapshotUndoManager
 # Controllers and models are now handled by the factory pattern
 from src.views.gui.dialog_factory import DialogFactory, DialogType
 # Controllers and models are now handled by the factory pattern
+from src.strategy_pattern import (
+    PackingStrategy, StabilityStrategy, PreferenceStrategy, BalancedStrategy
+)
 import json
 from scheduler import (
     Scheduler,
@@ -192,11 +197,13 @@ class MainGUI(QWidget):
         faculty_btn = make_edit_btn("Edit Faculty", self.open_faculty_manager)
         labs_btn = make_edit_btn("Edit Labs", self.open_lab_manager)
         rooms_btn = make_edit_btn("Edit Rooms", self.open_room_manager)
+        timeslots_btn = make_edit_btn("Edit Time Slots", self.open_timeslot_manager)
 
         grid.addWidget(courses_btn, 0, 0)
         grid.addWidget(faculty_btn, 0, 1)
         grid.addWidget(labs_btn, 1, 0)
         grid.addWidget(rooms_btn, 1, 1)
+        grid.addWidget(timeslots_btn, 2, 0)
 
         edit_layout.addLayout(grid)
         layout.addWidget(edit_section)
@@ -353,6 +360,27 @@ class MainGUI(QWidget):
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Failed to open Room Manager:\n{e}")
 
+    def open_timeslot_manager(self):
+        """Open the time slot management dialog using the factory pattern."""
+        if not self.file_uploaded:
+            QMessageBox.critical(
+                self, "Error", "Please upload a configuration file first."
+            )
+            return
+
+        try:
+            # Use factory to create the time slots dialog with observer support
+            self.timeslot_window = DialogFactory.create_dialog(
+                DialogType.TIMESLOTS, 
+                self.config, 
+                self,
+                self.conflict_observer
+            )
+            self.timeslot_window.exec_()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Time Slot Manager:\n{e}")
+
     def save_configuration(self):
         if not self.file_uploaded:
             QMessageBox.critical(
@@ -408,7 +436,11 @@ class MainGUI(QWidget):
                     }
                 )
             course_manager.load_courses(courses_data)
-            course_controller = CourseController(course_manager)
+            course_undo = SnapshotUndoManager(
+                get_state=course_manager.snapshot_state,
+                set_state=course_manager.restore_state,
+            )
+            course_controller = CourseController(course_manager, undo_manager=course_undo)
 
             # Create faculty controller
             faculty_manager = FacultyManager()
@@ -435,14 +467,28 @@ class MainGUI(QWidget):
                     }
                 )
             faculty_manager.load_faculty(faculty_data)
-            faculty_controller = FacultyController(faculty_manager)
+            faculty_undo = SnapshotUndoManager(
+                get_state=faculty_manager.snapshot_state,
+                set_state=faculty_manager.restore_state,
+            )
+            faculty_controller = FacultyController(
+                faculty_manager, undo_manager=faculty_undo
+            )
 
             # Create lab and room controllers
             lab_manager = LabManager(self.config)
-            lab_controller = LabController(lab_manager)
+            lab_undo = SnapshotUndoManager(
+                get_state=lab_manager.snapshot_state,
+                set_state=lab_manager.restore_state,
+            )
+            lab_controller = LabController(lab_manager, undo_manager=lab_undo)
 
             room_manager = RoomManager(self.config)
-            room_controller = RoomController(room_manager)
+            room_undo = SnapshotUndoManager(
+                get_state=room_manager.snapshot_state,
+                set_state=room_manager.restore_state,
+            )
+            room_controller = RoomController(room_manager, undo_manager=room_undo)
 
             # Create NL controller with all controllers and config
             nl_controller = NLController(
@@ -482,7 +528,20 @@ class MainGUI(QWidget):
         opt_dialog = QDialog(self)
         opt_dialog.setWindowTitle("Optimization Options")
         opt_layout = QVBoxLayout(opt_dialog)
-        opt_layout.addWidget(QLabel("Select optimization options:"))
+        
+        # Add preset dropdown (Strategy Pattern in action!)
+        opt_layout.addWidget(QLabel("Quick Presets:"))
+        preset_combo = QComboBox()
+        preset_combo.addItems([
+            "Custom (manual selection)",
+            "📦 Maximum Packing - fewer rooms/labs",
+            "🔒 Stability - same rooms/labs", 
+            "❤️  Faculty Preferences - optimize for faculty",
+            "⚖️  Balanced - preferences + stability"
+        ])
+        opt_layout.addWidget(preset_combo)
+        
+        opt_layout.addWidget(QLabel("\nOr select individual options:"))
 
         cb_fac_course = QCheckBox("Optimize faculty course")
         cb_fac_room = QCheckBox("Optimize faculty room")
@@ -502,6 +561,35 @@ class MainGUI(QWidget):
             (cb_pack_rooms, "pack_rooms"),
             (cb_pack_labs, "pack_labs"),
         ]
+        
+        # Create reverse map for easy checkbox lookup
+        checkbox_map = {name: cb for cb, name in flag_map}
+        
+        # Preset selection handler
+        def apply_preset(index):
+            if index == 0:  # Custom
+                return
+            # Clear all first
+            for cb, _ in flag_map:
+                cb.setChecked(False)
+            # Apply strategy
+            strategy = None
+            if index == 1:  # Packing
+                strategy = PackingStrategy()
+            elif index == 2:  # Stability
+                strategy = StabilityStrategy()
+            elif index == 3:  # Preference
+                strategy = PreferenceStrategy()
+            elif index == 4:  # Balanced
+                strategy = BalancedStrategy()
+            
+            if strategy:
+                for flag in strategy.get_flags():
+                    if flag in checkbox_map:
+                        checkbox_map[flag].setChecked(True)
+        
+        preset_combo.currentIndexChanged.connect(apply_preset)
+        
         # Pre-fill from existing config flags if available
         existing_flags = getattr(self.config, "optimizer_flags", None)
         if isinstance(existing_flags, (list, set, tuple)):

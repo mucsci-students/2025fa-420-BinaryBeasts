@@ -147,6 +147,7 @@ def test_faculty_controller_basic_flow(tmp_path):
     
     # Get faculty and verify data
     dave = controller.get_faculty('Dr. Dave')
+    assert dave is not None
     assert dave.name == 'Dr. Dave'
     assert dave.maximum_credits == 6
     
@@ -192,6 +193,7 @@ def test_faculty_controller_modify_delete():
     
     # Verify modification
     updated_faculty = controller.get_faculty('Dr. Eve')
+    assert updated_faculty is not None
     assert updated_faculty.minimum_credits == 2
     assert updated_faculty.course_preferences.get('CMSC 240') == 7
     

@@ -1,13 +1,14 @@
 # src/controllers/lab_controller.py
 
 from src.models.lab_model import LabManager
-from typing import List, Dict
+from typing import List, Dict, Optional
+from src.undo_manager import SnapshotUndoManager
 
 
 class LabController:
     """Controller layer for lab management - bridges view and model."""
 
-    def __init__(self, manager: LabManager) -> None:
+    def __init__(self, manager: LabManager, undo_manager: Optional[SnapshotUndoManager] = None) -> None:
         """
         Initialize LabController.
 
@@ -15,6 +16,12 @@ class LabController:
             manager: LabManager instance to control
         """
         self.mgr = manager
+        self.undo_manager = undo_manager
+
+    def _record_change(self) -> None:
+        """Helper: record a snapshot after a successful change."""
+        if self.undo_manager is not None:
+            self.undo_manager.record_change()
 
     def add_lab(self, lab_name: str) -> bool:
         """
@@ -26,10 +33,10 @@ class LabController:
         Returns:
             True if lab was added, False if it already exists
         """
-        try:
-            return self.mgr.add_lab(lab_name)
-        except ValueError as e:
-            raise e
+        ok = self.mgr.add_lab(lab_name)
+        if ok:
+            self._record_change()
+        return ok
 
     def delete_lab(self, lab_name: str) -> bool:
         """
@@ -41,7 +48,10 @@ class LabController:
         Returns:
             True if lab was deleted, False if it doesn't exist
         """
-        return self.mgr.delete_lab(lab_name)
+        ok = self.mgr.delete_lab(lab_name)
+        if ok:
+            self._record_change()
+        return ok
 
     def edit_lab(self, old_name: str, new_name: str) -> bool:
         """
@@ -54,10 +64,22 @@ class LabController:
         Returns:
             True if lab was renamed, False if old_name doesn't exist or new_name already exists
         """
-        try:
-            return self.mgr.edit_lab(old_name, new_name)
-        except ValueError as e:
-            raise e
+        ok = self.mgr.edit_lab(old_name, new_name)
+        if ok:
+            self._record_change()
+        return ok
+
+    def undo(self) -> bool:
+        """Undo the last faculty change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.undo()
+
+    def redo(self) -> bool:
+        """Redo the last undone faculty change."""
+        if self.undo_manager is None:
+            return False
+        return self.undo_manager.redo()
 
     def get_labs(self) -> List[str]:
         """

@@ -16,6 +16,10 @@ BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
 )
+SMALL_BUTTON_STYLE = (
+    "padding: 6px; background-color: #327f66; color: white; "
+    "border-radius: 4px; min-width: 70px;"
+)
 TITLE_FONT = QFont("Arial", 19, QFont.Bold)
 LABEL_FONT = QFont("Arial", 15)
 BUTTON_FONT = QFont("Arial", 15)
@@ -112,6 +116,10 @@ class LabsDialog(QDialog):
             b.setFont(BUTTON_FONT)
             b.setStyleSheet(BUTTON_STYLE)
 
+        for b in (self.undo_button, self.redo_button):
+            b.setFont(QFont("Arial", 12))
+            b.setStyleSheet(SMALL_BUTTON_STYLE)
+
         self.add_button.clicked.connect(self.add_lab)
         self.edit_button.clicked.connect(self.edit_lab)
         self.delete_button.clicked.connect(self.delete_lab)
@@ -125,6 +133,11 @@ class LabsDialog(QDialog):
         list_layout.addWidget(list_label)
         list_layout.addWidget(self.lab_list)
 
+        top_button_row = QHBoxLayout()
+        top_button_row.addWidget(self.undo_button)
+        top_button_row.addWidget(self.redo_button)
+        top_button_row.addStretch()
+
         # Bottom button row
         button_row = QHBoxLayout()
         button_row.addWidget(self.add_button)
@@ -132,10 +145,13 @@ class LabsDialog(QDialog):
         button_row.addWidget(self.delete_button)
         button_row.addWidget(self.save_button)
         button_row.addWidget(self.cancel_button)
+        button_row.addWidget(self.save_button)
+        button_row.addWidget(self.cancel_button)
 
         # Main layout
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(header)
+        main_layout.addLayout(top_button_row)
         main_layout.addLayout(list_layout)
         main_layout.addLayout(button_row)
 
@@ -147,6 +163,18 @@ class LabsDialog(QDialog):
         self.lab_list.clear()
         for lab in sorted(self.controller.get_labs()):
             self.lab_list.addItem(lab)
+
+    def handle_undo(self):
+        if self.controller.undo():
+            self.refresh_labs()
+        else:
+            QMessageBox.information(self, "Undo", "Nothing to undo.")
+
+    def handle_redo(self):
+        if self.controller.redo():
+            self.refresh_labs()
+        else:
+            QMessageBox.information(self, "Redo", "Nothing to redo.")
 
     def add_lab(self):
         """Add a new lab."""

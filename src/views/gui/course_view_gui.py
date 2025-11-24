@@ -10,6 +10,10 @@ BUTTON_STYLE = (
     "padding: 10px; background-color: #327f66; color: white; "
     "border-radius: 5px; width: 140px;"
 )
+SMALL_BUTTON_STYLE = (
+    "padding: 6px; background-color: #327f66; color: white; "
+    "border-radius: 4px; min-width: 70px;"
+)
 TITLE_FONT = QFont("Arial", 19, QFont.Bold)
 LABEL_FONT = QFont("Arial", 15)
 BUTTON_FONT = QFont("Arial", 15)
@@ -151,12 +155,6 @@ class CourseDialog(QDialog):
             QMessageBox.warning(self, "Error", "At least one room is required")
             return
 
-        if not faculty_list:
-            QMessageBox.warning(
-                self, "Error", "At least one faculty member is required"
-            )
-            return
-
         self.result_course = {
             "course_id": course_id,
             "credits": credits,
@@ -207,6 +205,8 @@ class CoursesDialog(QDialog):
         self.delete_button = QPushButton("Delete")
         self.save_button = QPushButton("Save and Close")
         self.cancel_button = QPushButton("Cancel")
+        self.undo_button = QPushButton("Undo")
+        self.redo_button = QPushButton("Redo")
 
         for b in (
             self.add_button,
@@ -218,11 +218,17 @@ class CoursesDialog(QDialog):
             b.setFont(BUTTON_FONT)
             b.setStyleSheet(BUTTON_STYLE)
 
+        for b in (self.undo_button, self.redo_button):
+            b.setFont(QFont("Arial", 12))
+            b.setStyleSheet(SMALL_BUTTON_STYLE)
+
         self.add_button.clicked.connect(self.add_section)
         self.edit_button.clicked.connect(self.edit_section)
         self.delete_button.clicked.connect(self.delete_section)
         self.save_button.clicked.connect(self.save_and_close)
         self.cancel_button.clicked.connect(self.reject)
+        self.undo_button.clicked.connect(self.handle_undo)
+        self.redo_button.clicked.connect(self.handle_redo)
 
         # layout: two columns, right side wider
         lists_row = QHBoxLayout()
@@ -242,6 +248,12 @@ class CoursesDialog(QDialog):
         lists_row.addLayout(left_box, 1)
         lists_row.addLayout(right_box, 3)
 
+        # top-right Undo/Redo row
+        top_button_row = QHBoxLayout()
+        top_button_row.addWidget(self.undo_button)
+        top_button_row.addWidget(self.redo_button)
+        top_button_row.addStretch()
+
         # bottom button row
         button_row = QHBoxLayout()
         button_row.addWidget(self.add_button)
@@ -253,6 +265,7 @@ class CoursesDialog(QDialog):
         # layout
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(header)
+        main_layout.addLayout(top_button_row)
         main_layout.addLayout(lists_row)
         main_layout.addLayout(button_row)
 
@@ -268,6 +281,18 @@ class CoursesDialog(QDialog):
             self.course_id_list.setCurrentRow(0)
         else:
             self.section_list.clear()
+
+    def handle_undo(self):
+        if self.controller.undo():
+            self.refresh_course_ids()
+        else:
+            QMessageBox.information(self, "Undo", "Nothing to undo.")
+
+    def handle_redo(self):
+        if self.controller.redo():
+            self.refresh_course_ids()
+        else:
+            QMessageBox.information(self, "Redo", "Nothing to redo.")
 
     def show_sections(self, _row: int):
         """Fill the right list with sections of the selected course."""

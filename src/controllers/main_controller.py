@@ -7,8 +7,12 @@ from src.controllers.room_controller import RoomController
 from src.models.room_model import RoomManager
 from src.controllers.lab_controller import LabController
 from src.models.lab_model import LabManager
+from src.controllers.time_slot_controller import TimeSlotController
+from src.models.time_slot_model import TimeSlotManager
+from src.views.cli.time_slot_view_cli import TimeSlotView
 from src.controllers import schedules_controller
 from src.controllers.nl_controller import NLController
+from src.undo_manager import SnapshotUndoManager
 from src.views.cli.nl_view import NLView
 from scheduler import (
     Scheduler,
@@ -236,7 +240,16 @@ class main_controller:
 
     def save_schedules(self, path: str):
         with open(path, "w") as f:
-            f.write(str(self.schedules[self.current_schedule_index]))
+            # Support legacy tests that set schedules directly on the controller
+            schedules = getattr(self, "schedules", None)
+            index = getattr(self, "current_schedule_index", None)
+            if not isinstance(schedules, list) or not isinstance(index, int):
+                schedules = self.model.schedules
+                index = self.model.current_schedule_index
+            if not schedules:
+                f.write("[]")
+            else:
+                f.write(str(schedules[index]))
 
     def manage_courses(self):
         """Manage courses using the course management system"""
@@ -259,8 +272,14 @@ class main_controller:
 
         manager.load_courses(courses_data)
 
-        # Create controller and run
-        controller = CourseController(manager)
+        # Create undo manager *for this manager*
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+
+        # Create controller with undo support
+        controller = CourseController(manager, undo_manager=undo_manager)
         from src.views.cli.course_view_cli import CourseView
 
         while True:
@@ -285,8 +304,20 @@ class main_controller:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return
+            elif choice == "7":
+                # UNDO
+                if controller.undo():
+                    print("↩️ Undid last change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                # REDO
+                if controller.redo():
+                    print("↪️ Redid last undone change.")
+                else:
+                    print("Nothing to redo.")
             else:
-                print("❌ Invalid choice. Please select 1-6.")
+                print("❌ Invalid choice. Please select 1-8.")
 
     def manage_faculty(self):
         """Manage faculty using the faculty management system"""
@@ -311,8 +342,14 @@ class main_controller:
 
         manager.load_faculty(faculty_data)
 
+        # Set up undo/redo for faculty (snapshot-based)
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+
         # Create controller and run
-        controller = FacultyController(manager)
+        controller = FacultyController(manager, undo_manager=undo_manager)
         from src.views.cli.faculty_view import FacultyView
 
         # Get available resources for validation
@@ -366,16 +403,31 @@ class main_controller:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return
+            elif choice == "7":
+                if controller.undo():
+                    print("↩️ Undid last faculty change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                if controller.redo():
+                    print("↪️ Redid last undone faculty change.")
+                else:
+                    print("Nothing to redo.")
             else:
-                print("❌ Invalid choice. Please select 1-6.")
+                print("❌ Invalid choice. Please select 1-8.")
 
     def manage_rooms(self):
         """Manage rooms using the room management system"""
         # Create RoomManager and load rooms from CombinedConfig
         manager = RoomManager(self.model.config.config)
 
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+
         # Create controller and run
-        controller = RoomController(manager)
+        controller = RoomController(manager, undo_manager=undo_manager)
         from src.views.cli.room_view import RoomView
 
         # Get course and faculty data for impact analysis
@@ -435,16 +487,30 @@ class main_controller:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return
+            elif choice == "7":
+                if controller.undo():
+                    print("↩️ Undid last room change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                if controller.redo():
+                    print("↪️ Redid last undone room change.")
+                else:
+                    print("Nothing to redo.")
             else:
-                print("❌ Invalid choice. Please select 1-6.")
+                print("❌ Invalid choice. Please select 1-8.")
 
     def manage_labs(self):
         """Manage labs using the lab management system"""
         # Create LabManager and load labs from CombinedConfig
         manager = LabManager(self.model.config)
 
-        # Create controller and run
-        controller = LabController(manager)
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+
+        controller = LabController(manager, undo_manager=undo_manager)
         from src.views.cli.lab_view_cli import LabView
 
         # Get course and faculty data for impact analysis
@@ -504,8 +570,95 @@ class main_controller:
             elif choice == "6":
                 print("Exiting without saving changes.")
                 return
-            else:
-                print("❌ Invalid choice. Please select 1-6.")
+            elif choice == "7":
+                if controller.undo():
+                    print("↩️ Undid last lab change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                if controller.redo():
+                    print("↪️ Redid last undone lab change.")
+                else:
+                    print("Nothing to redo.")
+
+    def manage_time_slots(self):
+        """Manage time slot configuration using the time slot management system"""
+        # Check if configuration is loaded
+        if not self.model.config:
+            print("❌ No configuration loaded. Please load a configuration file first.")
+            print("   Use the 'Load Configuration' option from the main menu.")
+            return
+
+        # Create TimeSlotManager and load time slot config from CombinedConfig
+        manager = TimeSlotManager()
+
+        # Extract time slot configuration from CombinedConfig
+        time_slot_data = {}
+        if (hasattr(self.model.config, 'time_slot_config') and
+                self.model.config.time_slot_config):
+            time_slot_data = self.model.config.time_slot_config.model_dump()
+        elif (hasattr(self.model.config, 'config') and
+              hasattr(self.model.config.config, 'time_slot_config')):
+            time_slot_data = self.model.config.config.time_slot_config.model_dump()
+
+        if not time_slot_data:
+            print("⚠️  No time slot configuration found in the loaded file.")
+            print("   This can happen if:")
+            print("   1. The configuration file is empty or corrupted")
+            print("   2. The file doesn't contain a 'time_slot_config' section")
+            print()
+            print("💡 To fix this:")
+            print("   • Load a different configuration file that includes time slot data")
+            print("   • Use 'example.json' which has a complete configuration")
+            print("   • Create a new time slot configuration manually")
+            return
+
+        if time_slot_data:
+            manager.load_time_slots(time_slot_data)
+
+        undo_manager = SnapshotUndoManager(
+            get_state=manager.snapshot_state,
+            set_state=manager.restore_state,
+        )
+        # record initial baseline
+        undo_manager.record_change()
+
+        # Create controller with undo support
+        controller = TimeSlotController(manager, undo_manager=undo_manager)
+
+        while True:
+            TimeSlotView.show_menu()
+            choice = TimeSlotView.get_menu_choice()
+
+            if choice == "1":
+                TimeSlotView.display_time_slots(controller)
+            elif choice == "2":
+                TimeSlotView.manage_time_blocks(controller)
+            elif choice == "3":
+                TimeSlotView.manage_class_patterns(controller)
+            elif choice == "4":
+                TimeSlotView.configure_settings(controller)
+            elif choice == "5":
+                # Save changes back to CombinedConfig
+                if controller.save_to_combined_config(self.model.config):
+                    print("✅ Time slot configuration saved successfully")
+                    print("📋 Updated configuration will be used for schedule generation")
+                else:
+                    print("❌ Failed to save time slot configuration")
+                return
+            elif choice == "6":
+                print("Exiting without saving changes.")
+                return
+            elif choice == "7":
+                if controller.undo():
+                    print("↩️ Undid last time-slot change.")
+                else:
+                    print("Nothing to undo.")
+            elif choice == "8":
+                if controller.redo():
+                    print("↪️ Redid last undone time-slot change.")
+                else:
+                    print("Nothing to redo.")
 
     def process_input(self, input_data):
         # edit course has been selected
@@ -520,8 +673,11 @@ class main_controller:
         # edit room has been selected
         elif input_data == "4":
             self.manage_rooms()
-        # generate schedules has been selected
+        # edit time slots has been selected
         elif input_data == "5":
+            self.manage_time_slots()
+        # generate schedules has been selected
+        elif input_data == "6":
             config_flags = main_view.generate_schedules()
             num = config_flags[0]
             self.model.config.optimizer_flags = config_flags[1]
@@ -529,10 +685,10 @@ class main_controller:
             controller = schedules_controller.generate_controller(scheds)
             controller.entry()
         # import schedules has been selected
-        elif input_data == "6":
+        elif input_data == "7":
             self.load_schedules()
         # AI assistant has been selected
-        elif input_data == "7":
+        elif input_data == "8":
             # Create managers from config
             course_manager = CourseManager()
             courses_data = []
@@ -592,7 +748,7 @@ class main_controller:
                 controller = schedules_controller.generate_controller(nl_controller.generated_schedules)
                 controller.entry()
         # exit has been selected
-        elif input_data == "8":
+        elif input_data == "9":
             print("Exiting program.")
             exit(0)
 

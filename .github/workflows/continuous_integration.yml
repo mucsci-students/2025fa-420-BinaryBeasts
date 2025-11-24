@@ -8,6 +8,9 @@ on: [push, pull_request]
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      # Run Qt in headless mode to prevent aborts when constructing widgets
+      QT_QPA_PLATFORM: offscreen
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python 3.12
@@ -20,11 +23,11 @@ jobs:
     - name: Install dependencies
       run: uv sync --all-extras
 
-    - name: Test with pytest
-      run: uv run pytest
+    - name: Test with pytest (verbose logs)
+      run: uv run pytest -s
 
     - name: Generate coverage report
-      run: uv run pytest --cov --cov-branch --cov-report=xml
+      run: uv run pytest -s --cov=src --cov-branch --cov-report=xml
       
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v5

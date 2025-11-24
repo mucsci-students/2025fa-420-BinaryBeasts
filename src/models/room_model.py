@@ -260,3 +260,18 @@ class RoomManager(Observable):
                 and room_name in faculty.room_preferences
             ):
                 del faculty.room_preferences[room_name]
+
+    def snapshot_state(self) -> dict:
+        """
+        Create a snapshot of the current room state.
+        Used by the undo/redo system.
+        """
+        return {
+            "rooms": list(self.rooms),
+        }
+
+    def restore_state(self, state: dict) -> None:
+        """
+        Restore room state from snapshot.
+        """
+        self.rooms = list(state.get("rooms", []))
