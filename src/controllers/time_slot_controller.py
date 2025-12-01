@@ -30,6 +30,10 @@ class TimeSlotController:
         """Get all time blocks for a specific day."""
         return self.mgr.get_time_blocks_for_day(day)
 
+    def get_daily_times_for_day(self, day: str) -> List[dict]:
+        """Get daily time slots for a specific day (alias for get_time_blocks_for_day)."""
+        return self.get_time_blocks_for_day(day)
+
     def get_all_days(self) -> List[str]:
         """Get all configured days."""
         return self.mgr.get_all_days()

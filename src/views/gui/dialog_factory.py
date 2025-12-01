@@ -197,27 +197,35 @@ class DialogFactory:
         """Create and configure a time slots management dialog."""
         # Create time slot manager
         timeslot_manager = TimeSlotManager()
-
+        
         # Load time slot configuration from the combined config
         if hasattr(config, 'time_slot_config') and config.time_slot_config:
             time_slot_config = config.time_slot_config
-
+            
             # Convert TimeSlotConfig object to dictionary format
             try:
-                # Try Pydantic v2 method first
-                config_dict = time_slot_config.model_dump()
-            except AttributeError:
+                # Try Pydantic v2 method first (mode='python' gives plain dicts)
+                config_dict = time_slot_config.model_dump(mode='python')
+            except (AttributeError, TypeError):
                 try:
                     # Try Pydantic v1 method
                     config_dict = time_slot_config.dict()
                 except AttributeError:
                     # If it's already a dictionary
-                    config_dict = time_slot_config
-
+                    config_dict = time_slot_config if isinstance(time_slot_config, dict) else {}
+            
+            # Ensure times and classes are properly converted to plain dicts/lists
+            if 'times' in config_dict:
+                for day in config_dict['times']:
+                    config_dict['times'][day] = [
+                        slot if isinstance(slot, dict) else (
+                            slot.model_dump(mode='python') if hasattr(slot, 'model_dump') else 
+                            slot.dict() if hasattr(slot, 'dict') else dict(slot)
+                        ) for slot in config_dict['times'][day]
+                    ]
+            
             # Load the dictionary configuration
             timeslot_manager.load_time_slots(config_dict)
-        
-        timeslot_manager = TimeSlotManager(config)
 
         # Attach conflict resolution observer if provided
         if conflict_observer and hasattr(timeslot_manager, 'add_observer'):
